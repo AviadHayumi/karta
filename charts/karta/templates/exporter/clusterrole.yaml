@@ -47,7 +47,10 @@ rules:
   # Workload and child kinds, enumerated (no wildcards). Extend via values
   # or with an extra ClusterRole labeled karta.run.ai/exporter-rbac: "true".
   {{- range .Values.exporter.rbac.workloadRules }}
-  - apiGroups: [{{ .apiGroups | join ", " | quote }}]
+  - apiGroups:
+      {{- range .apiGroups }}
+      - {{ . | quote }}
+      {{- end }}
     resources:
       {{- range .resources }}
       - {{ . | quote }}

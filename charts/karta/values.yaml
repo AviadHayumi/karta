@@ -181,7 +181,7 @@ exporter:
       - apiGroups: ["nvidia.com"]
         resources: ["dynamographdeployments", "dynamocomponentdeployments"]
       - apiGroups: ["grove.io", "scheduler.grove.io"]
-        resources: ["podcliquesets", "podcliques", "podcliquescalinggroups"]
+        resources: ["podcliquesets", "podcliques", "podcliquescalinggroups", "podgangs"]
 
   serviceMonitor:
     # Requires the prometheus-operator CRDs.
