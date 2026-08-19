@@ -261,6 +261,12 @@ func (c *Controller) reconcileWatchers() {
 		}
 		close(w.stop)
 		delete(c.watchers, gvk)
+		// a stopped informer fires no delete events; drop its owner edges
+		for _, item := range w.informer.GetStore().List() {
+			if objectMeta, ok := item.(metav1.Object); ok {
+				c.index.DeleteObject(objectMeta.GetUID())
+			}
+		}
 		c.logger.Info("stopped watcher", "gvk", gvk.String())
 	}
 

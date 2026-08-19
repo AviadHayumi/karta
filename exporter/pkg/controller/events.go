@@ -84,7 +84,7 @@ func (c *Controller) rebuildGroupKind(groupKind schema.GroupKind) {
 // dropUnservedWorkloads removes workload records whose group and kind no
 // longer has a chosen Karta, so their series disappear at the next scrape.
 func (c *Controller) dropUnservedWorkloads() {
-	for _, record := range c.store.Snapshot().Workloads {
+	for _, record := range c.store.Workloads() {
 		groupKind := schema.GroupKind{Group: record.Ref.Group, Kind: record.Ref.Kind}
 		if !c.registry.IsRoot(groupKind) {
 			c.store.DeleteWorkload(record.UID)
@@ -262,11 +262,14 @@ func (c *Controller) attributePodByKey(podKey string) {
 func (c *Controller) attributePod(pod *corev1.Pod) {
 	podKey := pod.Namespace + "/" + pod.Name
 
-	for _, waitingKey := range c.index.UpsertObject(pod.UID, pod.OwnerReferences) {
-		if waitingKey != podKey {
-			defer c.attributePodByKey(waitingKey)
+	waiting := c.index.UpsertObject(pod.UID, pod.OwnerReferences)
+	defer func() {
+		for _, waitingKey := range waiting {
+			if waitingKey != podKey {
+				c.attributePodByKey(waitingKey)
+			}
 		}
-	}
+	}()
 
 	result := c.index.RootFor(pod.OwnerReferences, c.registry.IsRoot)
 	switch result.Outcome {

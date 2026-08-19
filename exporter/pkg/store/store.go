@@ -160,6 +160,17 @@ func (s *Store) Workload(uid types.UID) (WorkloadRecord, bool) {
 	return record, ok
 }
 
+// Workloads returns the workload records without copying pod records.
+func (s *Store) Workloads() []WorkloadRecord {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	records := make([]WorkloadRecord, 0, len(s.workloads))
+	for _, record := range s.workloads {
+		records = append(records, record)
+	}
+	return records
+}
+
 func (s *Store) Snapshot() Snapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
