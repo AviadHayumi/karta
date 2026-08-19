@@ -64,6 +64,11 @@ func (r *Registry) SeedCatalog() {
 		if rootKind == nil {
 			continue
 		}
+		// the bare-Pod catalog entry would turn every pod on the cluster
+		// into a workload; it stays opt-in via an explicit Karta CR
+		if rootKind.Group == "" && rootKind.Kind == "Pod" {
+			continue
+		}
 		r.kartas["catalog:"+karta.Name] = kartaState{
 			karta:   karta,
 			rootGK:  schema.GroupKind{Group: rootKind.Group, Kind: rootKind.Kind},
