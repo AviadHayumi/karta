@@ -62,10 +62,8 @@ const (
 	ReasonNoStatusDefinition = "no_status_definition"
 )
 
-// AllPhases is the closed set of normalized statuses. Every workload with a
-// StatusDefinition gets one 0/1 series per entry, so time-in-phase queries
-// never break on a missing series. Undefined is the library fallback when
-// mappings are present but nothing matched.
+// AllPhases is the closed set of normalized statuses, emitted densely so
+// time-in-phase queries never break on a missing series.
 var AllPhases = []v1alpha1.ResourceStatus{
 	v1alpha1.InitializingStatus,
 	v1alpha1.RunningStatus,

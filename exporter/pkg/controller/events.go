@@ -37,7 +37,10 @@ func (c *Controller) onKartaEvent(obj any) {
 
 	c.registry.Set(karta)
 	c.reconcileWatchers()
-	c.rebuildTrackedWorkloads()
+	if rootKind := karta.Spec.StructureDefinition.RootComponent.Kind; rootKind != nil {
+		c.rebuildGroupKind(schema.GroupKind{Group: rootKind.Group, Kind: rootKind.Kind})
+	}
+	c.dropUnservedWorkloads()
 	c.markEvent()
 }
 
@@ -58,23 +61,24 @@ func (c *Controller) onKartaDelete(obj any) {
 	c.registry.Remove(u.GetName())
 	c.reconcileWatchers()
 	c.dropUnservedWorkloads()
+	group, _, _ := unstructured.NestedString(u.Object, "spec", "structureDefinition", "rootComponent", "kind", "group")
+	kind, _, _ := unstructured.NestedString(u.Object, "spec", "structureDefinition", "rootComponent", "kind", "kind")
+	if kind != "" {
+		c.rebuildGroupKind(schema.GroupKind{Group: group, Kind: kind})
+	}
 	c.markEvent()
 }
 
-// rebuildTrackedWorkloads reprocesses every cached workload of every chosen
-// entry with forced pod re-attribution, so a live Karta update never leaves
-// stale attribution behind.
-func (c *Controller) rebuildTrackedWorkloads() {
-	for _, entry := range c.registry.Entries() {
-		workloadStore := c.rootWatcherStore(entry.RootGVK.GroupKind())
-		if workloadStore == nil {
-			continue
-		}
-		for _, item := range workloadStore.List() {
-			c.processWorkload(item, true)
-		}
+// rebuildGroupKind reprocesses the cached workloads of one kind with forced
+// pod re-attribution, so a live Karta update never leaves stale attribution.
+func (c *Controller) rebuildGroupKind(groupKind schema.GroupKind) {
+	workloadStore := c.rootWatcherStore(groupKind)
+	if workloadStore == nil {
+		return
 	}
-	c.dropUnservedWorkloads()
+	for _, item := range workloadStore.List() {
+		c.processWorkload(item, true)
+	}
 }
 
 // dropUnservedWorkloads removes workload records whose group and kind no
@@ -252,11 +256,8 @@ func (c *Controller) attributePodByKey(podKey string) {
 }
 
 // attributePod walks the pod's owner chain to a Karta-described root and
-// stores the attribution. Pods that do not belong to a described workload
-// are removed from the store; pods blocked on a not-yet-observed owner are
-// parked and retried when that owner shows up.
-// The pod itself is fed into the owner index first: pods can be middle
-// owners in real chains (a LeaderWorkerSet worker StatefulSet is owned by
+// stores the attribution. The pod registers its own owner edge first: pods
+// can be middle owners (a LeaderWorkerSet worker StatefulSet is owned by
 // its leader pod), and other pods may be parked waiting for this one.
 func (c *Controller) attributePod(pod *corev1.Pod) {
 	podKey := pod.Namespace + "/" + pod.Name
