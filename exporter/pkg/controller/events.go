@@ -310,7 +310,21 @@ func (c *Controller) attributePod(pod *corev1.Pod) {
 		return
 	}
 
-	attribution := attribute.Attribute(context.Background(), pod, entry, workload)
+	instanceIDs := map[string][]string{}
+	if record, ok := c.store.Workload(workload.GetUID()); ok {
+		for _, componentState := range record.Components {
+			instanceIDs[componentState.Component] = append(instanceIDs[componentState.Component], componentState.Instance)
+		}
+	} else {
+		computed, err := attribute.InstanceIDs(context.Background(), entry, workload)
+		if err != nil {
+			c.attributionErrors.WithLabelValues(collector.ReasonJQError).Inc()
+		} else {
+			instanceIDs = computed
+		}
+	}
+
+	attribution := attribute.Attribute(context.Background(), pod, entry, instanceIDs)
 	if attribution.Reason != "" {
 		c.attributionErrors.WithLabelValues(attribution.Reason).Inc()
 	}

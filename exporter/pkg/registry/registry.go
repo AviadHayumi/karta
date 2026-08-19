@@ -17,10 +17,11 @@ import (
 
 // Entry is a validated Karta chosen to serve its (group, kind).
 type Entry struct {
-	Karta      *v1alpha1.Karta
-	RootGVK    schema.GroupVersionKind
-	Summary    *instructions.StructureSummary
-	ChildKinds []schema.GroupVersionKind
+	Karta       *v1alpha1.Karta
+	RootGVK     schema.GroupVersionKind
+	Summary     *instructions.StructureSummary
+	ChildKinds  []schema.GroupVersionKind
+	Definitions map[string]*v1alpha1.ComponentDefinition
 }
 
 // Stats counts Kartas per validity and reason, for self-observability.
@@ -215,7 +216,14 @@ func newEntry(karta *v1alpha1.Karta) (*Entry, error) {
 			Version: rootKind.Version,
 			Kind:    rootKind.Kind,
 		},
-		Summary: summary,
+		Summary:     summary,
+		Definitions: map[string]*v1alpha1.ComponentDefinition{},
+	}
+	root := &karta.Spec.StructureDefinition.RootComponent
+	entry.Definitions[root.Name] = root
+	for index := range karta.Spec.StructureDefinition.ChildComponents {
+		child := &karta.Spec.StructureDefinition.ChildComponents[index]
+		entry.Definitions[child.Name] = child
 	}
 
 	seen := map[schema.GroupVersionKind]struct{}{}

@@ -28,10 +28,10 @@ type Result struct {
 }
 
 // Attribute resolves which component, component instance, and replica of a
-// workload the given pod belongs to, using the entry's Karta definition.
-// The workload object is the live root object the pod's owner chain reached.
-func Attribute(ctx context.Context, pod *corev1.Pod, entry *registry.Entry, workload resource.KubernetesObject) Result {
-	factory := resource.NewComponentFactoryFromObject(entry.Karta, workload)
+// workload the given pod belongs to. All jq runs against the pod only: the
+// workload side is the instanceIDs map (component name to declared instance
+// ids), which the caller computes once per workload event, not per pod.
+func Attribute(ctx context.Context, pod *corev1.Pod, entry *registry.Entry, instanceIDs map[string][]string) Result {
 	querier := resource.NewPodQuerier(pod)
 
 	componentName, err := instructions.InferPodComponent(ctx, querier, entry.Summary)
@@ -44,22 +44,29 @@ func Attribute(ctx context.Context, pod *corev1.Pod, entry *registry.Entry, work
 	}
 
 	result := Result{Component: componentName}
-
-	instance, err := instructions.InferPodComponentInstance(ctx, querier, componentName, factory)
-	switch {
-	case err == nil:
-		if instance != nil {
-			result.Instance = *instance
-		}
-	case errors.As(err, new(resource.InstanceNotFoundError)):
+	definition := entry.Definitions[componentName]
+	if definition == nil {
 		result.Instance = collector.SentinelUnknown
 		result.Reason = collector.ReasonUnknownInstance
-	default:
-		result.Instance = collector.SentinelUnknown
-		result.Reason = collector.ReasonJQError
+		return result
 	}
 
-	replica, err := extractReplica(ctx, querier, factory, componentName)
+	ids := instanceIDs[componentName]
+	if len(ids) > 0 && ids[0] != "" && definition.PodSelector != nil {
+		instance, err := querier.GetMatchingInstanceId(ctx, definition.PodSelector.ComponentInstanceSelector, ids)
+		switch {
+		case err == nil:
+			result.Instance = instance
+		case errors.As(err, new(resource.InstanceNotFoundError)):
+			result.Instance = collector.SentinelUnknown
+			result.Reason = collector.ReasonUnknownInstance
+		default:
+			result.Instance = collector.SentinelUnknown
+			result.Reason = collector.ReasonJQError
+		}
+	}
+
+	replica, err := extractReplica(ctx, querier, entry, componentName)
 	if err != nil && result.Reason == "" {
 		result.Reason = collector.ReasonJQError
 	}
@@ -68,19 +75,48 @@ func Attribute(ctx context.Context, pod *corev1.Pod, entry *registry.Entry, work
 	return result
 }
 
+// InstanceIDs lists the declared instance ids per pod-producing component,
+// straight from the workload object. This is the once-per-workload-event
+// half of attribution.
+func InstanceIDs(ctx context.Context, entry *registry.Entry, workload resource.KubernetesObject) (map[string][]string, error) {
+	factory := resource.NewComponentFactoryFromObject(entry.Karta, workload)
+
+	components, err := factory.GetChildComponents()
+	if err != nil {
+		return nil, err
+	}
+	root, err := factory.GetRootComponent()
+	if err != nil {
+		return nil, err
+	}
+	components = append(components, root)
+
+	instanceIDs := make(map[string][]string, len(components))
+	for _, component := range components {
+		if !component.HasPodDefinition() {
+			continue
+		}
+		ids, err := component.GetInstanceIds(ctx)
+		if err != nil {
+			return nil, err
+		}
+		instanceIDs[component.Name()] = ids
+	}
+	return instanceIDs, nil
+}
+
 // extractReplica finds the nearest ReplicaSelector on the component or its
 // ancestors (descendants inherit the replica context from the ancestor that
 // defines it) and evaluates it against the pod.
-func extractReplica(ctx context.Context, querier *resource.PodQuerier, factory *resource.ComponentFactory, componentName string) (string, error) {
+func extractReplica(ctx context.Context, querier *resource.PodQuerier, entry *registry.Entry, componentName string) (string, error) {
 	current := componentName
 	for current != "" {
-		component, err := factory.GetComponent(current)
-		if err != nil {
-			return "", err
+		definition := entry.Definitions[current]
+		if definition == nil {
+			return "", nil
 		}
 
-		selector := component.GetPodSelector()
-		if selector != nil && selector.ReplicaSelector != nil {
+		if selector := definition.PodSelector; selector != nil && selector.ReplicaSelector != nil {
 			replica, found, err := querier.ExtractReplicaKey(ctx, selector.ReplicaSelector)
 			if err != nil {
 				return "", err
@@ -91,7 +127,6 @@ func extractReplica(ctx context.Context, querier *resource.PodQuerier, factory *
 			return "", nil
 		}
 
-		definition := component.Definition()
 		if definition.OwnerRef == nil {
 			return "", nil
 		}
