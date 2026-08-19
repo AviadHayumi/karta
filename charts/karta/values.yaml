@@ -137,6 +137,10 @@ exporter:
   # other pod fields.
   fullPodCache: false
 
+  # Use the built-in catalog definitions for workload kinds that have no
+  # Karta CR on the cluster. A Karta CR always overrides the catalog.
+  useCatalog: false
+
   # Extra flags appended after the chart's default args.
   extraArgs: []
 
@@ -166,6 +170,18 @@ exporter:
         resources: ["rayclusters", "rayjobs", "rayservices"]
       - apiGroups: ["leaderworkerset.x-k8s.io"]
         resources: ["leaderworkersets"]
+      - apiGroups: ["serving.knative.dev"]
+        resources: ["services", "configurations", "revisions"]
+      - apiGroups: ["serving.kserve.io"]
+        resources: ["inferenceservices"]
+      - apiGroups: ["milvus.io"]
+        resources: ["milvuses"]
+      - apiGroups: ["apps.nvidia.com"]
+        resources: ["nimservices", "nimcaches"]
+      - apiGroups: ["nvidia.com"]
+        resources: ["dynamographdeployments", "dynamocomponentdeployments"]
+      - apiGroups: ["grove.io", "scheduler.grove.io"]
+        resources: ["podcliquesets", "podcliques", "podcliquescalinggroups"]
 
   serviceMonitor:
     # Requires the prometheus-operator CRDs.

@@ -37,22 +37,24 @@ func main() {
 		metricsAddr  string
 		kubeconfig   string
 		fullPodCache bool
+		useCatalog   bool
 		resync       time.Duration
 	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "Address to serve /metrics, /healthz, and /readyz on.")
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig; empty means in-cluster configuration.")
 	flag.BoolVar(&fullPodCache, "full-pod-cache", false, "Cache full pod objects instead of the trimmed shape. Needed only for custom Kartas whose pod selectors read fields outside metadata, spec.nodeName, and status.phase.")
+	flag.BoolVar(&useCatalog, "use-catalog", false, "Use the built-in catalog definitions for workload kinds that have no Karta CR on the cluster. A Karta CR always overrides the catalog.")
 	flag.DurationVar(&resync, "resync-period", 10*time.Hour, "Informer resync period.")
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	if err := run(metricsAddr, kubeconfig, fullPodCache, resync, logger); err != nil {
+	if err := run(metricsAddr, kubeconfig, fullPodCache, useCatalog, resync, logger); err != nil {
 		logger.Error("exporter failed", "error", err)
 		os.Exit(1)
 	}
 }
 
-func run(metricsAddr, kubeconfig string, fullPodCache bool, resync time.Duration, logger *slog.Logger) error {
+func run(metricsAddr, kubeconfig string, fullPodCache, useCatalog bool, resync time.Duration, logger *slog.Logger) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
@@ -80,6 +82,9 @@ func run(metricsAddr, kubeconfig string, fullPodCache bool, resync time.Duration
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(discoveryClient))
 
 	kartaRegistry := registry.New()
+	if useCatalog {
+		kartaRegistry.SeedCatalog()
+	}
 	ownerIndex := owner.New()
 	metricsStore := store.New()
 
@@ -110,7 +115,7 @@ func run(metricsAddr, kubeconfig string, fullPodCache bool, resync time.Duration
 	go func() { errCh <- exporterController.Run(ctx) }()
 	go func() { errCh <- metricsServer.Run(ctx) }()
 
-	logger.Info("karta exporter started", "metricsAddr", metricsAddr, "fullPodCache", fullPodCache)
+	logger.Info("karta exporter started", "metricsAddr", metricsAddr, "fullPodCache", fullPodCache, "useCatalog", useCatalog)
 
 	select {
 	case err := <-errCh:

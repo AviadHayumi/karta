@@ -36,6 +36,9 @@ spec:
             {{- if .Values.exporter.fullPodCache }}
             - --full-pod-cache
             {{- end }}
+            {{- if .Values.exporter.useCatalog }}
+            - --use-catalog
+            {{- end }}
             {{- range .Values.exporter.extraArgs }}
             - {{ . | quote }}
             {{- end }}

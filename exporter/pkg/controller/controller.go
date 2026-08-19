@@ -167,6 +167,10 @@ func (c *Controller) Run(ctx context.Context) error {
 		return fmt.Errorf("informer caches failed to sync")
 	}
 
+	// with a seeded catalog there may be no Karta events at all, so the
+	// watchers must be reconciled at least once after the initial sync
+	c.reconcileWatchers()
+
 	c.startedMu.Lock()
 	c.started = true
 	c.startedMu.Unlock()

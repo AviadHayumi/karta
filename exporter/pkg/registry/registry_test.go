@@ -94,4 +94,44 @@ var _ = ginkgo.Describe("Registry", func() {
 		Expect(r.Entries()).To(BeEmpty())
 		Expect(r.IsRoot(jobsetGroupKind)).To(BeFalse())
 	})
+
+	ginkgo.Context("with the seeded catalog", func() {
+		ginkgo.BeforeEach(func() {
+			r.SeedCatalog()
+		})
+
+		ginkgo.It("serves catalog definitions when no CR exists", func() {
+			Expect(r.IsRoot(jobsetGroupKind)).To(BeTrue())
+			Expect(len(r.Entries())).To(BeNumerically(">=", 15))
+		})
+
+		ginkgo.It("picks one entry per kind when the catalog has several versions", func() {
+			dynamoGroupKind := schema.GroupKind{Group: "nvidia.com", Kind: "DynamoGraphDeployment"}
+			entry, ok := r.EntryFor(dynamoGroupKind)
+			Expect(ok).To(BeTrue())
+			Expect(entry.RootGVK.Version).To(Equal("v1beta1"))
+		})
+
+		ginkgo.It("lets a cluster CR override the catalog entry", func() {
+			r.Set(jobsetKarta("my-jobset", time.Hour))
+
+			entry, _ := r.EntryFor(jobsetGroupKind)
+			Expect(entry.Karta.Name).To(Equal("my-jobset"))
+		})
+
+		ginkgo.It("falls back to the catalog when the CR is removed", func() {
+			r.Set(jobsetKarta("my-jobset", time.Hour))
+			r.Remove("my-jobset")
+
+			entry, ok := r.EntryFor(jobsetGroupKind)
+			Expect(ok).To(BeTrue())
+			Expect(entry.Karta.Name).To(Equal("jobset-x-k8s-io-jobset-v1alpha2"))
+		})
+
+		ginkgo.It("does not count an overridden catalog entry as shadowed", func() {
+			r.Set(jobsetKarta("my-jobset", time.Hour))
+
+			Expect(r.Stats().Shadowed).To(BeZero())
+		})
+	})
 })

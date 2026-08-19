@@ -149,9 +149,10 @@ Default readable kinds are in `exporter.rbac.workloadRules` in values.yaml.
 
 ## Scoping and behavior notes
 
-- The exporter serves only workloads whose Karta CR is applied to the
-  cluster. There is no built-in catalog fallback; the catalog YAMLs under
-  docs/catalog are what admins apply.
+- By default the exporter serves only workloads whose Karta CR is applied
+  to the cluster. With `exporter.useCatalog=true` the built-in catalog
+  definitions cover workload kinds that have no CR; a Karta CR always
+  overrides the catalog entry for its kind.
 - One Karta serves each (group, kind). When two Kartas target the same
   kind, the oldest wins and the others surface as
   `karta_exporter_kartas{valid="false", reason="shadowed"}`.

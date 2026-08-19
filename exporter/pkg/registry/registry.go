@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
+	"github.com/run-ai/karta/pkg/catalog"
 	"github.com/run-ai/karta/pkg/instructions"
 )
 
@@ -30,9 +31,10 @@ type Stats struct {
 }
 
 type kartaState struct {
-	karta  *v1alpha1.Karta
-	err    error
-	rootGK schema.GroupKind
+	karta   *v1alpha1.Karta
+	err     error
+	rootGK  schema.GroupKind
+	catalog bool
 }
 
 // Registry tracks cluster Karta CRs, validates them, and picks exactly one
@@ -49,6 +51,26 @@ func New() *Registry {
 		kartas: make(map[string]kartaState),
 		chosen: make(map[schema.GroupKind]*Entry),
 	}
+}
+
+// SeedCatalog loads the built-in catalog definitions as a fallback tier:
+// a cluster Karta CR for the same group and kind always overrides them.
+func (r *Registry) SeedCatalog() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, karta := range catalog.List() {
+		rootKind := karta.Spec.StructureDefinition.RootComponent.Kind
+		if rootKind == nil {
+			continue
+		}
+		r.kartas["catalog:"+karta.Name] = kartaState{
+			karta:   karta,
+			rootGK:  schema.GroupKind{Group: rootKind.Group, Kind: rootKind.Kind},
+			catalog: true,
+		}
+	}
+	r.recomputeLocked()
 }
 
 // Set adds or updates a Karta and recomputes the chosen entries.
@@ -112,12 +134,14 @@ func (r *Registry) Stats() Stats {
 
 	stats := Stats{}
 	for _, state := range r.kartas {
+		chosen := r.chosen[state.rootGK]
 		switch {
 		case state.err != nil:
 			stats.Invalid++
-		case r.chosen[state.rootGK] != nil && r.chosen[state.rootGK].Karta.Name == state.karta.Name:
+		case chosen != nil && chosen.Karta == state.karta:
 			stats.Valid++
-		default:
+		case !state.catalog:
+			// a catalog entry overridden by a CR is expected, not shadowed
 			stats.Shadowed++
 		}
 	}
@@ -125,16 +149,21 @@ func (r *Registry) Stats() Stats {
 }
 
 func (r *Registry) recomputeLocked() {
-	candidates := make(map[schema.GroupKind][]*v1alpha1.Karta)
+	crCandidates := make(map[schema.GroupKind][]*v1alpha1.Karta)
+	catalogCandidates := make(map[schema.GroupKind][]*v1alpha1.Karta)
 	for _, state := range r.kartas {
 		if state.err != nil {
 			continue
 		}
-		candidates[state.rootGK] = append(candidates[state.rootGK], state.karta)
+		if state.catalog {
+			catalogCandidates[state.rootGK] = append(catalogCandidates[state.rootGK], state.karta)
+		} else {
+			crCandidates[state.rootGK] = append(crCandidates[state.rootGK], state.karta)
+		}
 	}
 
-	chosen := make(map[schema.GroupKind]*Entry, len(candidates))
-	for groupKind, kartas := range candidates {
+	chosen := make(map[schema.GroupKind]*Entry)
+	for groupKind, kartas := range crCandidates {
 		sort.Slice(kartas, func(i, j int) bool {
 			iTime, jTime := kartas[i].CreationTimestamp, kartas[j].CreationTimestamp
 			if !iTime.Equal(&jTime) {
@@ -142,6 +171,21 @@ func (r *Registry) recomputeLocked() {
 			}
 			return kartas[i].Name < kartas[j].Name
 		})
+
+		entry, err := newEntry(kartas[0])
+		if err != nil {
+			continue
+		}
+		chosen[groupKind] = entry
+	}
+
+	for groupKind, kartas := range catalogCandidates {
+		if _, ok := chosen[groupKind]; ok {
+			continue
+		}
+		// catalog entries have no creation time; name-descending picks the
+		// newest API version when the catalog carries several for one kind
+		sort.Slice(kartas, func(i, j int) bool { return kartas[i].Name > kartas[j].Name })
 
 		entry, err := newEntry(kartas[0])
 		if err != nil {
