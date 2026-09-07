@@ -70,7 +70,7 @@ async function findPluginBase(): Promise<string> {
 }
 
 function isKartaLoaded(karta?: KartaWasm): karta is KartaWasm {
-  return !!karta && Object.keys(karta).length > 0;
+  return !!karta;
 }
 
 async function waitForExports(): Promise<KartaWasm> {
