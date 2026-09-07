@@ -6,7 +6,7 @@ import { afterEach, beforeAll, describe, expect, it, type MockInstance,vi } from
 const { request } = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock('@kinvolk/headlamp-plugin/lib', () => ({ ApiProxy: { request } }));
 
-import { getKartaEngine, loadScriptViaApiProxy } from './karta';
+import { getKartaWasm, loadScriptViaApiProxy } from './karta';
 
 const PATH = '/plugins/karta/wasm_exec.js';
 
@@ -65,7 +65,7 @@ describe('loadScriptViaApiProxy', () => {
   });
 });
 
-describe('getKartaEngine', () => {
+describe('getKartaWasm', () => {
   beforeAll(() => {
     if (!URL.createObjectURL) URL.createObjectURL = vi.fn();
     if (!URL.revokeObjectURL) URL.revokeObjectURL = vi.fn();
@@ -93,7 +93,7 @@ describe('getKartaEngine', () => {
     });
     const appendChild = vi.spyOn(document.head, 'appendChild');
 
-    const promise = getKartaEngine();
+    const promise = getKartaWasm();
     const script = await getInjectedScript(appendChild);
     window.Go = class {
       importObject: WebAssembly.Imports = {};
@@ -112,9 +112,9 @@ describe('getKartaEngine', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     const runSpy = vi.fn();
 
-    const engine = driveToInstantiateStreaming(runSpy);
+    const karta = driveToInstantiateStreaming(runSpy);
 
-    await expect(engine).rejects.toThrow('bad content type');
+    await expect(karta).rejects.toThrow('bad content type');
     expect(consoleError).toHaveBeenCalledWith('karta: failed to instantiate the WASM module', instantiateError);
     expect(runSpy).not.toHaveBeenCalled();
   });

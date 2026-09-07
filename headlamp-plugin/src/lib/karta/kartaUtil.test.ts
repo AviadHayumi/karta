@@ -11,8 +11,8 @@ import path from 'node:path';
 import * as perfHooks from 'node:perf_hooks';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-const { getKartaEngine } = vi.hoisted(() => ({ getKartaEngine: vi.fn() }));
-vi.mock('./karta', () => ({ getKartaEngine }));
+const { getKartaWasm } = vi.hoisted(() => ({ getKartaWasm: vi.fn() }));
+vi.mock('./karta', () => ({ getKartaWasm }));
 
 import type { Karta, Pod, Workload } from './karta.types';
 import { attributePods, buildTree, evaluatePhases, listCatalog } from './kartaUtil';
@@ -44,7 +44,7 @@ beforeAll(async () => {
   const { instance } = await WebAssembly.instantiate(readFileSync(WASM_PATH), go.importObject);
   go.run(instance);
 
-  getKartaEngine.mockResolvedValue(globals.karta);
+  getKartaWasm.mockResolvedValue(globals.karta);
 }, 20_000);
 
 function podFixture(phase: string): Workload {

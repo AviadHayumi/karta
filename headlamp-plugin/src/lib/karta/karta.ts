@@ -11,7 +11,7 @@ export interface Envelope {
   error: string | null;
 }
 
-export interface KartaEngine {
+export interface KartaWasm {
   buildTree(definitionJSON: string, workloadJSON: string): Envelope;
   attributePods(definitionJSON: string, workloadJSON: string, podsJSON: string): Envelope;
   evaluatePhases(definitionJSON: string, workloadJSON: string): Envelope;
@@ -26,7 +26,7 @@ interface GoRuntime {
 declare global {
   interface Window {
     Go?: new () => GoRuntime;
-    karta?: KartaEngine;
+    karta?: KartaWasm;
   }
 }
 
@@ -69,11 +69,11 @@ async function findPluginBase(): Promise<string> {
   return `plugins/${PLUGIN_NAME}`;
 }
 
-function isKartaLoaded(karta?: KartaEngine): karta is KartaEngine {
+function isKartaLoaded(karta?: KartaWasm): karta is KartaWasm {
   return !!karta && Object.keys(karta).length > 0;
 }
 
-async function waitForExports(): Promise<KartaEngine> {
+async function waitForExports(): Promise<KartaWasm> {
   const deadline = Date.now() + WASM_EXPORTS_TIMEOUT_MS;
   while (Date.now() < deadline) {
     if (isKartaLoaded(window.karta)) {
@@ -84,7 +84,7 @@ async function waitForExports(): Promise<KartaEngine> {
   throw new Error('the WebAssembly module did not register its exports');
 }
 
-async function instantiate(): Promise<KartaEngine> {
+async function instantiate(): Promise<KartaWasm> {
   const base = await findPluginBase();
 
   await loadScriptViaApiProxy(`/${base}/wasm_exec.js`);
@@ -112,14 +112,14 @@ async function instantiate(): Promise<KartaEngine> {
   return waitForExports();
 }
 
-let enginePromise: Promise<KartaEngine> | null = null;
+let kartaWasmPromise: Promise<KartaWasm> | null = null;
 
-export function getKartaEngine(): Promise<KartaEngine> {
-  if (!enginePromise) {
-    enginePromise = instantiate().catch(err => {
-      enginePromise = null;
+export function getKartaWasm(): Promise<KartaWasm> {
+  if (!kartaWasmPromise) {
+    kartaWasmPromise = instantiate().catch(err => {
+      kartaWasmPromise = null;
       throw err;
     });
   }
-  return enginePromise;
+  return kartaWasmPromise;
 }
