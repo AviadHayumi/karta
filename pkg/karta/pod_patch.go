@@ -209,6 +209,18 @@ func (p PodPatch) SetFields() []PodField {
 	return fields
 }
 
+// AllPodFields is the complete typed vocabulary, in stable order. Exposed so
+// fakes and tooling enumerate the same universe production routes.
+func AllPodFields() []PodField {
+	return []PodField{
+		PodFieldSchedulerName, PodFieldPriorityClassName,
+		PodFieldLabels, PodFieldAnnotations,
+		PodFieldNodeAffinity, PodFieldPodAffinity,
+		PodFieldResourceClaims, PodFieldImage,
+		PodFieldResources, PodFieldContainers,
+	}
+}
+
 type podShape int
 
 const (
@@ -246,7 +258,8 @@ func specShape(def v1alpha1.ComponentDefinition) podShape {
 // truth.
 func WritablePodFields(def v1alpha1.ComponentDefinition) []PodField {
 	spec := def.SpecDefinition
-	switch specShape(def) {
+	shape := specShape(def)
+	switch shape {
 	case shapeTemplate:
 		if !isWritablePath(*spec.PodTemplateSpecPath) {
 			return nil
@@ -268,7 +281,7 @@ func WritablePodFields(def v1alpha1.ComponentDefinition) []PodField {
 			PodFieldResourceClaims, PodFieldImage, PodFieldResources,
 			PodFieldContainers,
 		}
-		if specShape(def) == shapeSplit && isWritablePath(*spec.MetadataPath) {
+		if shape == shapeSplit && isWritablePath(*spec.MetadataPath) {
 			fields = append(fields, PodFieldLabels, PodFieldAnnotations)
 		}
 		return fields

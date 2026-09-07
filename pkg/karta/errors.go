@@ -12,10 +12,11 @@ import (
 // ErrNotSupported is the permanent sentinel for operations the workload's
 // Karta definition cannot express. errors.Is(err, ErrNotSupported) is the one
 // check consumers write; typed detail stays available via errors.As.
-var ErrNotSupported = errors.New("karta: not supported by the workload's karta definition")
+var ErrNotSupported = errors.New("not supported by the workload's karta definition")
 
-// ErrEmptyPatch reports a PodPatch that sets no fields, which is almost
-// always a lost pointer on the caller side rather than an intended no-op.
+// ErrEmptyPatch reports an update that sets no fields - a nil update, an
+// all-unset PodPatch or an empty raw Patch. It is almost always a lost
+// pointer on the caller side rather than an intended no-op.
 var ErrEmptyPatch = errors.New("karta: pod patch sets no fields")
 
 // UnsupportedFieldsError reports every PodPatch field the component's
@@ -32,7 +33,7 @@ func (e *UnsupportedFieldsError) Error() string {
 		names[i] = string(field)
 	}
 	return fmt.Sprintf("karta: component %q cannot route pod patch fields [%s]: %s",
-		e.Component, strings.Join(names, ", "), ErrNotSupported)
+		e.Component, strings.Join(names, ", "), ErrNotSupported.Error())
 }
 
 func (e *UnsupportedFieldsError) Is(target error) bool { return target == ErrNotSupported }

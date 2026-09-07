@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	"github.com/run-ai/karta/internal/jq/execution"
 	"github.com/run-ai/karta/pkg/resource"
@@ -112,21 +113,18 @@ func applyLeaf(ctx context.Context, runner execution.Runner, write leafWrite, ta
 	return nil
 }
 
-// mergeRawMap merges string entries into the current raw map, creating it when
-// absent. Untouched keys survive verbatim.
-func mergeRawMap(entries map[string]string) func(any) (any, error) {
+// mergeRawMap merges entries into the current raw map, creating it when
+// absent. Untouched keys survive verbatim. Entry values are JSON-primitive
+// strings - the strict pod-template decode guarantees it.
+func mergeRawMap(entries map[string]any) func(any) (any, error) {
 	return func(current any) (any, error) {
 		merged := map[string]any{}
 		if existing, ok := current.(map[string]any); ok {
-			for key, value := range existing {
-				merged[key] = value
-			}
+			maps.Copy(merged, existing)
 		} else if current != nil {
 			return nil, fmt.Errorf("karta: existing value is %T, not an object", current)
 		}
-		for key, value := range entries {
-			merged[key] = value
-		}
+		maps.Copy(merged, entries)
 		return merged, nil
 	}
 }

@@ -138,3 +138,21 @@ func mergeSynthetic(a, b map[string]any) {
 		// keep the existing seed on conflicts
 	}
 }
+
+// syntheticObject builds a minimal raw object that the pure path matches,
+// with leaf as the value at the path (one element per iteration).
+func syntheticObject(segments []pathSegment, leaf any) any {
+	if len(segments) == 0 {
+		return leaf
+	}
+	head, rest := segments[0], segments[1:]
+	child := syntheticObject(rest, leaf)
+	switch {
+	case head.iter:
+		return []any{child}
+	case head.key != "":
+		return map[string]any{head.key: child}
+	default:
+		return map[string]any{head.field: child}
+	}
+}

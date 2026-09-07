@@ -7,7 +7,8 @@ package kartatest
 
 import (
 	"context"
-	"sort"
+	"fmt"
+	"slices"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/pkg/karta"
@@ -23,6 +24,11 @@ import (
 type Fake struct {
 	// ComponentInfos is returned by Components().
 	ComponentInfos []karta.ComponentInfo
+
+	// definitions, set by NewFromKarta, makes UpdatePodTemplate validate
+	// through karta.ValidatePodTemplateUpdate - the exact production code
+	// path. Hand-built fakes fall back to the static UnsupportedFields set.
+	definitions map[string]v1alpha1.ComponentDefinition
 
 	// Interceptors, when set, run first and their error is returned as-is.
 	InterceptUpdatePodTemplate func(component string, patch karta.Patch) error
@@ -62,22 +68,19 @@ var _ karta.Workload = (*Fake)(nil)
 // definition through karta.WritablePodFields, so the fake's capability
 // behavior cannot drift from production for that definition.
 func NewFromKarta(definition *v1alpha1.Karta) *Fake {
-	fake := &Fake{UnsupportedFields: map[string][]karta.PodField{}}
-	fake.ComponentInfos = kartaComponents(definition)
-	all := []karta.PodField{
-		karta.PodFieldSchedulerName, karta.PodFieldPriorityClassName,
-		karta.PodFieldLabels, karta.PodFieldAnnotations,
-		karta.PodFieldNodeAffinity, karta.PodFieldPodAffinity,
-		karta.PodFieldResourceClaims, karta.PodFieldImage,
-		karta.PodFieldResources, karta.PodFieldContainers,
+	fake := &Fake{
+		UnsupportedFields: map[string][]karta.PodField{},
+		definitions:       map[string]v1alpha1.ComponentDefinition{},
 	}
+	fake.ComponentInfos = karta.ComponentInfos(definition)
 	seed := func(def v1alpha1.ComponentDefinition) {
+		fake.definitions[def.Name] = def
 		writable := map[karta.PodField]bool{}
 		for _, field := range karta.WritablePodFields(def) {
 			writable[field] = true
 		}
 		var unsupported []karta.PodField
-		for _, field := range all {
+		for _, field := range karta.AllPodFields() {
 			if !writable[field] {
 				unsupported = append(unsupported, field)
 			}
@@ -118,9 +121,22 @@ func (f *Fake) UpdatePodTemplate(_ context.Context, component string, update kar
 			return err
 		}
 	}
-	if typed, ok := update.(karta.PodPatch); ok {
-		if fields := f.unsupported(component, typed); len(fields) > 0 {
-			return &karta.UnsupportedFieldsError{Component: component, Fields: fields}
+	if f.definitions != nil {
+		definition, ok := f.definitions[component]
+		if !ok {
+			return fmt.Errorf("karta: component %s not found", component)
+		}
+		if err := karta.ValidatePodTemplateUpdate(definition, component, update); err != nil {
+			return err
+		}
+	} else {
+		if len(patch) == 0 {
+			return karta.ErrEmptyPatch
+		}
+		if typed, ok := update.(karta.PodPatch); ok {
+			if fields := f.unsupported(component, typed); len(fields) > 0 {
+				return &karta.UnsupportedFieldsError{Component: component, Fields: fields}
+			}
 		}
 	}
 	f.PodUpdates = append(f.PodUpdates, PodUpdate{
@@ -172,24 +188,6 @@ func (f *Fake) unsupported(component string, patch karta.PodPatch) []karta.PodFi
 			fields = append(fields, field)
 		}
 	}
-	sort.Slice(fields, func(i, j int) bool { return fields[i] < fields[j] })
+	slices.Sort(fields)
 	return fields
-}
-
-func kartaComponents(definition *v1alpha1.Karta) []karta.ComponentInfo {
-	structure := definition.Spec.StructureDefinition
-	infos := make([]karta.ComponentInfo, 0, 1+len(structure.ChildComponents))
-	describe := func(component v1alpha1.ComponentDefinition, root bool) karta.ComponentInfo {
-		return karta.ComponentInfo{
-			Name:        component.Name,
-			Root:        root,
-			PodFields:   karta.WritablePodFields(component),
-			Suspendable: component.SuspendDefinition != nil,
-		}
-	}
-	infos = append(infos, describe(structure.RootComponent, true))
-	for _, child := range structure.ChildComponents {
-		infos = append(infos, describe(child, false))
-	}
-	return infos
 }

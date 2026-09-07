@@ -8,7 +8,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -31,29 +33,49 @@ type Patch map[string]any
 // AsPodMergePatch implements PodTemplateUpdate.
 func (p Patch) AsPodMergePatch() Patch { return p }
 
-func (w *workload) patchPodTemplate(ctx context.Context, component string, patch Patch, opts ...UpdateOption) error {
-	options := ResolveUpdateOptions(opts...)
-
-	leaves, err := patchLeaves(patch)
-	if err != nil {
-		return err
-	}
-	if len(leaves) == 0 {
+// ValidatePodTemplateUpdate checks an update against a component definition
+// exactly like UpdatePodTemplate does before writing anything: patch
+// structure, strict pod-template validation and route capability. It is the
+// same code path production runs, exported so fakes and tooling cannot drift
+// from it.
+func ValidatePodTemplateUpdate(definition v1alpha1.ComponentDefinition, component string, update PodTemplateUpdate) error {
+	if update == nil {
 		return ErrEmptyPatch
 	}
+	_, err := compileWrites(definition, component, update.AsPodMergePatch())
+	return err
+}
+
+// compileWrites turns a patch into physical leaf writes for the definition:
+// validate, flatten, route, and report every unroutable path at once.
+func compileWrites(definition v1alpha1.ComponentDefinition, component string, patch Patch) ([]leafWrite, error) {
+	leaves, err := patchLeaves(patch)
+	if err != nil {
+		return nil, err
+	}
+	if len(leaves) == 0 {
+		return nil, ErrEmptyPatch
+	}
+	writes, unsupported, err := routeRawLeaves(definition, leaves)
+	if err != nil {
+		return nil, err
+	}
+	if len(unsupported) > 0 {
+		return nil, &UnsupportedFieldsError{Component: component, Fields: unsupported}
+	}
+	return writes, nil
+}
+
+func (w *workload) patchPodTemplate(ctx context.Context, component string, patch Patch, opts ...UpdateOption) error {
+	options := ResolveUpdateOptions(opts...)
 
 	target, err := w.factory.GetComponent(component)
 	if err != nil {
 		return fmt.Errorf("karta: %w", err)
 	}
-	definition := target.Definition()
-
-	writes, unsupported, err := routeRawLeaves(definition, leaves)
+	writes, err := compileWrites(target.Definition(), component, patch)
 	if err != nil {
 		return err
-	}
-	if len(unsupported) > 0 {
-		return &UnsupportedFieldsError{Component: component, Fields: unsupported}
 	}
 
 	targeted, err := resolveTargets(ctx, target, options, writes)
@@ -69,7 +91,9 @@ func (w *workload) patchPodTemplate(ctx context.Context, component string, patch
 	if !ok {
 		return fmt.Errorf("karta: unsupported object type %T", current)
 	}
-	runner := execution.NewDefaultRunner(raw.Object)
+	// raw.Object is JSON-primitive: GetResource returns the accessor's
+	// converted data and DeepCopyObject preserves the primitive types.
+	runner := execution.NewPrimitiveRunner(raw.Object)
 	for _, write := range writes {
 		if err := applyLeaf(ctx, runner, write, targeted); err != nil {
 			return err
@@ -83,7 +107,7 @@ func (w *workload) patchPodTemplate(ctx context.Context, component string, patch
 	if !ok {
 		return fmt.Errorf("karta: mutated object is %T, not an object", mutated)
 	}
-	w.factory = resource.NewComponentFactoryFromObject(w.karta, &unstructured.Unstructured{Object: mutatedMap})
+	w.factory = resource.NewComponentFactoryFromPrimitiveObject(w.karta, &unstructured.Unstructured{Object: mutatedMap})
 	return nil
 }
 
@@ -148,7 +172,7 @@ func patchLeaves(patch Patch) ([]rawLeaf, error) {
 				return nil
 			}
 			for key, entry := range typed {
-				if err := walk(append(append([]string{}, prefix...), key), entry); err != nil {
+				if err := walk(append(slices.Clone(prefix), key), entry); err != nil {
 					return err
 				}
 			}
@@ -171,14 +195,14 @@ func nullPaths(value any, prefix []string) []string {
 	case map[string]any:
 		var paths []string
 		for key, entry := range typed {
-			paths = append(paths, nullPaths(entry, append(append([]string{}, prefix...), key))...)
+			paths = append(paths, nullPaths(entry, append(slices.Clone(prefix), key))...)
 		}
-		sort.Strings(paths)
+		slices.Sort(paths)
 		return paths
 	case []any:
 		var paths []string
 		for i, entry := range typed {
-			paths = append(paths, nullPaths(entry, append(append([]string{}, prefix...), fmt.Sprintf("%d", i)))...)
+			paths = append(paths, nullPaths(entry, append(slices.Clone(prefix), strconv.Itoa(i)))...)
 		}
 		return paths
 	default:
@@ -189,6 +213,15 @@ func nullPaths(value any, prefix []string) []string {
 func isMergeMapView(view []string) bool {
 	return len(view) == 2 && view[0] == "metadata" &&
 		(view[1] == "labels" || view[1] == "annotations")
+}
+
+// purePathBase parses an optional definition path as a pure assignment
+// target. A nil or impure path is not a write route.
+func purePathBase(path *string) ([]pathSegment, bool) {
+	if path == nil {
+		return nil, false
+	}
+	return parsePurePath(*path)
 }
 
 // routeRawLeaves maps template-view leaves onto physical jq leaf writes per
@@ -208,11 +241,7 @@ func routeRawLeaves(definition v1alpha1.ComponentDefinition, leaves []rawLeaf) (
 		write := leafWrite{path: appendPath(base, segments...)}
 		switch {
 		case leaf.merge:
-			entries := map[string]string{}
-			for key, value := range leaf.value.(map[string]any) {
-				entries[key] = fmt.Sprintf("%v", value)
-			}
-			write.transform = mergeRawMap(entries)
+			write.transform = mergeRawMap(leaf.value.(map[string]any))
 		case len(leaf.view) == 2 && leaf.view[0] == "spec" && leaf.view[1] == "containers":
 			write.transform = mergeRawContainerList(leaf.value)
 		default:
@@ -221,16 +250,9 @@ func routeRawLeaves(definition v1alpha1.ComponentDefinition, leaves []rawLeaf) (
 		}
 		return write
 	}
-	pureBase := func(path *string) ([]pathSegment, bool) {
-		if path == nil {
-			return nil, false
-		}
-		return parsePurePath(*path)
-	}
-
 	switch shape {
 	case shapeTemplate:
-		base, ok := pureBase(spec.PodTemplateSpecPath)
+		base, ok := purePathBase(spec.PodTemplateSpecPath)
 		if !ok {
 			return nil, nil, fmt.Errorf("karta: pod path is not a writable pure path: %w", ErrNotSupported)
 		}
@@ -238,13 +260,13 @@ func routeRawLeaves(definition v1alpha1.ComponentDefinition, leaves []rawLeaf) (
 			writes = append(writes, toWrite(base, leaf.view, leaf))
 		}
 	case shapePodSpec, shapeSplit:
-		base, ok := pureBase(spec.PodSpecPath)
+		base, ok := purePathBase(spec.PodSpecPath)
 		if !ok {
 			return nil, nil, fmt.Errorf("karta: pod path is not a writable pure path: %w", ErrNotSupported)
 		}
 		var metaBase []pathSegment
 		if shape == shapeSplit {
-			metaBase, ok = pureBase(spec.MetadataPath)
+			metaBase, ok = purePathBase(spec.MetadataPath)
 			if !ok {
 				return nil, nil, fmt.Errorf("karta: metadata path is not a writable pure path: %w", ErrNotSupported)
 			}
@@ -264,7 +286,7 @@ func routeRawLeaves(definition v1alpha1.ComponentDefinition, leaves []rawLeaf) (
 	case shapeFragmented:
 		fragmented := spec.FragmentedPodSpecDefinition
 		for _, leaf := range leaves {
-			fragmentWrites, bad := routeFragmentedLeaf(fragmented, leaf, pureBase)
+			fragmentWrites, bad := routeFragmentedLeaf(fragmented, leaf)
 			writes = append(writes, fragmentWrites...)
 			unsupported = append(unsupported, bad...)
 		}
@@ -275,15 +297,11 @@ func routeRawLeaves(definition v1alpha1.ComponentDefinition, leaves []rawLeaf) (
 	}
 
 	if len(unsupported) > 0 {
-		sort.Strings(unsupported)
-		fields := make([]PodField, 0, len(unsupported))
-		var last string
-		for _, path := range unsupported {
-			if path == last {
-				continue
-			}
-			last = path
-			fields = append(fields, PodField(path))
+		slices.Sort(unsupported)
+		unsupported = slices.Compact(unsupported)
+		fields := make([]PodField, len(unsupported))
+		for i, path := range unsupported {
+			fields[i] = PodField(path)
 		}
 		return nil, fields, nil
 	}
@@ -294,10 +312,10 @@ func routeRawLeaves(definition v1alpha1.ComponentDefinition, leaves []rawLeaf) (
 // path table, longest prefix first. Container entries decompose: an unnamed
 // sole entry bridges image/resources to their singular paths; named entries
 // need containersPath. No fallback from an impure path, ever.
-func routeFragmentedLeaf(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf rawLeaf, pureBase func(*string) ([]pathSegment, bool)) ([]leafWrite, []string) {
+func routeFragmentedLeaf(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf rawLeaf) ([]leafWrite, []string) {
 	view := strings.Join(leaf.view, ".")
 	direct := func(path *string, transform func(any) (any, error)) ([]leafWrite, []string) {
-		base, ok := pureBase(path)
+		base, ok := purePathBase(path)
 		if !ok {
 			return nil, []string{view}
 		}
@@ -309,29 +327,21 @@ func routeFragmentedLeaf(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf 
 
 	switch {
 	case view == "metadata.labels":
-		entries := map[string]string{}
-		for key, value := range leaf.value.(map[string]any) {
-			entries[key] = fmt.Sprintf("%v", value)
-		}
-		return direct(fragmented.LabelsPath, mergeRawMap(entries))
+		return direct(fragmented.LabelsPath, mergeRawMap(leaf.value.(map[string]any)))
 	case view == "metadata.annotations":
-		entries := map[string]string{}
-		for key, value := range leaf.value.(map[string]any) {
-			entries[key] = fmt.Sprintf("%v", value)
-		}
-		return direct(fragmented.AnnotationsPath, mergeRawMap(entries))
+		return direct(fragmented.AnnotationsPath, mergeRawMap(leaf.value.(map[string]any)))
 	case view == "spec.schedulerName":
 		return direct(fragmented.SchedulerNamePath, replace(leaf.value))
 	case view == "spec.priorityClassName":
 		return direct(fragmented.PriorityClassNamePath, replace(leaf.value))
 	case strings.HasPrefix(view, "spec.affinity.nodeAffinity"):
-		return fragmentSuffix(fragmented.NodeAffinityPath, leaf, 3, "spec.affinity.nodeAffinity", pureBase)
+		return fragmentSuffix(fragmented.NodeAffinityPath, leaf, 3, "spec.affinity.nodeAffinity")
 	case strings.HasPrefix(view, "spec.affinity.podAffinity"):
-		return fragmentSuffix(fragmented.PodAffinityPath, leaf, 3, "spec.affinity.podAffinity", pureBase)
+		return fragmentSuffix(fragmented.PodAffinityPath, leaf, 3, "spec.affinity.podAffinity")
 	case view == "spec.resourceClaims":
 		return direct(fragmented.ResourceClaimsPath, replace(leaf.value))
 	case view == "spec.containers":
-		return routeFragmentedContainers(fragmented, leaf, pureBase)
+		return routeFragmentedContainers(fragmented, leaf)
 	default:
 		return nil, []string{view}
 	}
@@ -342,8 +352,8 @@ func routeFragmentedLeaf(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf 
 // so sibling leaves under the same fragment merge instead of stomping each
 // other. An unroutable leaf reports the fragment-view path - the same
 // vocabulary the typed capability check uses.
-func fragmentSuffix(path *string, leaf rawLeaf, depth int, label string, pureBase func(*string) ([]pathSegment, bool)) ([]leafWrite, []string) {
-	base, ok := pureBase(path)
+func fragmentSuffix(path *string, leaf rawLeaf, depth int, label string) ([]leafWrite, []string) {
+	base, ok := purePathBase(path)
 	if !ok {
 		return nil, []string{label}
 	}
@@ -355,7 +365,7 @@ func fragmentSuffix(path *string, leaf rawLeaf, depth int, label string, pureBas
 	return []leafWrite{{path: appendPath(base, suffix...), transform: func(any) (any, error) { return value, nil }}}, nil
 }
 
-func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf rawLeaf, pureBase func(*string) ([]pathSegment, bool)) ([]leafWrite, []string) {
+func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf rawLeaf) ([]leafWrite, []string) {
 	entries, ok := leaf.value.([]any)
 	if !ok || len(entries) == 0 {
 		return nil, []string{"spec.containers"}
@@ -363,7 +373,7 @@ func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition,
 	// named entries: the whole list merges at containersPath
 	first, _ := entries[0].(map[string]any)
 	if name, _ := first["name"].(string); name != "" || len(entries) > 1 {
-		base, ok := pureBase(fragmented.ContainersPath)
+		base, ok := purePathBase(fragmented.ContainersPath)
 		if !ok {
 			return nil, []string{"spec.containers"}
 		}
@@ -375,7 +385,7 @@ func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition,
 	for key, value := range first {
 		switch key {
 		case "image":
-			base, ok := pureBase(fragmented.ImagePath)
+			base, ok := purePathBase(fragmented.ImagePath)
 			if !ok {
 				unsupported = append(unsupported, "spec.containers.image")
 				continue
@@ -383,7 +393,7 @@ func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition,
 			replace := value
 			writes = append(writes, leafWrite{path: renderPath(base), transform: func(any) (any, error) { return replace, nil }})
 		case "resources":
-			base, ok := pureBase(fragmented.ResourcesPath)
+			base, ok := purePathBase(fragmented.ResourcesPath)
 			if !ok {
 				unsupported = append(unsupported, "spec.containers.resources")
 				continue
@@ -391,7 +401,7 @@ func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition,
 			replace := value
 			writes = append(writes, leafWrite{path: renderPath(base), transform: func(any) (any, error) { return replace, nil }})
 		default:
-			base, ok := pureBase(fragmented.ContainerPath)
+			base, ok := purePathBase(fragmented.ContainerPath)
 			if !ok {
 				unsupported = append(unsupported, "spec.containers."+key)
 				continue
@@ -402,10 +412,7 @@ func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition,
 				if !ok {
 					return nil, fmt.Errorf("karta: containerPath value is %T, not an object", current)
 				}
-				copied := make(map[string]any, len(container)+1)
-				for k, v := range container {
-					copied[k] = v
-				}
+				copied := maps.Clone(container)
 				copied[field] = replace
 				return copied, nil
 			}})
@@ -434,11 +441,7 @@ func mergeRawContainerList(value any) func(any) (any, error) {
 			if !ok {
 				return nil, fmt.Errorf("karta: container %d is %T, not an object", i, entry)
 			}
-			copied := make(map[string]any, len(raw))
-			for key, item := range raw {
-				copied[key] = item
-			}
-			containers[i] = copied
+			containers[i] = maps.Clone(raw)
 			if name, _ := raw["name"].(string); name != "" {
 				if _, dup := names[name]; dup {
 					return nil, fmt.Errorf("karta: duplicate container name %q in the pod", name)

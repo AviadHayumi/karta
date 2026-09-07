@@ -14,6 +14,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/pkg/resource"
@@ -62,7 +65,10 @@ type Workload interface {
 	Components() []ComponentInfo
 
 	// Object returns a deep copy of the underlying object with all
-	// mutations applied, ready to be sent to the cluster.
+	// mutations applied, ready to be sent to the cluster. The object is
+	// JSON-canonical: every number is a float64, so integers above 2^53
+	// lose precision. Typical pod values (ports, replicas, quantities)
+	// are unaffected; a CRD carrying larger integers is not supported.
 	Object() (resource.KubernetesObject, error)
 }
 
@@ -122,9 +128,9 @@ func validateSuspendActions(definition *v1alpha1.Karta) error {
 		if component.SuspendDefinition == nil {
 			return nil
 		}
-		actions := append(append([]v1alpha1.SuspendAction{},
-			component.SuspendDefinition.SuspendActions...),
-			component.SuspendDefinition.ResumeActions...)
+		actions := slices.Concat(
+			component.SuspendDefinition.SuspendActions,
+			component.SuspendDefinition.ResumeActions)
 		for _, action := range actions {
 			if !isWritablePath(action.Path) {
 				return fmt.Errorf("karta: invalid definition: suspend action path %q on component %s is not a writable path", action.Path, component.Name)
@@ -156,7 +162,15 @@ func (w *workload) Tree(ctx context.Context) (*WorkloadTree, error) {
 }
 
 func (w *workload) Components() []ComponentInfo {
-	structure := w.karta.Spec.StructureDefinition
+	return ComponentInfos(w.karta)
+}
+
+// ComponentInfos describes every component of a Karta definition: name, root,
+// statically writable pod fields and suspendability. Pure function of the
+// definition; the real implementation and the kartatest fake share it as the
+// one source of discovery truth.
+func ComponentInfos(definition *v1alpha1.Karta) []ComponentInfo {
+	structure := definition.Spec.StructureDefinition
 	infos := make([]ComponentInfo, 0, 1+len(structure.ChildComponents))
 	describe := func(component v1alpha1.ComponentDefinition, root bool) ComponentInfo {
 		return ComponentInfo{
@@ -192,11 +206,13 @@ func (w *workload) withScratch(mutate func(*resource.ComponentFactory) error) er
 	if err != nil {
 		return fmt.Errorf("karta: get object: %w", err)
 	}
-	copied, ok := current.DeepCopyObject().(resource.KubernetesObject)
+	copied, ok := current.DeepCopyObject().(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("karta: deep copy did not return a kubernetes object")
+		return fmt.Errorf("karta: unsupported object type %T", current)
 	}
-	scratch := resource.NewComponentFactoryFromObject(w.karta, copied)
+	// copied is JSON-primitive: GetResource returns the accessor's converted
+	// data and DeepCopyObject preserves the primitive types.
+	scratch := resource.NewComponentFactoryFromPrimitiveObject(w.karta, copied)
 	if err := mutate(scratch); err != nil {
 		return err
 	}
