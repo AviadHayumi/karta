@@ -61,7 +61,7 @@ var _ = Describe("catalog conformance gate", func() {
 					workload, err := karta.New(definition, obj)
 					Expect(err).NotTo(HaveOccurred(), name)
 
-					err = workload.UpdatePods(ctx, info.Name, patch)
+					err = workload.UpdatePodTemplate(ctx, info.Name, patch)
 					Expect(err).NotTo(HaveOccurred(),
 						fmt.Sprintf("%s component %s field %s", name, info.Name, field))
 
@@ -89,7 +89,7 @@ var _ = Describe("catalog conformance gate", func() {
 		Expect(karta.WritablePodFields(root)).NotTo(ContainElement(karta.PodFieldResources))
 		workload, err := karta.New(nimcache, karta.SyntheticWorkload(nimcache))
 		Expect(err).NotTo(HaveOccurred())
-		err = workload.UpdatePods(ctx, root.Name, karta.PodPatch{Resources: ptr.To(resourcesFixture())})
+		err = workload.UpdatePodTemplate(ctx, root.Name, karta.PodPatch{Resources: ptr.To(resourcesFixture())})
 		Expect(errors.Is(err, karta.ErrNotSupported)).To(BeTrue())
 		Expect(karta.IsUnsupportedFields(err)).To(BeTrue())
 

@@ -54,7 +54,7 @@ type UpdateOptions struct {
 	Instances []string
 }
 
-// UpdateOption configures one UpdatePods call.
+// UpdateOption configures one UpdatePodTemplate call.
 type UpdateOption func(*UpdateOptions)
 
 // ResolveUpdateOptions folds opts into their resolved form. Exposed so fakes

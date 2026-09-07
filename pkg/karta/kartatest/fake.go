@@ -25,15 +25,15 @@ type Fake struct {
 	ComponentInfos []karta.ComponentInfo
 
 	// Interceptors, when set, run first and their error is returned as-is.
-	InterceptUpdatePods func(component string, patch karta.PodPatch) error
-	InterceptSuspend    func() error
-	InterceptResume     func() error
+	InterceptUpdatePodTemplate func(component string, patch karta.PodPatch) error
+	InterceptSuspend           func() error
+	InterceptResume            func() error
 
 	TreeResult   *tree.WorkloadTree
 	TreeErr      error
 	ObjectResult resource.KubernetesObject
 
-	// UnsupportedFields, keyed by component name, makes UpdatePods fail with
+	// UnsupportedFields, keyed by component name, makes UpdatePodTemplate fail with
 	// *karta.UnsupportedFieldsError for the listed fields, exactly like
 	// production.
 	UnsupportedFields map[string][]karta.PodField
@@ -48,7 +48,7 @@ type Fake struct {
 	Resumes    int
 }
 
-// PodUpdate is one recorded UpdatePods call.
+// PodUpdate is one recorded UpdatePodTemplate call.
 type PodUpdate struct {
 	Component string
 	Patch     karta.PodPatch
@@ -107,9 +107,9 @@ func (f *Fake) Components() []karta.ComponentInfo {
 	return f.ComponentInfos
 }
 
-func (f *Fake) UpdatePods(_ context.Context, component string, patch karta.PodPatch, opts ...karta.UpdateOption) error {
-	if f.InterceptUpdatePods != nil {
-		if err := f.InterceptUpdatePods(component, patch); err != nil {
+func (f *Fake) UpdatePodTemplate(_ context.Context, component string, patch karta.PodPatch, opts ...karta.UpdateOption) error {
+	if f.InterceptUpdatePodTemplate != nil {
+		if err := f.InterceptUpdatePodTemplate(component, patch); err != nil {
 			return err
 		}
 	}

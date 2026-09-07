@@ -15,7 +15,7 @@ import (
 	"github.com/run-ai/karta/pkg/resource"
 )
 
-func (w *workload) UpdatePods(ctx context.Context, component string, patch PodPatch, opts ...UpdateOption) error {
+func (w *workload) UpdatePodTemplate(ctx context.Context, component string, patch PodPatch, opts ...UpdateOption) error {
 	options := ResolveUpdateOptions(opts...)
 
 	if len(patch.SetFields()) == 0 {

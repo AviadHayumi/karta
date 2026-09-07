@@ -219,7 +219,7 @@ func run(ctx context.Context, ex workloadExample, o opts) error {
 	fmt.Println()
 
 	// ── Step 4: Inject scheduler + label into all pod-bearing components ─────
-	// One UpdatePods call per component states the INTENT (scheduler + label);
+	// One UpdatePodTemplate call per component states the INTENT (scheduler + label);
 	// Karta routes each field to wherever the CRD stores it - full template,
 	// bare pod spec, or fragmented paths - without any per-type branching.
 	// Components() lists what each component can accept.
@@ -232,7 +232,7 @@ func run(ctx context.Context, ex workloadExample, o opts) error {
 		if info.Root || len(info.PodFields) == 0 {
 			continue
 		}
-		if err := w.UpdatePods(ctx, info.Name, patch); err != nil {
+		if err := w.UpdatePodTemplate(ctx, info.Name, patch); err != nil {
 			return fmt.Errorf("update pods for %s: %w", info.Name, err)
 		}
 		fmt.Printf("  Injected into %q\n", info.Name)

@@ -148,7 +148,7 @@ var _ = Describe("recorded real-cluster data: before/after parity", func() {
 			// NEW way: the front door
 			w, err := karta.New(state.definition, original.DeepCopy())
 			Expect(err).NotTo(HaveOccurred(), state.source)
-			Expect(w.UpdatePods(ctx, rootName, karta.PodPatch{
+			Expect(w.UpdatePodTemplate(ctx, rootName, karta.PodPatch{
 				SchedulerName: ptr.To(scheduler),
 				Labels:        map[string]string{labelKey: labelValue},
 			})).To(Succeed(), state.source)

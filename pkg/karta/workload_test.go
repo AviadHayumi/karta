@@ -47,10 +47,10 @@ var _ = Describe("Workload", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	Describe("UpdatePods routing", func() {
+	Describe("UpdatePodTemplate routing", func() {
 		It("routes through a full pod template", func() {
 			w := mustWorkload(templateDefinition(), templateWorkload())
-			Expect(w.UpdatePods(ctx, "root", karta.PodPatch{
+			Expect(w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				SchedulerName: ptr.To("kai-scheduler"),
 				Labels:        map[string]string{"team": "ml"},
 				Image:         ptr.To("app:v2"),
@@ -65,12 +65,12 @@ var _ = Describe("Workload", func() {
 
 		It("routes through a bare pod spec and reports labels as unsupported", func() {
 			w := mustWorkload(podSpecDefinition(), podSpecWorkload())
-			Expect(w.UpdatePods(ctx, "root", karta.PodPatch{
+			Expect(w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				SchedulerName: ptr.To("kai-scheduler"),
 			})).To(Succeed())
 			Expect(field(w, "spec", "podSpec", "schedulerName")).To(Equal("kai-scheduler"))
 
-			err := w.UpdatePods(ctx, "root", karta.PodPatch{Labels: map[string]string{"team": "ml"}})
+			err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{Labels: map[string]string{"team": "ml"}})
 			Expect(errors.Is(err, karta.ErrNotSupported)).To(BeTrue())
 			var unsupported *karta.UnsupportedFieldsError
 			Expect(errors.As(err, &unsupported)).To(BeTrue())
@@ -79,7 +79,7 @@ var _ = Describe("Workload", func() {
 
 		It("routes metadata through the split shape", func() {
 			w := mustWorkload(splitDefinition(), podSpecWorkload())
-			Expect(w.UpdatePods(ctx, "root", karta.PodPatch{
+			Expect(w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				SchedulerName: ptr.To("kai-scheduler"),
 				Labels:        map[string]string{"team": "ml"},
 			})).To(Succeed())
@@ -90,7 +90,7 @@ var _ = Describe("Workload", func() {
 
 		It("routes per-field paths on the fragmented shape and writes only set fields", func() {
 			w := mustWorkload(fragmentedDefinition(), fragmentedWorkload())
-			Expect(w.UpdatePods(ctx, "root", karta.PodPatch{
+			Expect(w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				Labels: map[string]string{"team": "ml"},
 			})).To(Succeed())
 			Expect(field(w, "spec", "podLabels")).To(
@@ -102,7 +102,7 @@ var _ = Describe("Workload", func() {
 
 		It("reports every unsupported field at once, before any write", func() {
 			w := mustWorkload(fragmentedDefinition(), fragmentedWorkload())
-			err := w.UpdatePods(ctx, "root", karta.PodPatch{
+			err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				SchedulerName: ptr.To("x"), // supported
 				NodeAffinity:  &corev1NodeAffinity,
 				Resources:     &corev1Resources,
@@ -118,12 +118,12 @@ var _ = Describe("Workload", func() {
 
 		It("rejects an empty patch", func() {
 			w := mustWorkload(templateDefinition(), templateWorkload())
-			Expect(w.UpdatePods(ctx, "root", karta.PodPatch{})).To(MatchError(karta.ErrEmptyPatch))
+			Expect(w.UpdatePodTemplate(ctx, "root", karta.PodPatch{})).To(MatchError(karta.ErrEmptyPatch))
 		})
 
 		It("fails image on a multi-container pod, naming the containers", func() {
 			w := mustWorkload(podSpecDefinition(), podSpecWorkload())
-			err := w.UpdatePods(ctx, "root", karta.PodPatch{Image: ptr.To("app:v2")})
+			err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{Image: ptr.To("app:v2")})
 			Expect(err).To(MatchError(ContainSubstring("single container")))
 			Expect(errors.Is(err, karta.ErrNotSupported)).To(BeFalse())
 			// atomic: nothing changed
@@ -132,13 +132,13 @@ var _ = Describe("Workload", func() {
 
 		It("merges containers by name and rejects unknown names", func() {
 			w := mustWorkload(podSpecDefinition(), podSpecWorkload())
-			Expect(w.UpdatePods(ctx, "root", karta.PodPatch{
+			Expect(w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				Containers: []karta.ContainerPatch{{Name: "sidecar", Image: ptr.To("sidecar:v2")}},
 			})).To(Succeed())
 			containers := field(w, "spec", "podSpec", "containers").([]any)
 			Expect(containers[1].(map[string]any)["image"]).To(Equal("sidecar:v2"))
 
-			err := w.UpdatePods(ctx, "root", karta.PodPatch{
+			err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				Containers: []karta.ContainerPatch{{Name: "nope", Image: ptr.To("x")}},
 			})
 			Expect(err).To(MatchError(ContainSubstring(`container "nope" not found`)))
@@ -153,7 +153,7 @@ var _ = Describe("Workload", func() {
 			workload.Object["spec"].(map[string]any)["image"] = "not-metadata"
 			w := mustWorkload(definition, workload)
 
-			err := w.UpdatePods(ctx, "root", karta.PodPatch{
+			err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{
 				SchedulerName: ptr.To("kai-scheduler"),
 				Labels:        map[string]string{"team": "ml"},
 			})
@@ -164,7 +164,7 @@ var _ = Describe("Workload", func() {
 
 		It("rejects unknown instance ids before any write", func() {
 			w := mustWorkload(templateDefinition(), templateWorkload())
-			err := w.UpdatePods(ctx, "root", karta.PodPatch{SchedulerName: ptr.To("x")},
+			err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{SchedulerName: ptr.To("x")},
 				karta.WithInstances("missing"))
 			Expect(err).To(MatchError(ContainSubstring(`unknown instance id "missing"`)))
 			Expect(field(w, "spec", "template", "spec", "schedulerName")).To(Equal("default-scheduler"))
@@ -230,8 +230,8 @@ var _ = Describe("Workload", func() {
 			fake := kartatest.NewFromKarta(definition)
 
 			patch := karta.PodPatch{NodeAffinity: &corev1NodeAffinity}
-			realErr := real.UpdatePods(ctx, "root", patch)
-			fakeErr := fake.UpdatePods(ctx, "root", patch)
+			realErr := real.UpdatePodTemplate(ctx, "root", patch)
+			fakeErr := fake.UpdatePodTemplate(ctx, "root", patch)
 
 			var fromReal, fromFake *karta.UnsupportedFieldsError
 			Expect(errors.As(realErr, &fromReal)).To(BeTrue())
@@ -241,7 +241,7 @@ var _ = Describe("Workload", func() {
 
 		It("records accepted updates", func() {
 			fake := kartatest.NewFromKarta(templateDefinition())
-			Expect(fake.UpdatePods(ctx, "root", karta.PodPatch{SchedulerName: ptr.To("x")},
+			Expect(fake.UpdatePodTemplate(ctx, "root", karta.PodPatch{SchedulerName: ptr.To("x")},
 				karta.WithInstances("a"))).To(Succeed())
 			Expect(fake.PodUpdates).To(HaveLen(1))
 			Expect(fake.PodUpdates[0].Instances).To(Equal([]string{"a"}))

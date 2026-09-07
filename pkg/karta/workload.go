@@ -40,11 +40,11 @@ type Workload interface {
 	// status, and extracted pod data.
 	Tree(ctx context.Context) (*WorkloadTree, error)
 
-	// UpdatePods applies the set fields of patch to the pod definition of
+	// UpdatePodTemplate applies the set fields of patch to the pod definition of
 	// the named component. It validates the patch against the component's
 	// write capabilities before touching the object and returns
 	// *UnsupportedFieldsError listing every unroutable field.
-	UpdatePods(ctx context.Context, component string, patch PodPatch, opts ...UpdateOption) error
+	UpdatePodTemplate(ctx context.Context, component string, patch PodPatch, opts ...UpdateOption) error
 
 	// Suspend applies the suspend actions of every component that declares
 	// a SuspendDefinition, children before the root. It returns
