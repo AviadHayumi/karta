@@ -13,7 +13,7 @@ export interface Envelope {
 
 export interface KartaWasm {
   buildTree(definitionJSON: string, workloadJSON: string): Envelope;
-  attributePods(definitionJSON: string, workloadJSON: string, podsJSON: string): Envelope;
+  inferPodComponents(definitionJSON: string, workloadJSON: string, podsJSON: string): Envelope;
   evaluatePhases(definitionJSON: string, workloadJSON: string): Envelope;
   listCatalog(): Envelope;
 }

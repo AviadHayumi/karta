@@ -63,7 +63,7 @@ export interface WorkloadTree {
   Children: ComponentNode[];
 }
 
-export interface PodAttribution {
+export interface PodComponentMatch {
   podIndex: number;
   componentName: string;
   instanceKey?: string;

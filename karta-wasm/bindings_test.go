@@ -48,31 +48,31 @@ func TestJsBuildTree_WrongArgCount(t *testing.T) {
 	}
 }
 
-func TestJsAttributePods(t *testing.T) {
+func TestJsInferPodComponents(t *testing.T) {
 	definitionJSON := marshal(t, types.PyFlowKarta())
 	workloadJSON := marshal(t, types.NewPyFlowObject())
 	pods := []corev1.Pod{
 		{ObjectMeta: metav1.ObjectMeta{Name: "worker-0", Labels: map[string]string{"role": "worker"}}},
 	}
 
-	env := jsAttributePods(js.Value{}, []js.Value{
+	env := jsInferPodComponents(js.Value{}, []js.Value{
 		js.ValueOf(definitionJSON), js.ValueOf(workloadJSON), js.ValueOf(marshal(t, pods)),
 	}).(js.Value)
 	if !env.Get("error").IsNull() {
 		t.Fatalf("unexpected error: %s", env.Get("error").String())
 	}
 
-	var attributions []PodAttribution
-	if err := json.Unmarshal([]byte(env.Get("data").String()), &attributions); err != nil {
-		t.Fatalf("failed to unmarshal attributions: %v", err)
+	var matches []PodComponentMatch
+	if err := json.Unmarshal([]byte(env.Get("data").String()), &matches); err != nil {
+		t.Fatalf("failed to unmarshal matches: %v", err)
 	}
-	if len(attributions) != 1 || attributions[0].ComponentName != "worker" {
-		t.Fatalf("expected a single attribution to %q, got %#v", "worker", attributions)
+	if len(matches) != 1 || matches[0].ComponentName != "worker" {
+		t.Fatalf("expected a single match to %q, got %#v", "worker", matches)
 	}
 }
 
-func TestJsAttributePods_WrongArgCount(t *testing.T) {
-	env := jsAttributePods(js.Value{}, []js.Value{js.ValueOf("{}"), js.ValueOf("{}")}).(js.Value)
+func TestJsInferPodComponents_WrongArgCount(t *testing.T) {
+	env := jsInferPodComponents(js.Value{}, []js.Value{js.ValueOf("{}"), js.ValueOf("{}")}).(js.Value)
 
 	if env.Get("error").IsNull() {
 		t.Fatal("expected an error for a missing argument")

@@ -17,8 +17,8 @@ import (
 )
 
 // decodeFactory decodes a JSON Karta definition and a JSON workload object
-// into the ComponentFactory that tree building, pod attribution, and phase
-// evaluation are all computed against.
+// into the ComponentFactory that tree building, pod component inference, and
+// phase evaluation are all computed against.
 func decodeFactory(definitionJSON, workloadJSON string) (*resource.ComponentFactory, error) {
 	var karta v1alpha1.Karta
 	if err := json.Unmarshal([]byte(definitionJSON), &karta); err != nil {

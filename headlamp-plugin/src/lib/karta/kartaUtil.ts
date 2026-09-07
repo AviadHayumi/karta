@@ -2,7 +2,7 @@
 // Copyright (c) 2026 NVIDIA Corporation
 
 import { Envelope, getKartaWasm } from './karta';
-import { Karta, Pod, PodAttribution, Workload, WorkloadTree } from './karta.types';
+import { Karta, Pod, PodComponentMatch, Workload, WorkloadTree } from './karta.types';
 
 function unwrap<T>(envelope: Envelope, fallback: T): T {
   if (envelope.error !== null) {
@@ -22,10 +22,10 @@ export async function buildTree(definition: Karta, workload: Workload): Promise<
   });
 }
 
-export async function attributePods(definition: Karta, workload: Workload, pods: Pod[]): Promise<PodAttribution[]> {
+export async function inferPodComponents(definition: Karta, workload: Workload, pods: Pod[]): Promise<PodComponentMatch[]> {
   const karta = await getKartaWasm();
   return unwrap(
-    karta.attributePods(JSON.stringify(definition), JSON.stringify(workload), JSON.stringify(pods)),
+    karta.inferPodComponents(JSON.stringify(definition), JSON.stringify(workload), JSON.stringify(pods)),
     []
   );
 }

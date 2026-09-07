@@ -4,7 +4,7 @@
 export { getKartaWasm } from './karta';
 export type { Envelope, KartaWasm } from './karta';
 
-export { attributePods, buildTree, evaluatePhases, listCatalog } from './kartaUtil';
+export { buildTree, evaluatePhases, inferPodComponents, listCatalog } from './kartaUtil';
 
 export type {
   ComponentNode,
@@ -12,7 +12,7 @@ export type {
   InstanceNode,
   Karta,
   Pod,
-  PodAttribution,
+  PodComponentMatch,
   Scale,
   Workload,
   WorkloadStatus,

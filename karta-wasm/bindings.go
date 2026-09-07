@@ -20,7 +20,7 @@ import (
 	"github.com/run-ai/karta/pkg/tree"
 )
 
-type PodAttribution struct {
+type PodComponentMatch struct {
 	PodIndex      int     `json:"podIndex"`
 	ComponentName string  `json:"componentName"`
 	InstanceKey   *string `json:"instanceKey,omitempty"`
@@ -42,9 +42,9 @@ func jsBuildTree(_ js.Value, args []js.Value) any {
 	return encodeEnvelope(workloadTree, err)
 }
 
-func jsAttributePods(_ js.Value, args []js.Value) any {
+func jsInferPodComponents(_ js.Value, args []js.Value) any {
 	if len(args) != 3 {
-		return encodeEnvelope(nil, fmt.Errorf("kartaAttributePods: expected 3 arguments, got %d", len(args)))
+		return encodeEnvelope(nil, fmt.Errorf("kartaInferPodComponents: expected 3 arguments, got %d", len(args)))
 	}
 	definitionJSON := args[0].String()
 	workloadJSON := args[1].String()
@@ -71,7 +71,7 @@ func jsAttributePods(_ js.Value, args []js.Value) any {
 		return encodeEnvelope(nil, fmt.Errorf("failed to unmarshal pods: %w", err))
 	}
 
-	attributions := make([]PodAttribution, 0, len(pods))
+	matches := make([]PodComponentMatch, 0, len(pods))
 	for i := range pods {
 		querier := resource.NewPodQuerier(&pods[i])
 
@@ -85,10 +85,10 @@ func jsAttributePods(_ js.Value, args []js.Value) any {
 			continue
 		}
 
-		attributions = append(attributions, PodAttribution{PodIndex: i, ComponentName: componentName, InstanceKey: instanceKey})
+		matches = append(matches, PodComponentMatch{PodIndex: i, ComponentName: componentName, InstanceKey: instanceKey})
 	}
 
-	return encodeEnvelope(attributions, nil)
+	return encodeEnvelope(matches, nil)
 }
 
 func jsEvaluatePhases(_ js.Value, args []js.Value) any {
