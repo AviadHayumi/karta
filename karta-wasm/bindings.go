@@ -69,14 +69,20 @@ func jsInferPodComponents(_ js.Value, args []js.Value) any {
 	for i := range pods {
 		querier := resource.NewPodQuerier(&pods[i])
 
+		// Skips the pod on any error, because InferPodComponent reports both an
+		// expected miss (a pod that is not part of this workload) and a failed
+		// selector evaluation the same way. Telling them apart needs a sentinel
+		// error in pkg/instructions.
 		componentName, err := instructions.InferPodComponent(ctx, querier, summary)
 		if err != nil {
 			continue
 		}
 
+		// Unlike above, a nil instance is how "no instance matched" is reported,
+		// so every error here is a genuine failure.
 		instanceKey, err := instructions.InferPodComponentInstance(ctx, querier, componentName, factory)
 		if err != nil {
-			continue
+			return encodeEnvelope(nil, fmt.Errorf("failed to infer the component instance for pod %s: %w", pods[i].Name, err))
 		}
 
 		matches = append(matches, PodComponentMatch{PodIndex: i, ComponentName: componentName, InstanceKey: instanceKey})
