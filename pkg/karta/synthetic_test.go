@@ -38,6 +38,9 @@ func SyntheticWorkload(definition *v1alpha1.Karta) *unstructured.Unstructured {
 }
 
 func seedComponent(object map[string]any, component v1alpha1.ComponentDefinition) {
+	if component.InstanceIdPath != nil {
+		seedPath(object, *component.InstanceIdPath, "instance-a")
+	}
 	spec := component.SpecDefinition
 	if spec == nil {
 		return
@@ -72,9 +75,6 @@ func seedComponent(object map[string]any, component v1alpha1.ComponentDefinition
 		seedPath(object, deref(fragmented.ResourceClaimsPath), []any{})
 		seedPath(object, deref(fragmented.ContainersPath), []any{map[string]any{"name": "main", "image": "app:v1"}})
 		seedPath(object, deref(fragmented.ImagePath), "app:v1")
-	}
-	if component.InstanceIdPath != nil {
-		seedPath(object, *component.InstanceIdPath, "instance-a")
 	}
 }
 
