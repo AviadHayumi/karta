@@ -207,8 +207,11 @@ func nullPaths(value any, prefix []string) []string {
 	}
 }
 
-// writableBase parses an optional definition path as a pure assignment
-// target. A nil path, or one that is not statically assignable, is not a write route.
+// writableBase is the one constructor of write routes: it turns an optional
+// definition path into an assignable target. A nil path, or one that is not
+// statically assignable, is not a write route. A definition language whose
+// fields are not jq paths plugs in here - a sibling constructor producing the
+// same routes, with no changes to the router or its callers.
 func writableBase(path *string) ([]pathSegment, bool) {
 	if path == nil {
 		return nil, false
@@ -246,7 +249,7 @@ func routeFields(definition v1alpha1.ComponentDefinition, fields []patchField) (
 	case shapeTemplate:
 		base, ok := writableBase(spec.PodTemplateSpecPath)
 		if !ok {
-			return nil, nil, fmt.Errorf("karta: pod path is not a writable path: %w", ErrNotSupported)
+			return nil, nil, fmt.Errorf("karta: the pod template has no write route: %w", ErrNotSupported)
 		}
 		for _, field := range fields {
 			writes = append(writes, toWrite(base, field.fieldPath, field))
@@ -254,13 +257,13 @@ func routeFields(definition v1alpha1.ComponentDefinition, fields []patchField) (
 	case shapePodSpec, shapeSplit:
 		base, ok := writableBase(spec.PodSpecPath)
 		if !ok {
-			return nil, nil, fmt.Errorf("karta: pod path is not a writable path: %w", ErrNotSupported)
+			return nil, nil, fmt.Errorf("karta: the pod spec has no write route: %w", ErrNotSupported)
 		}
 		var metaBase []pathSegment
 		if shape == shapeSplit {
 			metaBase, ok = writableBase(spec.MetadataPath)
 			if !ok {
-				return nil, nil, fmt.Errorf("karta: metadata path is not a writable path: %w", ErrNotSupported)
+				return nil, nil, fmt.Errorf("karta: pod metadata has no write route: %w", ErrNotSupported)
 			}
 		}
 		for _, field := range fields {

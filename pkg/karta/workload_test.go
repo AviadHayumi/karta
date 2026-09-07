@@ -250,6 +250,27 @@ var _ = Describe("Workload", func() {
 	})
 })
 
+var _ = Describe("a definition with no write routes", func() {
+	ctx := context.Background()
+
+	It("reads fine and rejects every write with one typed error", func() {
+		w := mustWorkload(routelessDefinition(), fragmentedWorkload())
+		Expect(w.Components()[0].PodFields).To(BeEmpty())
+		Expect(karta.WritablePodFields(routelessDefinition().Spec.StructureDefinition.RootComponent)).To(BeEmpty())
+
+		err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{SchedulerName: ptr.To("kai")})
+		Expect(errors.Is(err, karta.ErrNotSupported)).To(BeTrue())
+		var unsupported *karta.UnsupportedFieldsError
+		Expect(errors.As(err, &unsupported)).To(BeTrue())
+		Expect(unsupported.Fields).To(Equal([]karta.PodField{karta.PodFieldSchedulerName}))
+
+		err = w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"spec": karta.Patch{"schedulerName": "kai"},
+		})
+		Expect(errors.Is(err, karta.ErrNotSupported)).To(BeTrue())
+	})
+})
+
 var _ = Describe("WithInstances on a fragmented shape", func() {
 	ctx := context.Background()
 

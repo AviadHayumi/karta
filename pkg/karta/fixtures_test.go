@@ -96,6 +96,14 @@ func fragmentedWorkersWorkload() *unstructured.Unstructured {
 	}}
 }
 
+// routelessDefinition has a spec group with no writable paths at all - the
+// shape a non-path definition language produces before its routes plug in.
+func routelessDefinition() *v1alpha1.Karta {
+	return definitionWith(&v1alpha1.SpecDefinition{
+		FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{},
+	}, nil)
+}
+
 func templateWorkload() *unstructured.Unstructured {
 	return &unstructured.Unstructured{Object: map[string]any{
 		"apiVersion": "example.com/v1", "kind": "Job",

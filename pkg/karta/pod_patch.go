@@ -174,6 +174,10 @@ const (
 	shapeFragmented
 )
 
+// specShape classifies the definition by which spec group is set. Today each
+// group is expressed through its jq path fields, so presence of a path IS
+// presence of the group; a definition language that expresses the groups
+// differently changes only this function.
 func specShape(def v1alpha1.ComponentDefinition) podShape {
 	spec := def.SpecDefinition
 	switch {
