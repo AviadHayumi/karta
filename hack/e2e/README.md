@@ -61,26 +61,32 @@ make e2e-up WORKLOADS=none CLUSTER_NAME=karta-cm   KARTA_WEBHOOK_MODE=cert-manag
 make e2e-up WORKLOADS=none CLUSTER_NAME=karta-nowh KARTA_WEBHOOK_MODE=disabled      # route disabled
 ```
 
-Give each route its own `CLUSTER_NAME`, or tear down between them. `up.sh` reuses a
-kind cluster that already exists, and the routes leave state the next one does not
-want: switching off the cert-manager route leaves cert-manager and the Karta
-`Certificate` behind, and that Certificate keeps reconciling the same Secret the auto
-route's operator writes. Two controllers then fight over one key, and the
-no-cert-manager claim below quietly stops holding. CI is unaffected, since a fresh
-runner has no cluster to reuse.
+Give each route its own `CLUSTER_NAME`, or tear down between them.
 
-The install itself lives in `install-karta-operator.sh`, a standalone script `up.sh` runs last,
-on the same exit-code contract as the workload operators. Karta is the system under
-test rather than cluster infrastructure, so it gets its own file; run it directly
-against the current context to reinstall Karta without reprovisioning the cluster.
+`up.sh` reuses a kind cluster that already exists. Each route leaves state the next
+one does not want. Switching off the cert-manager route leaves cert-manager and the
+Karta `Certificate` behind. That Certificate keeps reconciling the same Secret the
+auto route's operator writes. Two controllers then fight over one key, and the
+no-cert-manager claim below quietly stops holding.
 
-The chart deliberately ships no `Issuer` or `Certificate`: `provisionMode: manual`
-only mounts the Secret and stamps the injection annotation, so supplying them is the
-caller's half of the contract. `install_certificate` is that half, and it has to run
-before the helm install rather than from a test: controller-runtime reads the serving
-cert at startup, so an operator pod that starts without the Secret crashloops instead
-of waiting for it. After the install, `wait_for_ca_injection` blocks until cainjector
-has stamped a caBundle onto both webhook configs, which nothing else gates on.
+CI is unaffected. A fresh runner has no cluster to reuse.
+
+The install itself lives in `install-karta-operator.sh`. `up.sh` runs it last, as a
+standalone script, on the same exit-code contract as the workload operators. Karta is
+the system under test rather than cluster infrastructure, so it gets its own file.
+Run it directly against the current context to reinstall Karta without
+reprovisioning the cluster.
+
+The chart deliberately ships no `Issuer` or `Certificate`. `provisionMode: manual`
+only mounts the Secret and stamps the injection annotation. Supplying the pair is the
+caller's half of the contract, and `install_certificate` is that half.
+
+`install_certificate` has to run before the helm install rather than from a test,
+because controller-runtime reads the serving cert at startup. An operator pod that
+starts without the Secret crashloops instead of waiting for it.
+
+`wait_for_ca_injection` runs after the install. It blocks until cainjector has
+stamped a caBundle onto both webhook configs. Nothing else gates on that.
 
 ## cert-manager
 
@@ -95,10 +101,11 @@ operator needs it. Today that is kserve alone: its bundled manifest ships cert-m
 where the install decision is made; extend it if another operator turns out to need it.
 
 Leaving cert-manager out is deliberate rather than only a saving. On a fresh cluster
-the `auto` and `disabled` routes run without it, which is what proves the operator's
-own cert controller depends on nothing external. That only holds on a cluster the
-cert-manager route has not already touched, which is why each route wants its own
-`CLUSTER_NAME`.
+the `auto` and `disabled` routes run without it. That is what proves the operator's
+own cert controller depends on nothing external.
+
+The claim only holds on a cluster the cert-manager route has not already touched.
+That is why each route wants its own `CLUSTER_NAME`.
 
 ## How up.sh runs an operator
 
