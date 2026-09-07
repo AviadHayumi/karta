@@ -46,17 +46,17 @@ func ValidatePodTemplateUpdate(definition v1alpha1.ComponentDefinition, componen
 	return err
 }
 
-// compileWrites turns a patch into physical leaf writes for the definition:
+// compileWrites turns a patch into physical field writes for the definition:
 // validate, flatten, route, and report every unroutable path at once.
-func compileWrites(definition v1alpha1.ComponentDefinition, component string, patch Patch) ([]leafWrite, error) {
-	leaves, err := patchLeaves(patch)
+func compileWrites(definition v1alpha1.ComponentDefinition, component string, patch Patch) ([]pathWrite, error) {
+	fields, err := flattenPatch(patch)
 	if err != nil {
 		return nil, err
 	}
-	if len(leaves) == 0 {
+	if len(fields) == 0 {
 		return nil, ErrEmptyPatch
 	}
-	writes, unsupported, err := routeRawLeaves(definition, leaves)
+	writes, unsupported, err := routeFields(definition, fields)
 	if err != nil {
 		return nil, err
 	}
@@ -69,16 +69,16 @@ func compileWrites(definition v1alpha1.ComponentDefinition, component string, pa
 func (w *workload) patchPodTemplate(ctx context.Context, component string, patch Patch, opts ...UpdateOption) error {
 	options := ResolveUpdateOptions(opts...)
 
-	target, err := w.factory.GetComponent(component)
+	comp, err := w.factory.GetComponent(component)
 	if err != nil {
 		return fmt.Errorf("karta: %w", err)
 	}
-	writes, err := compileWrites(target.Definition(), component, patch)
+	writes, err := compileWrites(comp.Definition(), component, patch)
 	if err != nil {
 		return err
 	}
 
-	targeted, err := resolveTargets(ctx, target, options, writes)
+	instances, err := resolveTargets(ctx, comp, options, writes)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (w *workload) patchPodTemplate(ctx context.Context, component string, patch
 	// converted data and DeepCopyObject preserves the primitive types.
 	runner := execution.NewPrimitiveRunner(raw.Object)
 	for _, write := range writes {
-		if err := applyLeaf(ctx, runner, write, targeted); err != nil {
+		if err := applyWrite(ctx, runner, write, instances); err != nil {
 			return err
 		}
 	}
@@ -111,21 +111,22 @@ func (w *workload) patchPodTemplate(ctx context.Context, component string, patch
 	return nil
 }
 
-// rawLeaf is one leaf of the patch in the template view.
-type rawLeaf struct {
-	view  []string
-	value any
-	merge bool // map leaf merged by key instead of replaced
+// patchField is one field of the flattened patch: where it lives in the pod
+// template (fieldPath, like ["spec", "schedulerName"]) and the value to set.
+type patchField struct {
+	fieldPath  []string
+	value      any
+	mergeByKey bool // map value merged into the existing map instead of replacing it
 }
 
-// patchLeaves validates the patch and flattens it to writable leaves:
+// flattenPatch validates the patch and flattens it to writable fields:
 // strict-decode against corev1.PodTemplateSpec, every null path reported,
 // metadata restricted to labels and annotations in v1.
-func patchLeaves(patch Patch) ([]rawLeaf, error) {
+func flattenPatch(patch Patch) ([]patchField, error) {
 	if len(patch) == 0 {
 		return nil, ErrEmptyPatch
 	}
-	canonical, err := toRaw(map[string]any(patch))
+	canonical, err := toUnstructured(map[string]any(patch))
 	if err != nil {
 		return nil, err
 	}
@@ -159,33 +160,29 @@ func patchLeaves(patch Patch) ([]rawLeaf, error) {
 		return nil, fmt.Errorf("karta: patch is not a valid partial pod template: %w", err)
 	}
 
-	var leaves []rawLeaf
-	var walk func(prefix []string, value any) error
-	walk = func(prefix []string, value any) error {
+	var fields []patchField
+	var walk func(prefix []string, value any)
+	walk = func(prefix []string, value any) {
 		switch typed := value.(type) {
 		case map[string]any:
 			if len(typed) == 0 {
-				return nil // empty maps contribute no operation
+				return // empty maps contribute no operation
 			}
-			if isMergeMapView(prefix) {
-				leaves = append(leaves, rawLeaf{view: prefix, value: typed, merge: true})
-				return nil
+			// labels and annotations hold arbitrary keys: the whole map
+			// is one entry, merged key by key instead of replaced.
+			if len(prefix) == 2 && prefix[0] == "metadata" {
+				fields = append(fields, patchField{fieldPath: prefix, value: typed, mergeByKey: true})
+				return
 			}
 			for key, entry := range typed {
-				if err := walk(append(slices.Clone(prefix), key), entry); err != nil {
-					return err
-				}
+				walk(append(slices.Clone(prefix), key), entry)
 			}
-			return nil
 		default:
-			leaves = append(leaves, rawLeaf{view: prefix, value: value})
-			return nil
+			fields = append(fields, patchField{fieldPath: prefix, value: value})
 		}
 	}
-	if err := walk(nil, root); err != nil {
-		return nil, err
-	}
-	return leaves, nil
+	walk(nil, root)
+	return fields, nil
 }
 
 func nullPaths(value any, prefix []string) []string {
@@ -210,116 +207,111 @@ func nullPaths(value any, prefix []string) []string {
 	}
 }
 
-func isMergeMapView(view []string) bool {
-	return len(view) == 2 && view[0] == "metadata" &&
-		(view[1] == "labels" || view[1] == "annotations")
-}
-
-// purePathBase parses an optional definition path as a pure assignment
-// target. A nil or impure path is not a write route.
-func purePathBase(path *string) ([]pathSegment, bool) {
+// writableBase parses an optional definition path as a pure assignment
+// target. A nil path, or one that is not statically assignable, is not a write route.
+func writableBase(path *string) ([]pathSegment, bool) {
 	if path == nil {
 		return nil, false
 	}
-	return parsePurePath(*path)
+	return parseWritablePath(*path)
 }
 
-// routeRawLeaves maps template-view leaves onto physical jq leaf writes per
+// routeFields maps template-view fields onto physical jq field writes per
 // shape. Unroutable logical paths are collected all at once, sorted.
-func routeRawLeaves(definition v1alpha1.ComponentDefinition, leaves []rawLeaf) ([]leafWrite, []PodField, error) {
+func routeFields(definition v1alpha1.ComponentDefinition, fields []patchField) ([]pathWrite, []PodField, error) {
 	shape := specShape(definition)
 	spec := definition.SpecDefinition
 
-	var writes []leafWrite
+	var writes []pathWrite
 	var unsupported []string
 
-	toWrite := func(base []pathSegment, relative []string, leaf rawLeaf) leafWrite {
+	toWrite := func(base []pathSegment, relative []string, field patchField) pathWrite {
 		segments := make([]pathSegment, len(relative))
 		for i, field := range relative {
 			segments[i] = pathSegment{field: field}
 		}
-		write := leafWrite{path: appendPath(base, segments...)}
+		write := pathWrite{path: joinPath(base, segments...)}
 		switch {
-		case leaf.merge:
-			write.transform = mergeRawMap(leaf.value.(map[string]any))
-		case len(leaf.view) == 2 && leaf.view[0] == "spec" && leaf.view[1] == "containers":
-			write.transform = mergeRawContainerList(leaf.value)
+		case field.mergeByKey:
+			write.transform = mergeMap(field.value.(map[string]any))
+		case len(field.fieldPath) == 2 && field.fieldPath[0] == "spec" && field.fieldPath[1] == "containers":
+			write.transform = mergeContainersByName(field.value)
 		default:
-			value := leaf.value
+			value := field.value
 			write.transform = func(any) (any, error) { return value, nil }
 		}
 		return write
 	}
 	switch shape {
 	case shapeTemplate:
-		base, ok := purePathBase(spec.PodTemplateSpecPath)
+		base, ok := writableBase(spec.PodTemplateSpecPath)
 		if !ok {
-			return nil, nil, fmt.Errorf("karta: pod path is not a writable pure path: %w", ErrNotSupported)
+			return nil, nil, fmt.Errorf("karta: pod path is not a writable path: %w", ErrNotSupported)
 		}
-		for _, leaf := range leaves {
-			writes = append(writes, toWrite(base, leaf.view, leaf))
+		for _, field := range fields {
+			writes = append(writes, toWrite(base, field.fieldPath, field))
 		}
 	case shapePodSpec, shapeSplit:
-		base, ok := purePathBase(spec.PodSpecPath)
+		base, ok := writableBase(spec.PodSpecPath)
 		if !ok {
-			return nil, nil, fmt.Errorf("karta: pod path is not a writable pure path: %w", ErrNotSupported)
+			return nil, nil, fmt.Errorf("karta: pod path is not a writable path: %w", ErrNotSupported)
 		}
 		var metaBase []pathSegment
 		if shape == shapeSplit {
-			metaBase, ok = purePathBase(spec.MetadataPath)
+			metaBase, ok = writableBase(spec.MetadataPath)
 			if !ok {
-				return nil, nil, fmt.Errorf("karta: metadata path is not a writable pure path: %w", ErrNotSupported)
+				return nil, nil, fmt.Errorf("karta: metadata path is not a writable path: %w", ErrNotSupported)
 			}
 		}
-		for _, leaf := range leaves {
-			switch leaf.view[0] {
+		for _, field := range fields {
+			switch field.fieldPath[0] {
 			case "spec":
-				writes = append(writes, toWrite(base, leaf.view[1:], leaf))
+				writes = append(writes, toWrite(base, field.fieldPath[1:], field))
 			case "metadata":
 				if shape != shapeSplit {
-					unsupported = append(unsupported, strings.Join(leaf.view, "."))
+					unsupported = append(unsupported, strings.Join(field.fieldPath, "."))
 					continue
 				}
-				writes = append(writes, toWrite(metaBase, leaf.view[1:], leaf))
+				writes = append(writes, toWrite(metaBase, field.fieldPath[1:], field))
 			}
 		}
 	case shapeFragmented:
 		fragmented := spec.FragmentedPodSpecDefinition
-		for _, leaf := range leaves {
-			fragmentWrites, bad := routeFragmentedLeaf(fragmented, leaf)
+		for _, field := range fields {
+			fragmentWrites, bad := routeFragmentedField(fragmented, field)
 			writes = append(writes, fragmentWrites...)
 			unsupported = append(unsupported, bad...)
 		}
 	default:
-		for _, leaf := range leaves {
-			unsupported = append(unsupported, strings.Join(leaf.view, "."))
+		for _, field := range fields {
+			unsupported = append(unsupported, strings.Join(field.fieldPath, "."))
 		}
 	}
 
 	if len(unsupported) > 0 {
 		slices.Sort(unsupported)
 		unsupported = slices.Compact(unsupported)
-		fields := make([]PodField, len(unsupported))
+		unroutable := make([]PodField, len(unsupported))
 		for i, path := range unsupported {
-			fields[i] = PodField(path)
+			unroutable[i] = PodField(path)
 		}
-		return nil, fields, nil
+		return nil, unroutable, nil
 	}
 	return writes, nil, nil
 }
 
-// routeFragmentedLeaf resolves one template-view leaf against the fragmented
+// routeFragmentedField resolves one template-view field against the fragmented
 // path table, longest prefix first. Container entries decompose: an unnamed
 // sole entry bridges image/resources to their singular paths; named entries
-// need containersPath. No fallback from an impure path, ever.
-func routeFragmentedLeaf(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf rawLeaf) ([]leafWrite, []string) {
-	view := strings.Join(leaf.view, ".")
-	direct := func(path *string, transform func(any) (any, error)) ([]leafWrite, []string) {
-		base, ok := purePathBase(path)
+// need containersPath. A path that is not statically assignable is never a fallback route.
+func routeFragmentedField(fragmented *v1alpha1.FragmentedPodSpecDefinition, field patchField) ([]pathWrite, []string) {
+	view := strings.Join(field.fieldPath, ".")
+	direct := func(path *string, transform func(any) (any, error)) ([]pathWrite, []string) {
+		base, ok := writableBase(path)
 		if !ok {
 			return nil, []string{view}
 		}
-		return []leafWrite{{path: renderPath(base), transform: transform}}, nil
+		return []pathWrite{{path: renderPath(base), transform: transform}}, nil
 	}
 	replace := func(value any) func(any) (any, error) {
 		return func(any) (any, error) { return value, nil }
@@ -327,87 +319,87 @@ func routeFragmentedLeaf(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf 
 
 	switch {
 	case view == "metadata.labels":
-		return direct(fragmented.LabelsPath, mergeRawMap(leaf.value.(map[string]any)))
+		return direct(fragmented.LabelsPath, mergeMap(field.value.(map[string]any)))
 	case view == "metadata.annotations":
-		return direct(fragmented.AnnotationsPath, mergeRawMap(leaf.value.(map[string]any)))
+		return direct(fragmented.AnnotationsPath, mergeMap(field.value.(map[string]any)))
 	case view == "spec.schedulerName":
-		return direct(fragmented.SchedulerNamePath, replace(leaf.value))
+		return direct(fragmented.SchedulerNamePath, replace(field.value))
 	case view == "spec.priorityClassName":
-		return direct(fragmented.PriorityClassNamePath, replace(leaf.value))
+		return direct(fragmented.PriorityClassNamePath, replace(field.value))
 	case strings.HasPrefix(view, "spec.affinity.nodeAffinity"):
-		return fragmentSuffix(fragmented.NodeAffinityPath, leaf, 3, "spec.affinity.nodeAffinity")
+		return routeUnderFragment(fragmented.NodeAffinityPath, field, 3, "spec.affinity.nodeAffinity")
 	case strings.HasPrefix(view, "spec.affinity.podAffinity"):
-		return fragmentSuffix(fragmented.PodAffinityPath, leaf, 3, "spec.affinity.podAffinity")
+		return routeUnderFragment(fragmented.PodAffinityPath, field, 3, "spec.affinity.podAffinity")
 	case view == "spec.resourceClaims":
-		return direct(fragmented.ResourceClaimsPath, replace(leaf.value))
+		return direct(fragmented.ResourceClaimsPath, replace(field.value))
 	case view == "spec.containers":
-		return routeFragmentedContainers(fragmented, leaf)
+		return routeFragmentedContainers(fragmented, field)
 	default:
 		return nil, []string{view}
 	}
 }
 
-// fragmentSuffix writes one leaf below a fragment root: the fragment's own
-// path plus the leaf's remaining view fields. Each leaf is its own assignment,
-// so sibling leaves under the same fragment merge instead of stomping each
-// other. An unroutable leaf reports the fragment-view path - the same
+// routeUnderFragment writes one field below a fragment root: the fragment's
+// own path plus the field's remaining path segments. Each field is its own
+// assignment, so sibling fields under the same fragment merge instead of
+// stomping each other. An unroutable field reports podField - the same
 // vocabulary the typed capability check uses.
-func fragmentSuffix(path *string, leaf rawLeaf, depth int, label string) ([]leafWrite, []string) {
-	base, ok := purePathBase(path)
+func routeUnderFragment(fragmentPath *string, field patchField, prefixLen int, podField string) ([]pathWrite, []string) {
+	base, ok := writableBase(fragmentPath)
 	if !ok {
-		return nil, []string{label}
+		return nil, []string{podField}
 	}
-	suffix := make([]pathSegment, 0, len(leaf.view)-depth)
-	for _, field := range leaf.view[depth:] {
-		suffix = append(suffix, pathSegment{field: field})
+	suffix := make([]pathSegment, 0, len(field.fieldPath)-prefixLen)
+	for _, name := range field.fieldPath[prefixLen:] {
+		suffix = append(suffix, pathSegment{field: name})
 	}
-	value := leaf.value
-	return []leafWrite{{path: appendPath(base, suffix...), transform: func(any) (any, error) { return value, nil }}}, nil
+	value := field.value
+	return []pathWrite{{path: joinPath(base, suffix...), transform: func(any) (any, error) { return value, nil }}}, nil
 }
 
-func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition, leaf rawLeaf) ([]leafWrite, []string) {
-	entries, ok := leaf.value.([]any)
+func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition, field patchField) ([]pathWrite, []string) {
+	entries, ok := field.value.([]any)
 	if !ok || len(entries) == 0 {
 		return nil, []string{"spec.containers"}
 	}
 	// named entries: the whole list merges at containersPath
 	first, _ := entries[0].(map[string]any)
 	if name, _ := first["name"].(string); name != "" || len(entries) > 1 {
-		base, ok := purePathBase(fragmented.ContainersPath)
+		base, ok := writableBase(fragmented.ContainersPath)
 		if !ok {
 			return nil, []string{"spec.containers"}
 		}
-		return []leafWrite{{path: renderPath(base), transform: mergeRawContainerList(leaf.value)}}, nil
+		return []pathWrite{{path: renderPath(base), transform: mergeContainersByName(field.value)}}, nil
 	}
 	// the sole logical container: bridge each provided key to its own path
-	var writes []leafWrite
+	var writes []pathWrite
 	var unsupported []string
 	for key, value := range first {
 		switch key {
 		case "image":
-			base, ok := purePathBase(fragmented.ImagePath)
+			base, ok := writableBase(fragmented.ImagePath)
 			if !ok {
 				unsupported = append(unsupported, "spec.containers.image")
 				continue
 			}
 			replace := value
-			writes = append(writes, leafWrite{path: renderPath(base), transform: func(any) (any, error) { return replace, nil }})
+			writes = append(writes, pathWrite{path: renderPath(base), transform: func(any) (any, error) { return replace, nil }})
 		case "resources":
-			base, ok := purePathBase(fragmented.ResourcesPath)
+			base, ok := writableBase(fragmented.ResourcesPath)
 			if !ok {
 				unsupported = append(unsupported, "spec.containers.resources")
 				continue
 			}
 			replace := value
-			writes = append(writes, leafWrite{path: renderPath(base), transform: func(any) (any, error) { return replace, nil }})
+			writes = append(writes, pathWrite{path: renderPath(base), transform: func(any) (any, error) { return replace, nil }})
 		default:
-			base, ok := purePathBase(fragmented.ContainerPath)
+			base, ok := writableBase(fragmented.ContainerPath)
 			if !ok {
 				unsupported = append(unsupported, "spec.containers."+key)
 				continue
 			}
 			field, replace := key, value
-			writes = append(writes, leafWrite{path: renderPath(base), transform: func(current any) (any, error) {
+			writes = append(writes, pathWrite{path: renderPath(base), transform: func(current any) (any, error) {
 				container, ok := current.(map[string]any)
 				if !ok {
 					return nil, fmt.Errorf("karta: containerPath value is %T, not an object", current)
@@ -421,10 +413,10 @@ func routeFragmentedContainers(fragmented *v1alpha1.FragmentedPodSpecDefinition,
 	return writes, unsupported
 }
 
-// mergeRawContainerList merges patch containers into the current raw list by
+// mergeContainersByName merges patch containers into the current raw list by
 // container name. A single unnamed entry targets the sole container. Named
 // entries must exist - UpdatePodTemplate does not add sidecars.
-func mergeRawContainerList(value any) func(any) (any, error) {
+func mergeContainersByName(value any) func(any) (any, error) {
 	return func(current any) (any, error) {
 		patchList, ok := value.([]any)
 		if !ok {

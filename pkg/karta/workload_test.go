@@ -193,7 +193,8 @@ var _ = Describe("Workload", func() {
 			w := mustWorkload(templateDefinition(), templateWorkload())
 			err := w.Suspend(ctx)
 			Expect(errors.Is(err, karta.ErrNotSupported)).To(BeTrue())
-			Expect(karta.IsUnsupportedOperation(err)).To(BeTrue())
+			var unsupportedOp *karta.UnsupportedOperationError
+			Expect(errors.As(err, &unsupportedOp)).To(BeTrue())
 		})
 	})
 

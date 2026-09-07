@@ -20,10 +20,11 @@ func (w *workload) UpdatePodTemplate(ctx context.Context, component string, upda
 	return w.patchPodTemplate(ctx, component, update.AsPodMergePatch(), opts...)
 }
 
-// targets carries the WithInstances resolution: set is nil for "all".
-type targets struct {
-	set   map[string]bool
-	order []string // instance ids in evaluation order, when restricted
+// instanceTargets carries the WithInstances resolution: selected is nil when
+// the update applies to every instance.
+type instanceTargets struct {
+	selected map[string]bool
+	all      []string // every instance id, in path evaluation order
 }
 
 // resolveTargets validates WithInstances: known ids, no duplicates, and the v1
@@ -31,59 +32,60 @@ type targets struct {
 // Checking each physical route directly (instead of one shape-level base)
 // makes per-instance targeting work on any shape whose written paths iterate
 // alongside the instance ids - including fragmented ones.
-func resolveTargets(ctx context.Context, component *resource.Component, options UpdateOptions, writes []leafWrite) (targets, error) {
+func resolveTargets(ctx context.Context, component *resource.Component, options UpdateOptions, writes []pathWrite) (instanceTargets, error) {
 	if len(options.Instances) == 0 {
-		return targets{}, nil
+		return instanceTargets{}, nil
 	}
 	ids, err := component.GetInstanceIds(ctx)
 	if err != nil {
-		return targets{}, fmt.Errorf("karta: get instance ids: %w", err)
+		return instanceTargets{}, fmt.Errorf("karta: get instance ids: %w", err)
 	}
 	known := make(map[string]bool, len(ids))
 	for _, id := range ids {
 		if known[id] {
-			return targets{}, fmt.Errorf("karta: duplicate instance id %q on component %s", id, component.Name())
+			return instanceTargets{}, fmt.Errorf("karta: duplicate instance id %q on component %s", id, component.Name())
 		}
 		known[id] = true
 	}
 	set := make(map[string]bool, len(options.Instances))
 	for _, id := range options.Instances {
 		if !known[id] {
-			return targets{}, fmt.Errorf("karta: unknown instance id %q for component %s", id, component.Name())
+			return instanceTargets{}, fmt.Errorf("karta: unknown instance id %q for component %s", id, component.Name())
 		}
 		if set[id] {
-			return targets{}, fmt.Errorf("karta: instance id %q requested twice", id)
+			return instanceTargets{}, fmt.Errorf("karta: instance id %q requested twice", id)
 		}
 		set[id] = true
 	}
 	definition := component.Definition()
 	if definition.InstanceIdPath == nil {
-		return targets{}, fmt.Errorf("karta: WithInstances requires an instanceIdPath on component %s: %w", component.Name(), ErrNotSupported)
+		return instanceTargets{}, fmt.Errorf("karta: WithInstances requires an instanceIdPath on component %s: %w", component.Name(), ErrNotSupported)
 	}
-	idSegments, ok := parsePurePath(*definition.InstanceIdPath)
+	idSegments, ok := parseWritablePath(*definition.InstanceIdPath)
 	if !ok || iterCount(idSegments) != 1 {
-		return targets{}, fmt.Errorf("karta: WithInstances requires a pure single-iteration instanceIdPath on component %s: %w", component.Name(), ErrNotSupported)
+		return instanceTargets{}, fmt.Errorf("karta: WithInstances requires a writable single-iteration instanceIdPath on component %s: %w", component.Name(), ErrNotSupported)
 	}
 	for _, write := range writes {
-		segments, ok := parsePurePath(write.path)
+		segments, ok := parseWritablePath(write.path)
 		if !ok || !sharesIterationBase(idSegments, segments) {
-			return targets{}, fmt.Errorf("karta: WithInstances requires %s and instanceIdPath to share one iteration base on component %s: %w",
+			return instanceTargets{}, fmt.Errorf("karta: WithInstances requires %s and instanceIdPath to share one iteration base on component %s: %w",
 				write.path, component.Name(), ErrNotSupported)
 		}
 	}
-	return targets{set: set, order: ids}, nil
+	return instanceTargets{selected: set, all: ids}, nil
 }
 
-// leafWrite is one raw jq assignment: read the current values at the leaf,
-// transform each (or keep, when the instance is untargeted), write back.
-type leafWrite struct {
+// pathWrite is one jq assignment at one physical path: read the current
+// values, transform each (or keep, when the instance is untargeted), write
+// back.
+type pathWrite struct {
 	path      string
 	transform func(current any) (any, error)
 }
 
-// applyLeaf reads the leaf's current values, transforms the targeted ones and
-// assigns them back in the same evaluation order.
-func applyLeaf(ctx context.Context, runner execution.Runner, write leafWrite, targeted targets) error {
+// applyWrite reads the current values at the write's path, transforms the
+// targeted ones and assigns them back in the same evaluation order.
+func applyWrite(ctx context.Context, runner execution.Runner, write pathWrite, instances instanceTargets) error {
 	current, err := runner.Evaluate(ctx, write.path)
 	if err != nil {
 		return fmt.Errorf("karta: read %s: %w", write.path, err)
@@ -91,13 +93,13 @@ func applyLeaf(ctx context.Context, runner execution.Runner, write leafWrite, ta
 	if len(current) == 0 {
 		return fmt.Errorf("karta: path %s matched nothing on the object", write.path)
 	}
-	if targeted.set != nil && len(current) != len(targeted.order) {
+	if instances.selected != nil && len(current) != len(instances.all) {
 		return fmt.Errorf("karta: %s matched %d locations but the component has %d instances: %w",
-			write.path, len(current), len(targeted.order), ErrNotSupported)
+			write.path, len(current), len(instances.all), ErrNotSupported)
 	}
 	values := make([]any, len(current))
 	for i, value := range current {
-		if targeted.set != nil && !targeted.set[targeted.order[i]] {
+		if instances.selected != nil && !instances.selected[instances.all[i]] {
 			values[i] = value
 			continue
 		}
@@ -113,10 +115,10 @@ func applyLeaf(ctx context.Context, runner execution.Runner, write leafWrite, ta
 	return nil
 }
 
-// mergeRawMap merges entries into the current raw map, creating it when
+// mergeMap merges entries into the current raw map, creating it when
 // absent. Untouched keys survive verbatim. Entry values are JSON-primitive
 // strings - the strict pod-template decode guarantees it.
-func mergeRawMap(entries map[string]any) func(any) (any, error) {
+func mergeMap(entries map[string]any) func(any) (any, error) {
 	return func(current any) (any, error) {
 		merged := map[string]any{}
 		if existing, ok := current.(map[string]any); ok {
@@ -129,9 +131,9 @@ func mergeRawMap(entries map[string]any) func(any) (any, error) {
 	}
 }
 
-// toRaw converts a typed intent value into raw JSON shape. The value is
+// toUnstructured converts a typed intent value into raw JSON shape. The value is
 // consumer-provided intent, so the round-trip loses nothing of the object.
-func toRaw(value any) (any, error) {
+func toUnstructured(value any) (any, error) {
 	encoded, err := json.Marshal(value)
 	if err != nil {
 		return nil, fmt.Errorf("karta: encode patch value: %w", err)

@@ -51,23 +51,23 @@ func (p PodPatch) AsPodMergePatch() Patch {
 		spec["priorityClassName"] = *p.PriorityClassName
 	}
 	if len(p.Labels) > 0 {
-		metadata["labels"] = stringMapToAny(p.Labels)
+		metadata["labels"] = mustToUnstructured(p.Labels)
 	}
 	if len(p.Annotations) > 0 {
-		metadata["annotations"] = stringMapToAny(p.Annotations)
+		metadata["annotations"] = mustToUnstructured(p.Annotations)
 	}
 	affinity := map[string]any{}
 	if p.NodeAffinity != nil {
-		affinity["nodeAffinity"] = mustRaw(p.NodeAffinity)
+		affinity["nodeAffinity"] = mustToUnstructured(p.NodeAffinity)
 	}
 	if p.PodAffinity != nil {
-		affinity["podAffinity"] = mustRaw(p.PodAffinity)
+		affinity["podAffinity"] = mustToUnstructured(p.PodAffinity)
 	}
 	if len(affinity) > 0 {
 		spec["affinity"] = affinity
 	}
 	if len(p.ResourceClaims) > 0 {
-		spec["resourceClaims"] = mustRaw(p.ResourceClaims)
+		spec["resourceClaims"] = mustToUnstructured(p.ResourceClaims)
 	}
 	var containers []any
 	if p.Image != nil || p.Resources != nil {
@@ -76,7 +76,7 @@ func (p PodPatch) AsPodMergePatch() Patch {
 			sole["image"] = *p.Image
 		}
 		if p.Resources != nil {
-			sole["resources"] = mustRaw(p.Resources)
+			sole["resources"] = mustToUnstructured(p.Resources)
 		}
 		containers = append(containers, sole)
 	}
@@ -86,7 +86,7 @@ func (p PodPatch) AsPodMergePatch() Patch {
 			container["image"] = *entry.Image
 		}
 		if entry.Resources != nil {
-			container["resources"] = mustRaw(entry.Resources)
+			container["resources"] = mustToUnstructured(entry.Resources)
 		}
 		containers = append(containers, container)
 	}
@@ -103,18 +103,10 @@ func (p PodPatch) AsPodMergePatch() Patch {
 	return patch
 }
 
-func stringMapToAny(entries map[string]string) map[string]any {
-	raw := make(map[string]any, len(entries))
-	for key, value := range entries {
-		raw[key] = value
-	}
-	return raw
-}
-
-// mustRaw converts a typed corev1 value to raw JSON shape. The types are
+// mustToUnstructured converts a typed corev1 value to raw JSON shape. The types are
 // always marshalable, so a failure is a programming error.
-func mustRaw(value any) any {
-	raw, err := toRaw(value)
+func mustToUnstructured(value any) any {
+	raw, err := toUnstructured(value)
 	if err != nil {
 		panic(err)
 	}
@@ -172,55 +164,6 @@ const (
 	PodFieldContainers        PodField = "spec.containers"
 )
 
-// SetFields lists the fields the patch sets, in stable order. Exposed so
-// fakes and tooling classify a patch exactly like the real implementation.
-func (p PodPatch) SetFields() []PodField {
-	var fields []PodField
-	if p.SchedulerName != nil {
-		fields = append(fields, PodFieldSchedulerName)
-	}
-	if p.PriorityClassName != nil {
-		fields = append(fields, PodFieldPriorityClassName)
-	}
-	if len(p.Labels) > 0 {
-		fields = append(fields, PodFieldLabels)
-	}
-	if len(p.Annotations) > 0 {
-		fields = append(fields, PodFieldAnnotations)
-	}
-	if p.NodeAffinity != nil {
-		fields = append(fields, PodFieldNodeAffinity)
-	}
-	if p.PodAffinity != nil {
-		fields = append(fields, PodFieldPodAffinity)
-	}
-	if len(p.ResourceClaims) > 0 {
-		fields = append(fields, PodFieldResourceClaims)
-	}
-	if p.Image != nil {
-		fields = append(fields, PodFieldImage)
-	}
-	if p.Resources != nil {
-		fields = append(fields, PodFieldResources)
-	}
-	if len(p.Containers) > 0 {
-		fields = append(fields, PodFieldContainers)
-	}
-	return fields
-}
-
-// AllPodFields is the complete typed vocabulary, in stable order. Exposed so
-// fakes and tooling enumerate the same universe production routes.
-func AllPodFields() []PodField {
-	return []PodField{
-		PodFieldSchedulerName, PodFieldPriorityClassName,
-		PodFieldLabels, PodFieldAnnotations,
-		PodFieldNodeAffinity, PodFieldPodAffinity,
-		PodFieldResourceClaims, PodFieldImage,
-		PodFieldResources, PodFieldContainers,
-	}
-}
-
 type podShape int
 
 const (
@@ -251,7 +194,7 @@ func specShape(def v1alpha1.ComponentDefinition) podShape {
 
 // WritablePodFields reports which PodPatch fields the component definition can
 // route. A field is writable only when a route exists AND every jq path on
-// that route is a statically assignable pure path - computed projections,
+// that route is a statically assignable path - computed projections,
 // formulas and pipe expressions are read-only. The typed vocabulary never
 // routes through containerPath. Pure function of the definition; the real implementation, the
 // kartatest fake and consumers all share it as the one source of capability

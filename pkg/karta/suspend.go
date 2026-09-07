@@ -11,7 +11,7 @@ import (
 )
 
 func (w *workload) Suspend(ctx context.Context) error {
-	return w.withScratch(func(factory *resource.ComponentFactory) error {
+	return w.mutateAtomically(func(factory *resource.ComponentFactory) error {
 		components, err := suspendableComponents(factory)
 		if err != nil {
 			return err
@@ -31,7 +31,7 @@ func (w *workload) Suspend(ctx context.Context) error {
 }
 
 func (w *workload) Resume(ctx context.Context) error {
-	return w.withScratch(func(factory *resource.ComponentFactory) error {
+	return w.mutateAtomically(func(factory *resource.ComponentFactory) error {
 		components, err := suspendableComponents(factory)
 		if err != nil {
 			return err

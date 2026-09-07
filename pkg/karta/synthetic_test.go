@@ -91,7 +91,7 @@ func seedPath(object map[string]any, path string, leaf any) {
 	if path == "" {
 		return
 	}
-	segments, ok := parsePurePath(path)
+	segments, ok := parseWritablePath(path)
 	if !ok {
 		return
 	}

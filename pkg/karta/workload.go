@@ -122,7 +122,7 @@ func New(definition *v1alpha1.Karta, obj resource.KubernetesObject) (Workload, e
 }
 
 // validateSuspendActions makes the eager-validation promise true for suspend:
-// every action path must be a writable pure path and every value valid JSON.
+// every action path must be a writable path and every value valid JSON.
 func validateSuspendActions(definition *v1alpha1.Karta) error {
 	validate := func(component v1alpha1.ComponentDefinition) error {
 		if component.SuspendDefinition == nil {
@@ -199,9 +199,10 @@ func (w *workload) Object() (resource.KubernetesObject, error) {
 	return copied, nil
 }
 
-// withScratch runs mutate against a deep-copied factory and adopts the copy
-// only on full success, which is what makes every mutating method atomic.
-func (w *workload) withScratch(mutate func(*resource.ComponentFactory) error) error {
+// mutateAtomically runs mutate against a deep copy of the object and keeps
+// the result only when mutate returns nil - on any error the workload is
+// untouched. This is what makes every mutating method atomic.
+func (w *workload) mutateAtomically(mutate func(*resource.ComponentFactory) error) error {
 	current, err := w.factory.GetResource()
 	if err != nil {
 		return fmt.Errorf("karta: get object: %w", err)
@@ -212,10 +213,10 @@ func (w *workload) withScratch(mutate func(*resource.ComponentFactory) error) er
 	}
 	// copied is JSON-primitive: GetResource returns the accessor's converted
 	// data and DeepCopyObject preserves the primitive types.
-	scratch := resource.NewComponentFactoryFromPrimitiveObject(w.karta, copied)
-	if err := mutate(scratch); err != nil {
+	updated := resource.NewComponentFactoryFromPrimitiveObject(w.karta, copied)
+	if err := mutate(updated); err != nil {
 		return err
 	}
-	w.factory = scratch
+	w.factory = updated
 	return nil
 }

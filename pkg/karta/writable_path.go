@@ -11,7 +11,7 @@ import (
 	"github.com/itchyny/gojq"
 )
 
-// pathSegment is one hop of a pure path: a named field, a literal-string key,
+// pathSegment is one hop of a writable path: a named field, a literal-string key,
 // or an array iteration.
 type pathSegment struct {
 	field string
@@ -19,12 +19,12 @@ type pathSegment struct {
 	iter  bool
 }
 
-// parsePurePath accepts exactly the statically assignable subset of jq: one
+// parseWritablePath accepts exactly the statically assignable subset of jq: one
 // term, root Identity or a field/literal-string Index, suffixes that are only
 // field/literal-string indexes or [], Optional only as its own suffix after an
 // allowed one. Everything else - pipes, functions, operators, constructions,
 // literals, computed or numeric indexes, slices - is rejected.
-func parsePurePath(expr string) ([]pathSegment, bool) {
+func parseWritablePath(expr string) ([]pathSegment, bool) {
 	trimmed := strings.TrimSpace(expr)
 	parsed, err := gojq.Parse(trimmed)
 	if err != nil || parsed == nil {
@@ -101,9 +101,9 @@ func constantString(query *gojq.Query) (string, bool) {
 	return term.Str.Str, true
 }
 
-// isWritablePath reports whether expr is a statically assignable pure path.
+// isWritablePath reports whether expr is a statically assignable path.
 func isWritablePath(expr string) bool {
-	_, ok := parsePurePath(expr)
+	_, ok := parseWritablePath(expr)
 	return ok
 }
 
@@ -130,9 +130,9 @@ func renderPath(segments []pathSegment) string {
 	return rendered
 }
 
-// appendPath composes a base pure path with relative segments structurally,
+// joinPath composes a base writable path with relative segments structurally,
 // so a base of "." (core Pod) composes correctly.
-func appendPath(base []pathSegment, relative ...pathSegment) string {
+func joinPath(base []pathSegment, relative ...pathSegment) string {
 	combined := make([]pathSegment, 0, len(base)+len(relative))
 	combined = append(combined, base...)
 	combined = append(combined, relative...)
@@ -150,7 +150,7 @@ func iterCount(segments []pathSegment) int {
 	return count
 }
 
-// sharesIterationBase reports whether two pure paths satisfy the v1
+// sharesIterationBase reports whether two writable paths satisfy the v1
 // WithInstances rule: each has exactly one [], identical segments through the
 // iteration.
 func sharesIterationBase(a, b []pathSegment) bool {

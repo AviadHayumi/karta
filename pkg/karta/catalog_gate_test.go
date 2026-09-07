@@ -97,7 +97,8 @@ var _ = Describe("catalog conformance gate", func() {
 				err = workload.UpdatePodTemplate(ctx, info.Name, rawPatch)
 				if err != nil {
 					// only ever the typed capability error, never a jq failure
-					Expect(karta.IsUnsupportedFields(err)).To(BeTrue(),
+					var unsupportedFields *karta.UnsupportedFieldsError
+					Expect(errors.As(err, &unsupportedFields)).To(BeTrue(),
 						fmt.Sprintf("%s/%s: %v", name, info.Name, err))
 					continue
 				}
@@ -124,7 +125,8 @@ var _ = Describe("catalog conformance gate", func() {
 		Expect(err).NotTo(HaveOccurred())
 		err = workload.UpdatePodTemplate(ctx, root.Name, karta.PodPatch{Resources: ptr.To(resourcesFixture())})
 		Expect(errors.Is(err, karta.ErrNotSupported)).To(BeTrue())
-		Expect(karta.IsUnsupportedFields(err)).To(BeTrue())
+		var unsupportedFields *karta.UnsupportedFieldsError
+		Expect(errors.As(err, &unsupportedFields)).To(BeTrue())
 
 		By("kserve predictor image/resources/containers only had containerPath - read-only")
 		kserve := definitions["serving-kserve-io-inferenceservice-v1beta1.yaml"]

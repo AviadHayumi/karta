@@ -38,12 +38,6 @@ func (e *UnsupportedFieldsError) Error() string {
 
 func (e *UnsupportedFieldsError) Is(target error) bool { return target == ErrNotSupported }
 
-// IsUnsupportedFields reports whether err carries an *UnsupportedFieldsError.
-func IsUnsupportedFields(err error) bool {
-	var unsupported *UnsupportedFieldsError
-	return errors.As(err, &unsupported)
-}
-
 // UnsupportedOperationError reports a verb the workload's definition does not
 // support, such as suspend when no component declares a SuspendDefinition.
 type UnsupportedOperationError struct {
@@ -55,9 +49,3 @@ func (e *UnsupportedOperationError) Error() string {
 }
 
 func (e *UnsupportedOperationError) Is(target error) bool { return target == ErrNotSupported }
-
-// IsUnsupportedOperation reports whether err carries an *UnsupportedOperationError.
-func IsUnsupportedOperation(err error) bool {
-	var unsupported *UnsupportedOperationError
-	return errors.As(err, &unsupported)
-}
