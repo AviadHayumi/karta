@@ -4,6 +4,9 @@
 package karta_test
 
 import (
+	"encoding/json"
+
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -144,4 +147,11 @@ func gateResourcesFixture() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("777Mi")},
 	}
+}
+
+// asJSON normalizes for comparison: Go number types may differ, values must not.
+func asJSON(value any) string {
+	raw, err := json.Marshal(value)
+	Expect(err).NotTo(HaveOccurred())
+	return string(raw)
 }
