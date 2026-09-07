@@ -10,27 +10,34 @@ import (
 	"fmt"
 	"syscall/js"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
-	"github.com/run-ai/karta/pkg/resource"
 )
 
-// decodeFactory decodes a JSON Karta definition and a JSON workload object
-// into the ComponentFactory that tree building, pod component inference, and
-// phase evaluation are all computed against.
-func decodeFactory(definitionJSON, workloadJSON string) (*resource.ComponentFactory, error) {
+func decodeDefinition(definitionJSON string) (*v1alpha1.Karta, error) {
 	var karta v1alpha1.Karta
 	if err := json.Unmarshal([]byte(definitionJSON), &karta); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal definition: %w", err)
 	}
+	return &karta, nil
+}
 
+func decodeWorkload(workloadJSON string) (*unstructured.Unstructured, error) {
 	var workload map[string]interface{}
 	if err := json.Unmarshal([]byte(workloadJSON), &workload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal workload: %w", err)
 	}
+	return &unstructured.Unstructured{Object: workload}, nil
+}
 
-	return resource.NewComponentFactoryFromObject(&karta, &unstructured.Unstructured{Object: workload}), nil
+func decodePods(podsJSON string) ([]corev1.Pod, error) {
+	var pods []corev1.Pod
+	if err := json.Unmarshal([]byte(podsJSON), &pods); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal pods: %w", err)
+	}
+	return pods, nil
 }
 
 // encodeEnvelope marshals v (on success) or err (on failure) into the

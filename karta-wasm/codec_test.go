@@ -10,6 +10,9 @@ import (
 	"errors"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/run-ai/karta/test/types"
 )
 
@@ -22,25 +25,53 @@ func marshal(t *testing.T, v any) string {
 	return string(data)
 }
 
-func TestDecodeFactory(t *testing.T) {
-	definitionJSON := marshal(t, types.ReactorKarta())
-	workloadJSON := marshal(t, types.NewReactorObject())
-
-	factory, err := decodeFactory(definitionJSON, workloadJSON)
+func TestDecodeDefinition(t *testing.T) {
+	definition, err := decodeDefinition(marshal(t, types.ReactorKarta()))
 	if err != nil {
-		t.Fatalf("decodeFactory() error = %v", err)
+		t.Fatalf("decodeDefinition() error = %v", err)
 	}
-	if factory.GetKarta().Name != "reactor" {
-		t.Errorf("expected factory's karta name = %q, got %q", "reactor", factory.GetKarta().Name)
+	if definition.Name != "reactor" {
+		t.Errorf("expected definition name = %q, got %q", "reactor", definition.Name)
 	}
 }
 
-func TestDecodeFactory_InvalidJSON(t *testing.T) {
-	if _, err := decodeFactory("not json", marshal(t, types.NewReactorObject())); err == nil {
+func TestDecodeDefinition_InvalidJSON(t *testing.T) {
+	if _, err := decodeDefinition("not json"); err == nil {
 		t.Fatal("expected an error for malformed definition JSON")
 	}
-	if _, err := decodeFactory(marshal(t, types.ReactorKarta()), "not json"); err == nil {
+}
+
+func TestDecodeWorkload(t *testing.T) {
+	workload, err := decodeWorkload(marshal(t, types.NewReactorObject()))
+	if err != nil {
+		t.Fatalf("decodeWorkload() error = %v", err)
+	}
+	if workload.GetKind() == "" {
+		t.Error("expected the decoded workload to carry a kind")
+	}
+}
+
+func TestDecodeWorkload_InvalidJSON(t *testing.T) {
+	if _, err := decodeWorkload("not json"); err == nil {
 		t.Fatal("expected an error for malformed workload JSON")
+	}
+}
+
+func TestDecodePods(t *testing.T) {
+	pods, err := decodePods(marshal(t, []corev1.Pod{
+		{ObjectMeta: metav1.ObjectMeta{Name: "worker-0"}},
+	}))
+	if err != nil {
+		t.Fatalf("decodePods() error = %v", err)
+	}
+	if len(pods) != 1 || pods[0].Name != "worker-0" {
+		t.Errorf("expected a single pod named %q, got %#v", "worker-0", pods)
+	}
+}
+
+func TestDecodePods_InvalidJSON(t *testing.T) {
+	if _, err := decodePods("not json"); err == nil {
+		t.Fatal("expected an error for malformed pods JSON")
 	}
 }
 

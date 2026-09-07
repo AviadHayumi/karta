@@ -7,13 +7,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"syscall/js"
 
-	corev1 "k8s.io/api/core/v1"
-
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/pkg/catalog"
 	"github.com/run-ai/karta/pkg/instructions"
 	"github.com/run-ai/karta/pkg/resource"
@@ -30,14 +26,16 @@ func jsBuildTree(_ js.Value, args []js.Value) any {
 	if len(args) != 2 {
 		return encodeEnvelope(nil, fmt.Errorf("kartaBuildTree: expected 2 arguments, got %d", len(args)))
 	}
-	definitionJSON := args[0].String()
-	workloadJSON := args[1].String()
-
-	factory, err := decodeFactory(definitionJSON, workloadJSON)
+	definition, err := decodeDefinition(args[0].String())
+	if err != nil {
+		return encodeEnvelope(nil, err)
+	}
+	workload, err := decodeWorkload(args[1].String())
 	if err != nil {
 		return encodeEnvelope(nil, err)
 	}
 
+	factory := resource.NewComponentFactoryFromObject(definition, workload)
 	workloadTree, err := tree.Build(context.Background(), factory)
 	return encodeEnvelope(workloadTree, err)
 }
@@ -46,29 +44,25 @@ func jsInferPodComponents(_ js.Value, args []js.Value) any {
 	if len(args) != 3 {
 		return encodeEnvelope(nil, fmt.Errorf("kartaInferPodComponents: expected 3 arguments, got %d", len(args)))
 	}
-	definitionJSON := args[0].String()
-	workloadJSON := args[1].String()
-	podsJSON := args[2].String()
 	ctx := context.Background()
 
-	var karta v1alpha1.Karta
-	if err := json.Unmarshal([]byte(definitionJSON), &karta); err != nil {
-		return encodeEnvelope(nil, fmt.Errorf("failed to unmarshal definition: %w", err))
+	definition, err := decodeDefinition(args[0].String())
+	if err != nil {
+		return encodeEnvelope(nil, err)
 	}
-
-	factory, err := decodeFactory(definitionJSON, workloadJSON)
+	workload, err := decodeWorkload(args[1].String())
+	if err != nil {
+		return encodeEnvelope(nil, err)
+	}
+	pods, err := decodePods(args[2].String())
 	if err != nil {
 		return encodeEnvelope(nil, err)
 	}
 
-	summary, err := instructions.NewStructureSummary(&karta)
+	factory := resource.NewComponentFactoryFromObject(definition, workload)
+	summary, err := instructions.NewStructureSummary(definition)
 	if err != nil {
 		return encodeEnvelope(nil, fmt.Errorf("failed to build structure summary: %w", err))
-	}
-
-	var pods []corev1.Pod
-	if err := json.Unmarshal([]byte(podsJSON), &pods); err != nil {
-		return encodeEnvelope(nil, fmt.Errorf("failed to unmarshal pods: %w", err))
 	}
 
 	matches := make([]PodComponentMatch, 0, len(pods))
@@ -95,14 +89,16 @@ func jsEvaluatePhases(_ js.Value, args []js.Value) any {
 	if len(args) != 2 {
 		return encodeEnvelope(nil, fmt.Errorf("kartaEvaluatePhases: expected 2 arguments, got %d", len(args)))
 	}
-	definitionJSON := args[0].String()
-	workloadJSON := args[1].String()
-
-	factory, err := decodeFactory(definitionJSON, workloadJSON)
+	definition, err := decodeDefinition(args[0].String())
+	if err != nil {
+		return encodeEnvelope(nil, err)
+	}
+	workload, err := decodeWorkload(args[1].String())
 	if err != nil {
 		return encodeEnvelope(nil, err)
 	}
 
+	factory := resource.NewComponentFactoryFromObject(definition, workload)
 	workloadTree, err := tree.Build(context.Background(), factory)
 	if err != nil {
 		return encodeEnvelope(nil, err)
