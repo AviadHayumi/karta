@@ -4,9 +4,6 @@
 package karta
 
 import (
-	"fmt"
-	"sort"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
@@ -39,6 +36,89 @@ type PodPatch struct {
 	// Containers are merged by container name, touching only the fields set
 	// on each entry.
 	Containers []ContainerPatch
+}
+
+// AsPodMergePatch compiles the typed patch into the raw merge-patch view, so
+// the typed and raw doors go through one router. Image and Resources become a
+// single unnamed container entry - the sole-container bridge.
+func (p PodPatch) AsPodMergePatch() Patch {
+	metadata := map[string]any{}
+	spec := map[string]any{}
+	if p.SchedulerName != nil {
+		spec["schedulerName"] = *p.SchedulerName
+	}
+	if p.PriorityClassName != nil {
+		spec["priorityClassName"] = *p.PriorityClassName
+	}
+	if len(p.Labels) > 0 {
+		metadata["labels"] = stringMapToAny(p.Labels)
+	}
+	if len(p.Annotations) > 0 {
+		metadata["annotations"] = stringMapToAny(p.Annotations)
+	}
+	affinity := map[string]any{}
+	if p.NodeAffinity != nil {
+		affinity["nodeAffinity"] = mustRaw(p.NodeAffinity)
+	}
+	if p.PodAffinity != nil {
+		affinity["podAffinity"] = mustRaw(p.PodAffinity)
+	}
+	if len(affinity) > 0 {
+		spec["affinity"] = affinity
+	}
+	if len(p.ResourceClaims) > 0 {
+		spec["resourceClaims"] = mustRaw(p.ResourceClaims)
+	}
+	var containers []any
+	if p.Image != nil || p.Resources != nil {
+		sole := map[string]any{}
+		if p.Image != nil {
+			sole["image"] = *p.Image
+		}
+		if p.Resources != nil {
+			sole["resources"] = mustRaw(p.Resources)
+		}
+		containers = append(containers, sole)
+	}
+	for _, entry := range p.Containers {
+		container := map[string]any{"name": entry.Name}
+		if entry.Image != nil {
+			container["image"] = *entry.Image
+		}
+		if entry.Resources != nil {
+			container["resources"] = mustRaw(entry.Resources)
+		}
+		containers = append(containers, container)
+	}
+	if len(containers) > 0 {
+		spec["containers"] = containers
+	}
+	patch := Patch{}
+	if len(metadata) > 0 {
+		patch["metadata"] = metadata
+	}
+	if len(spec) > 0 {
+		patch["spec"] = spec
+	}
+	return patch
+}
+
+func stringMapToAny(entries map[string]string) map[string]any {
+	raw := make(map[string]any, len(entries))
+	for key, value := range entries {
+		raw[key] = value
+	}
+	return raw
+}
+
+// mustRaw converts a typed corev1 value to raw JSON shape. The types are
+// always marshalable, so a failure is a programming error.
+func mustRaw(value any) any {
+	raw, err := toRaw(value)
+	if err != nil {
+		panic(err)
+	}
+	return raw
 }
 
 // ContainerPatch is a partial update of one named container.
@@ -74,20 +154,22 @@ func WithInstances(ids ...string) UpdateOption {
 	return func(o *UpdateOptions) { o.Instances = append(o.Instances, ids...) }
 }
 
-// PodField names one routable pod field of a PodPatch.
+// PodField names one routable pod field as its logical path in the pod
+// template view - the same strings UnsupportedFieldsError carries for raw
+// patches, so both doors report capability failures in one vocabulary.
 type PodField string
 
 const (
-	PodFieldSchedulerName     PodField = "schedulerName"
-	PodFieldPriorityClassName PodField = "priorityClassName"
-	PodFieldLabels            PodField = "labels"
-	PodFieldAnnotations       PodField = "annotations"
-	PodFieldNodeAffinity      PodField = "nodeAffinity"
-	PodFieldPodAffinity       PodField = "podAffinity"
-	PodFieldResourceClaims    PodField = "resourceClaims"
-	PodFieldImage             PodField = "image"
-	PodFieldResources         PodField = "resources"
-	PodFieldContainers        PodField = "containers"
+	PodFieldSchedulerName     PodField = "spec.schedulerName"
+	PodFieldPriorityClassName PodField = "spec.priorityClassName"
+	PodFieldLabels            PodField = "metadata.labels"
+	PodFieldAnnotations       PodField = "metadata.annotations"
+	PodFieldNodeAffinity      PodField = "spec.affinity.nodeAffinity"
+	PodFieldPodAffinity       PodField = "spec.affinity.podAffinity"
+	PodFieldResourceClaims    PodField = "spec.resourceClaims"
+	PodFieldImage             PodField = "spec.containers.image"
+	PodFieldResources         PodField = "spec.containers.resources"
+	PodFieldContainers        PodField = "spec.containers"
 )
 
 // SetFields lists the fields the patch sets, in stable order. Exposed so
@@ -158,8 +240,8 @@ func specShape(def v1alpha1.ComponentDefinition) podShape {
 // WritablePodFields reports which PodPatch fields the component definition can
 // route. A field is writable only when a route exists AND every jq path on
 // that route is a statically assignable pure path - computed projections,
-// formulas and pipe expressions are read-only. containerPath is never a write
-// route. Pure function of the definition; the real implementation, the
+// formulas and pipe expressions are read-only. The typed vocabulary never
+// routes through containerPath. Pure function of the definition; the real implementation, the
 // kartatest fake and consumers all share it as the one source of capability
 // truth.
 func WritablePodFields(def v1alpha1.ComponentDefinition) []PodField {
@@ -230,43 +312,4 @@ func WritablePodFields(def v1alpha1.ComponentDefinition) []PodField {
 	default:
 		return nil
 	}
-}
-
-// unsupportedFields returns the set fields the definition cannot route,
-// sorted, all offenders at once.
-func unsupportedFields(patch PodPatch, def v1alpha1.ComponentDefinition) []PodField {
-	writable := make(map[PodField]bool)
-	for _, field := range WritablePodFields(def) {
-		writable[field] = true
-	}
-	var unsupported []PodField
-	for _, field := range patch.SetFields() {
-		if !writable[field] {
-			unsupported = append(unsupported, field)
-		}
-	}
-	sort.Slice(unsupported, func(i, j int) bool { return unsupported[i] < unsupported[j] })
-	return unsupported
-}
-
-// mergeContainersByName applies each ContainerPatch to the container with the
-// matching name, touching only set fields. An unmatched name is an error.
-func mergeContainersByName(containers []corev1.Container, patches []ContainerPatch) error {
-	byName := make(map[string]int, len(containers))
-	for i, container := range containers {
-		byName[container.Name] = i
-	}
-	for _, patch := range patches {
-		index, ok := byName[patch.Name]
-		if !ok {
-			return fmt.Errorf("karta: container %q not found in pod", patch.Name)
-		}
-		if patch.Image != nil {
-			containers[index].Image = *patch.Image
-		}
-		if patch.Resources != nil {
-			containers[index].Resources = *patch.Resources.DeepCopy()
-		}
-	}
-	return nil
 }

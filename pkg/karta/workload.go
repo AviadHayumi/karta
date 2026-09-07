@@ -40,11 +40,13 @@ type Workload interface {
 	// status, and extracted pod data.
 	Tree(ctx context.Context) (*WorkloadTree, error)
 
-	// UpdatePodTemplate applies the set fields of patch to the pod definition of
-	// the named component. It validates the patch against the component's
-	// write capabilities before touching the object and returns
-	// *UnsupportedFieldsError listing every unroutable field.
-	UpdatePodTemplate(ctx context.Context, component string, patch PodPatch, opts ...UpdateOption) error
+	// UpdatePodTemplate applies a partial pod template update to the named
+	// component. It accepts either the typed PodPatch (compile-safe sugar)
+	// or a raw Patch (the {metadata, spec} view - ANY field the definition
+	// can route, no fixed vocabulary). Both compile to the same merge patch
+	// and go through one router. Capability failures list every unroutable
+	// path in one typed error, before anything is written.
+	UpdatePodTemplate(ctx context.Context, component string, update PodTemplateUpdate, opts ...UpdateOption) error
 
 	// Suspend applies the suspend actions of every component that declares
 	// a SuspendDefinition, children before the root. It returns
@@ -62,6 +64,12 @@ type Workload interface {
 	// Object returns a deep copy of the underlying object with all
 	// mutations applied, ready to be sent to the cluster.
 	Object() (resource.KubernetesObject, error)
+}
+
+// PodTemplateUpdate is a partial pod template update: the typed PodPatch or a
+// raw Patch. Both compile to the same merge patch; one router serves both.
+type PodTemplateUpdate interface {
+	AsPodMergePatch() Patch
 }
 
 // ComponentInfo describes one component's mutation capabilities.

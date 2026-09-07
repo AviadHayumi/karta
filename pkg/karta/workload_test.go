@@ -124,7 +124,7 @@ var _ = Describe("Workload", func() {
 		It("fails image on a multi-container pod, naming the containers", func() {
 			w := mustWorkload(podSpecDefinition(), podSpecWorkload())
 			err := w.UpdatePodTemplate(ctx, "root", karta.PodPatch{Image: ptr.To("app:v2")})
-			Expect(err).To(MatchError(ContainSubstring("single container")))
+			Expect(err).To(MatchError(ContainSubstring("sole container")))
 			Expect(errors.Is(err, karta.ErrNotSupported)).To(BeFalse())
 			// atomic: nothing changed
 			Expect(field(w, "spec", "podSpec", "schedulerName")).To(Equal("default-scheduler"))
@@ -246,5 +246,100 @@ var _ = Describe("Workload", func() {
 			Expect(fake.PodUpdates).To(HaveLen(1))
 			Expect(fake.PodUpdates[0].Instances).To(Equal([]string{"a"}))
 		})
+	})
+})
+
+var _ = Describe("WithInstances on a fragmented shape", func() {
+	ctx := context.Background()
+
+	It("targets one instance when the fragment paths iterate with the ids", func() {
+		w := mustWorkload(fragmentedWorkersDefinition(), fragmentedWorkersWorkload())
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.PodPatch{Image: ptr.To("app:v2")},
+			karta.WithInstances("b"))).To(Succeed())
+		workers := field(w, "spec", "workers").([]any)
+		Expect(workers[0].(map[string]any)["image"]).To(Equal("app:v1"))
+		Expect(workers[1].(map[string]any)["image"]).To(Equal("app:v2"))
+	})
+})
+
+var _ = Describe("PatchPodTemplate - the raw merge-patch door", func() {
+	ctx := context.Background()
+
+	It("writes fields the typed door never enumerated", func() {
+		w := mustWorkload(templateDefinition(), templateWorkload())
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"spec": karta.Patch{
+				"tolerations": []any{
+					map[string]any{"key": "gpu", "operator": "Exists", "effect": "NoSchedule"},
+				},
+				"schedulerName": "kai-scheduler",
+			},
+			"metadata": karta.Patch{"labels": karta.Patch{"team": "ml"}},
+		})).To(Succeed())
+
+		tolerations := field(w, "spec", "template", "spec", "tolerations").([]any)
+		Expect(tolerations[0].(map[string]any)["key"]).To(Equal("gpu"))
+		Expect(field(w, "spec", "template", "spec", "schedulerName")).To(Equal("kai-scheduler"))
+		Expect(field(w, "spec", "template", "metadata", "labels")).To(
+			Equal(map[string]any{"existing": "yes", "team": "ml"}))
+	})
+
+	It("merges containers by name, touching only provided keys", func() {
+		w := mustWorkload(podSpecDefinition(), podSpecWorkload())
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"spec": karta.Patch{"containers": []any{
+				map[string]any{"name": "sidecar", "image": "sidecar:v9"},
+			}},
+		})).To(Succeed())
+		containers := field(w, "spec", "podSpec", "containers").([]any)
+		Expect(containers[1].(map[string]any)["image"]).To(Equal("sidecar:v9"))
+		Expect(containers[0].(map[string]any)["image"]).To(Equal("app:v1")) // untouched
+	})
+
+	It("reports metadata as unsupported on the bare pod spec shape", func() {
+		w := mustWorkload(podSpecDefinition(), podSpecWorkload())
+		err := w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"metadata": karta.Patch{"labels": karta.Patch{"a": "b"}},
+		})
+		Expect(errors.Is(err, karta.ErrNotSupported)).To(BeTrue())
+		var unsupported *karta.UnsupportedFieldsError
+		Expect(errors.As(err, &unsupported)).To(BeTrue())
+		Expect(unsupported.Fields).To(Equal([]karta.PodField{"metadata.labels"}))
+	})
+
+	It("routes fragmented leaves through the definition and lists the rest", func() {
+		w := mustWorkload(fragmentedDefinition(), fragmentedWorkload())
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"metadata": karta.Patch{"labels": karta.Patch{"team": "ml"}},
+		})).To(Succeed())
+		Expect(field(w, "spec", "podLabels")).To(
+			Equal(map[string]any{"existing": "yes", "team": "ml"}))
+
+		err := w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"spec": karta.Patch{"tolerations": []any{map[string]any{"key": "gpu"}}},
+		})
+		var unsupported *karta.UnsupportedFieldsError
+		Expect(errors.As(err, &unsupported)).To(BeTrue())
+		Expect(unsupported.Fields).To(Equal([]karta.PodField{"spec.tolerations"}))
+	})
+
+	It("rejects nulls and non-template top-level keys, replaces zero scalars", func() {
+		w := mustWorkload(templateDefinition(), templateWorkload())
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"spec": karta.Patch{"schedulerName": nil},
+		})).To(MatchError(ContainSubstring("deleting values is not supported")))
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"status": karta.Patch{"phase": "x"},
+		})).To(MatchError(ContainSubstring("top-level keys are metadata and spec")))
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"spec": karta.Patch{"labels": karta.Patch{"x": "y"}},
+		})).To(MatchError(ContainSubstring("not a valid partial pod template")))
+		// atomic: nothing landed
+		Expect(field(w, "spec", "template", "spec", "schedulerName")).To(Equal("default-scheduler"))
+		// scalars replace, including the zero value - "" is deliberate intent
+		Expect(w.UpdatePodTemplate(ctx, "root", karta.Patch{
+			"spec": karta.Patch{"schedulerName": ""},
+		})).To(Succeed())
+		Expect(field(w, "spec", "template", "spec", "schedulerName")).To(Equal(""))
 	})
 })

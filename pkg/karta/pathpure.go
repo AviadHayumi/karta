@@ -138,14 +138,6 @@ func appendPath(base []pathSegment, relative ...pathSegment) string {
 	return renderPath(combined)
 }
 
-func fieldSegments(fields ...string) []pathSegment {
-	segments := make([]pathSegment, len(fields))
-	for i, field := range fields {
-		segments[i] = pathSegment{field: field}
-	}
-	return segments
-}
-
 // iterCount returns how many [] iterations the path contains.
 func iterCount(segments []pathSegment) int {
 	count := 0

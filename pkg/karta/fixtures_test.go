@@ -67,6 +67,35 @@ func fragmentedDefinition() *v1alpha1.Karta {
 	}, nil)
 }
 
+func fragmentedWorkersDefinition() *v1alpha1.Karta {
+	definition := definitionWith(&v1alpha1.SpecDefinition{
+		FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
+			SchedulerNamePath: ptr.To(".spec.workers[].schedulerName"),
+			ImagePath:         ptr.To(".spec.workers[].image"),
+		},
+	}, nil)
+	definition.Spec.StructureDefinition.RootComponent.InstanceIdPath = ptr.To(".spec.workers[].name")
+	definition.Spec.StructureDefinition.RootComponent.PodSelector = &v1alpha1.PodSelector{
+		ComponentInstanceSelector: &v1alpha1.ComponentInstanceSelector{
+			IdPath: ".metadata.labels[\"worker\"]",
+		},
+	}
+	return definition
+}
+
+func fragmentedWorkersWorkload() *unstructured.Unstructured {
+	return &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": "example.com/v1", "kind": "Job",
+		"metadata": map[string]any{"name": "job"},
+		"spec": map[string]any{
+			"workers": []any{
+				map[string]any{"name": "a", "image": "app:v1", "schedulerName": "default-scheduler"},
+				map[string]any{"name": "b", "image": "app:v1", "schedulerName": "default-scheduler"},
+			},
+		},
+	}}
+}
+
 func templateWorkload() *unstructured.Unstructured {
 	return &unstructured.Unstructured{Object: map[string]any{
 		"apiVersion": "example.com/v1", "kind": "Job",

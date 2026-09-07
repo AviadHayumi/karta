@@ -25,7 +25,7 @@ type Fake struct {
 	ComponentInfos []karta.ComponentInfo
 
 	// Interceptors, when set, run first and their error is returned as-is.
-	InterceptUpdatePodTemplate func(component string, patch karta.PodPatch) error
+	InterceptUpdatePodTemplate func(component string, patch karta.Patch) error
 	InterceptSuspend           func() error
 	InterceptResume            func() error
 
@@ -42,7 +42,8 @@ type Fake struct {
 	// *karta.UnsupportedOperationError.
 	Suspendable bool
 
-	// Recorded calls.
+	// Recorded calls. Typed patches are recorded in their compiled
+	// merge-patch form - the same thing production routes.
 	PodUpdates []PodUpdate
 	Suspends   int
 	Resumes    int
@@ -51,7 +52,7 @@ type Fake struct {
 // PodUpdate is one recorded UpdatePodTemplate call.
 type PodUpdate struct {
 	Component string
-	Patch     karta.PodPatch
+	Patch     karta.Patch
 	Instances []string
 }
 
@@ -107,14 +108,20 @@ func (f *Fake) Components() []karta.ComponentInfo {
 	return f.ComponentInfos
 }
 
-func (f *Fake) UpdatePodTemplate(_ context.Context, component string, patch karta.PodPatch, opts ...karta.UpdateOption) error {
+func (f *Fake) UpdatePodTemplate(_ context.Context, component string, update karta.PodTemplateUpdate, opts ...karta.UpdateOption) error {
+	if update == nil {
+		return karta.ErrEmptyPatch
+	}
+	patch := update.AsPodMergePatch()
 	if f.InterceptUpdatePodTemplate != nil {
 		if err := f.InterceptUpdatePodTemplate(component, patch); err != nil {
 			return err
 		}
 	}
-	if fields := f.unsupported(component, patch); len(fields) > 0 {
-		return &karta.UnsupportedFieldsError{Component: component, Fields: fields}
+	if typed, ok := update.(karta.PodPatch); ok {
+		if fields := f.unsupported(component, typed); len(fields) > 0 {
+			return &karta.UnsupportedFieldsError{Component: component, Fields: fields}
+		}
 	}
 	f.PodUpdates = append(f.PodUpdates, PodUpdate{
 		Component: component,

@@ -79,6 +79,39 @@ var _ = Describe("catalog conformance gate", func() {
 		Expect(checked).To(BeNumerically(">", 40), "the gate must actually exercise the catalog")
 	})
 
+	It("the raw door: an unenumerated field works on template shapes, classifies on fragmented", func() {
+		rawPatch := karta.Patch{
+			"spec": karta.Patch{"tolerations": []any{
+				map[string]any{"key": "karta-gate", "operator": "Exists"},
+			}},
+		}
+		exercised := 0
+		for name, definition := range catalog() {
+			for _, info := range componentInfos(definition) {
+				if len(info.PodFields) == 0 {
+					continue
+				}
+				obj := karta.SyntheticWorkload(definition)
+				workload, err := karta.New(definition, obj)
+				Expect(err).NotTo(HaveOccurred(), name)
+				err = workload.UpdatePodTemplate(ctx, info.Name, rawPatch)
+				if err != nil {
+					// only ever the typed capability error, never a jq failure
+					Expect(karta.IsUnsupportedFields(err)).To(BeTrue(),
+						fmt.Sprintf("%s/%s: %v", name, info.Name, err))
+					continue
+				}
+				mutated, err := workload.Object()
+				Expect(err).NotTo(HaveOccurred())
+				flat := fmt.Sprintf("%v", mutated.(*unstructured.Unstructured).Object)
+				Expect(flat).To(ContainSubstring("karta-gate"), name+"/"+info.Name)
+				Expect(flat).To(ContainSubstring(karta.GateCanary), name+"/"+info.Name)
+				exercised++
+			}
+		}
+		Expect(exercised).To(BeNumerically(">", 10), "the raw door must exercise the catalog")
+	})
+
 	It("named impure paths classify as unsupported, typed, before any write", func() {
 		definitions := catalog()
 
