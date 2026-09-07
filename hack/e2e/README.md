@@ -55,10 +55,18 @@ runs against separate clusters rather than as one cluster reconfigured in place.
 | `disabled` | off | none | none |
 
 ```sh
-make e2e-up WORKLOADS=none                                  # route auto
-make e2e-up WORKLOADS=none KARTA_WEBHOOK_MODE=cert-manager  # route cert-manager
-make e2e-up WORKLOADS=none KARTA_WEBHOOK_MODE=disabled      # route disabled
+make e2e-up WORKLOADS=none CLUSTER_NAME=karta-auto                                  # route auto
+make e2e-up WORKLOADS=none CLUSTER_NAME=karta-cm   KARTA_WEBHOOK_MODE=cert-manager  # route cert-manager
+make e2e-up WORKLOADS=none CLUSTER_NAME=karta-nowh KARTA_WEBHOOK_MODE=disabled      # route disabled
 ```
+
+Give each route its own `CLUSTER_NAME`, or tear down between them. `up.sh` reuses a
+kind cluster that already exists, and the routes leave state the next one does not
+want: switching off the cert-manager route leaves cert-manager and the Karta
+`Certificate` behind, and that Certificate keeps reconciling the same Secret the auto
+route's operator writes. Two controllers then fight over one key, and the
+no-cert-manager claim below quietly stops holding. CI is unaffected, since a fresh
+runner has no cluster to reuse.
 
 The chart deliberately ships no `Issuer` or `Certificate`: `provisionMode: manual`
 only mounts the Secret and stamps the injection annotation, so supplying them is the
@@ -78,9 +86,11 @@ operator needs it. Today that is kserve alone: its bundled manifest ships cert-m
 `--force-conflicts` over cainjector's caBundle. The check lives in `up.sh` next to
 where the install decision is made; extend it if another operator turns out to need it.
 
-Leaving cert-manager out is deliberate rather than only a saving. The `auto` and
-`disabled` routes run on a cluster without it, which is what proves the operator's
-own cert controller depends on nothing external.
+Leaving cert-manager out is deliberate rather than only a saving. On a fresh cluster
+the `auto` and `disabled` routes run without it, which is what proves the operator's
+own cert controller depends on nothing external. That only holds on a cluster the
+cert-manager route has not already touched, which is why each route wants its own
+`CLUSTER_NAME`.
 
 ## How up.sh runs an operator
 

@@ -139,6 +139,7 @@ install_fake_gpu() {
 # agree with it.
 KARTA_WEBHOOK_SERVICE="karta-operator-webhook"
 KARTA_WEBHOOK_SECRET="karta-operator-webhook-cert"
+KARTA_WEBHOOK_CONFIGS="mutatingwebhookconfiguration/karta-operator-mutating validatingwebhookconfiguration/karta-operator-validating"
 # Name of the cert-manager Certificate created for KARTA_WEBHOOK_MODE=cert-manager.
 KARTA_WEBHOOK_CERT="karta-webhook-cert"
 
@@ -176,6 +177,31 @@ EOF
     -n "${KARTA_NAMESPACE}" --timeout=120s
 }
 
+# wait_for_ca_injection blocks until cainjector has stamped a caBundle onto both webhook
+# configs. It cannot run before the helm install, because cainjector only acts on configs
+# that already carry the inject-ca-from annotation, and helm is what creates them.
+#
+# Nothing else covers this. In auto mode the operator's own rotator writes the caBundle
+# before it reports ready, so rollout_wait is an implicit gate; in manual mode the operator
+# never touches it, and cainjector works asynchronously. Without this wait up.sh can report
+# the environment ready while the API server still has an empty caBundle, and the first
+# admission call fails with an x509 error that looks nothing like the real cause.
+wait_for_ca_injection() {
+  local target ca i
+  for target in ${KARTA_WEBHOOK_CONFIGS}; do
+    ca=""
+    for i in $(seq 1 60); do
+      ca="$(kubectl get "${target}" -o jsonpath='{.webhooks[0].clientConfig.caBundle}' 2>/dev/null || true)"
+      [ -n "${ca}" ] && break
+      sleep 2
+    done
+    if [ -z "${ca}" ]; then
+      fail "cainjector did not populate caBundle on ${target} within 120s"
+      exit 1
+    fi
+  done
+}
+
 install_karta() {
   kubectl apply --server-side -f "${REPO_ROOT}/charts/karta/crds/"
 
@@ -206,6 +232,10 @@ install_karta() {
     --set resources.limits.memory="${KARTA_OPERATOR_MEMORY}" \
     "${webhook_values[@]}" >/dev/null
   rollout_wait "${KARTA_NAMESPACE}" deploy/karta-operator 120s
+  # Only the cert-manager route needs this; see wait_for_ca_injection for why the other
+  # two are already covered.
+  [ "${KARTA_WEBHOOK_MODE}" = "cert-manager" ] && wait_for_ca_injection
+  return 0
 }
 
 # --- selectable workload operators -------------------------------------------
