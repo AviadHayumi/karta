@@ -117,7 +117,7 @@ func renderPath(segments []pathSegment) string {
 		case segment.iter:
 			builder.WriteString("[]")
 		case segment.key != "":
-			builder.WriteString(fmt.Sprintf("[%q]", segment.key))
+			fmt.Fprintf(&builder, "[%q]", segment.key)
 		default:
 			builder.WriteString("." + segment.field)
 		}
