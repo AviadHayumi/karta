@@ -31,13 +31,56 @@ hack/e2e/
 make e2e-up                          # base + all operators
 make e2e-up WORKLOADS="jobset lws"   # base + a subset (one provision, deps resolved once)
 make e2e-up WORKLOADS="jobset"       # base + a single operator
+make e2e-up WORKLOADS=none           # base only, no workload operators
 make e2e-down                        # tear down
 ./hack/e2e/up.sh --list dynamo       # print the resolved plan and exit (dynamo pulls grove)
+./hack/e2e/up.sh --list none         # print the base-only plan, including the cert-manager decision
 ```
 
-The always-on base is the kind cluster, cert-manager, the fake-gpu-operator, and
-the Karta operator. Selecting a subset keeps a run light. Dependencies are added
-automatically: kserve pulls knative, dynamo pulls grove.
+The base is the kind cluster, the fake-gpu-operator, and the Karta operator.
+Selecting a subset keeps a run light, and `none` keeps only the base, which is what
+the controller e2e wants. Dependencies are added automatically: kserve pulls
+knative, dynamo pulls grove.
+
+## Karta install routes
+
+`KARTA_WEBHOOK_MODE` picks which webhook and serving-cert arrangement Karta is
+installed with. The three are mutually exclusive, so they are exercised as separate
+runs against separate clusters rather than as one cluster reconfigured in place.
+
+| Mode | Webhook | Serving cert | caBundle |
+|---|---|---|---|
+| `auto` (default) | on | the operator self-signs and rotates it | patched by the operator |
+| `cert-manager` | on | issued by cert-manager | injected by cainjector |
+| `disabled` | off | none | none |
+
+```sh
+make e2e-up WORKLOADS=none                                  # route auto
+make e2e-up WORKLOADS=none KARTA_WEBHOOK_MODE=cert-manager  # route cert-manager
+make e2e-up WORKLOADS=none KARTA_WEBHOOK_MODE=disabled      # route disabled
+```
+
+The chart deliberately ships no `Issuer` or `Certificate`: `provisionMode: manual`
+only mounts the Secret and stamps the injection annotation, so supplying them is the
+caller's half of the contract. `install_karta_certificate` in `up.sh` is that half,
+and it applies them before the helm install so the Secret exists when the operator
+pod starts.
+
+## cert-manager
+
+`CERT_MANAGER` controls whether cert-manager is installed: `auto` (the default)
+installs it only when something needs it, `true` forces it on, `false` refuses and
+fails fast if something selected needs it.
+
+Something needs it when `KARTA_WEBHOOK_MODE=cert-manager`, or when a selected
+operator needs it. Today that is kserve alone: its bundled manifest ships cert-manager
+`Certificate` resources, which is why `operators/kserve/install.sh` has to
+`--force-conflicts` over cainjector's caBundle. The check lives in `up.sh` next to
+where the install decision is made; extend it if another operator turns out to need it.
+
+Leaving cert-manager out is deliberate rather than only a saving. The `auto` and
+`disabled` routes run on a cluster without it, which is what proves the operator's
+own cert controller depends on nothing external.
 
 ## How up.sh runs an operator
 

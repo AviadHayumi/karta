@@ -3,9 +3,11 @@
 # Copyright (c) 2026 NVIDIA Corporation
 #
 # Provision a local kind cluster for the Karta e2e suite: builds and deploys the
-# Karta operator, installs the base dependencies (cert-manager, fake-gpu-operator),
-# and installs the selected upstream workload operators, smoke-testing each one as
-# it installs. Run with --help for usage; see hack/e2e/README.md for the details.
+# Karta operator, installs the base dependencies (fake-gpu-operator, plus
+# cert-manager when something needs it), and installs the selected upstream workload
+# operators, smoke-testing each one as it installs. KARTA_WEBHOOK_MODE picks which
+# webhook and serving-cert arrangement Karta is installed with.
+# Run with --help for usage; see hack/e2e/README.md for the details.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -64,9 +66,14 @@ usage() {
   cat >&2 <<EOF
 Usage: $0 [--list] [workload...]
   No workload args (or "all") installs everything. Named args install the base
-  plus only those workload operators (and their dependencies).
+  plus only those workload operators (and their dependencies). "none" installs
+  the base only, which is what the controller e2e wants.
   Workloads: ${ALL_WORKLOADS[*]}
   --list    print the resolved install plan and exit
+
+Environment (see hack/e2e/global.env):
+  KARTA_WEBHOOK_MODE  auto | cert-manager | disabled   (default auto)
+  CERT_MANAGER        auto | true | false              (default auto)
 EOF
 }
 
@@ -127,12 +134,78 @@ install_fake_gpu() {
     --set computeDomainDraPlugin.enabled=true --wait --timeout 3m >/dev/null
 }
 
+# Webhook resource names rendered by the chart (charts/karta/templates/_helpers.tpl).
+# The service name doubles as the serving-cert SAN, so the Certificate below must
+# agree with it.
+KARTA_WEBHOOK_SERVICE="karta-operator-webhook"
+KARTA_WEBHOOK_SECRET="karta-operator-webhook-cert"
+# Name of the cert-manager Certificate created for KARTA_WEBHOOK_MODE=cert-manager.
+KARTA_WEBHOOK_CERT="karta-webhook-cert"
+
+# install_karta_certificate issues the webhook serving cert with cert-manager, for
+# the cert-manager route. The chart deliberately ships no Issuer or Certificate:
+# provisionMode=manual only mounts the Secret and stamps the caBundle annotation, so
+# supplying these is the caller's half of the contract. Applying them before the
+# helm install means the Secret exists by the time the operator pod starts.
+install_karta_certificate() {
+  kubectl create namespace "${KARTA_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+  kubectl apply -f - >/dev/null <<EOF
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: karta-selfsigned
+  namespace: ${KARTA_NAMESPACE}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${KARTA_WEBHOOK_CERT}
+  namespace: ${KARTA_NAMESPACE}
+spec:
+  secretName: ${KARTA_WEBHOOK_SECRET}
+  issuerRef:
+    name: karta-selfsigned
+    kind: Issuer
+  dnsNames:
+    - ${KARTA_WEBHOOK_SERVICE}.${KARTA_NAMESPACE}.svc
+    - ${KARTA_WEBHOOK_SERVICE}.${KARTA_NAMESPACE}.svc.cluster.local
+EOF
+  kubectl wait --for=condition=Ready "certificate/${KARTA_WEBHOOK_CERT}" \
+    -n "${KARTA_NAMESPACE}" --timeout=120s
+}
+
 install_karta() {
   kubectl apply --server-side -f "${REPO_ROOT}/charts/karta/crds/"
-  helm upgrade -i karta "${REPO_ROOT}/charts/karta" -n karta-system --create-namespace \
+
+  # One --set list per route. Only the webhook and cert values differ; everything
+  # else about the install is identical, so a route can never drift in some other way.
+  local webhook_values=()
+  case "${KARTA_WEBHOOK_MODE}" in
+    auto)
+      webhook_values=(--set webhook.enabled=true --set webhook.cert.provisionMode=auto)
+      ;;
+    cert-manager)
+      install_karta_certificate
+      webhook_values=(
+        --set webhook.enabled=true
+        --set webhook.cert.provisionMode=manual
+        # cainjector reads this annotation off the webhook configs and writes the
+        # issuing CA into their caBundle. The operator never touches it in manual mode.
+        --set-string "webhook.cert.annotations.cert-manager\.io/inject-ca-from=${KARTA_NAMESPACE}/${KARTA_WEBHOOK_CERT}"
+      )
+      ;;
+    disabled)
+      webhook_values=(--set webhook.enabled=false)
+      ;;
+  esac
+
+  helm upgrade -i karta "${REPO_ROOT}/charts/karta" -n "${KARTA_NAMESPACE}" --create-namespace \
     --set image.repository="${IMAGE%:*}" --set image.tag="${IMAGE##*:}" \
-    --set resources.limits.memory="${KARTA_OPERATOR_MEMORY}" >/dev/null
-  rollout_wait karta-system deploy/karta-operator 120s
+    --set resources.limits.memory="${KARTA_OPERATOR_MEMORY}" \
+    "${webhook_values[@]}" >/dev/null
+  rollout_wait "${KARTA_NAMESPACE}" deploy/karta-operator 120s
 }
 
 # --- selectable workload operators -------------------------------------------
@@ -194,16 +267,27 @@ main() {
     esac
   done
 
-  # "all" is an alias for every workload (same as passing no args). Guard the
-  # expansion so bare "up.sh" does not trip set -u on the empty array (bash 3.2).
+  # "all" is an alias for every workload (same as passing no args), "none" for the
+  # base only. Guard the expansion so bare "up.sh" does not trip set -u on the empty
+  # array (bash 3.2).
+  local base_only=false
   if [ "${#requested[@]}" -gt 0 ]; then
     for w in "${requested[@]}"; do
       [ "$w" = "all" ] && { requested=("${ALL_WORKLOADS[@]}"); break; }
     done
+    for w in "${requested[@]}"; do
+      if [ "$w" = "none" ]; then
+        [ "${#requested[@]}" -eq 1 ] ||
+          { echo "error: \"none\" cannot be combined with other workloads" >&2; usage; exit 2; }
+        base_only=true
+      fi
+    done
   fi
 
   local selected=()
-  if [ "${#requested[@]}" -eq 0 ]; then
+  if [ "${base_only}" = true ]; then
+    selected=()
+  elif [ "${#requested[@]}" -eq 0 ]; then
     selected=("${ALL_WORKLOADS[@]}")
   else
     for w in "${requested[@]}"; do
@@ -218,19 +302,67 @@ main() {
 
   # Build the ordered plan by walking the canonical order and keeping selected ones.
   local plan=()
-  for w in "${ALL_WORKLOADS[@]}"; do
-    if printf '%s\n' "${selected[@]}" | grep -qxF "$w"; then plan+=("$w"); fi
+  if [ "${#selected[@]}" -gt 0 ]; then
+    for w in "${ALL_WORKLOADS[@]}"; do
+      if printf '%s\n' "${selected[@]}" | grep -qxF "$w"; then plan+=("$w"); fi
+    done
+  fi
+
+  # Validate the route here, not in install_karta, so --list rejects a typo too and
+  # a bad value costs nothing instead of failing after a full provision.
+  case "${KARTA_WEBHOOK_MODE}" in
+    auto | cert-manager | disabled) ;;
+    *)
+      echo "error: unknown KARTA_WEBHOOK_MODE '${KARTA_WEBHOOK_MODE}' (want: auto, cert-manager, disabled)" >&2
+      exit 2
+      ;;
+  esac
+
+  # Decide cert-manager from the plan rather than making the caller get it right.
+  # A silent skip would surface much later as an unrelated webhook timeout, so an
+  # explicit CERT_MANAGER=false that contradicts the plan fails here instead.
+  local cert_manager_needed_by=""
+  [ "${KARTA_WEBHOOK_MODE}" = "cert-manager" ] && cert_manager_needed_by="KARTA_WEBHOOK_MODE=cert-manager"
+  # kserve is the only operator that needs it: its bundled kserve.yaml ships cert-manager
+  # Certificates, which is why operators/kserve/install.sh has to --force-conflicts over
+  # cainjector's caBundle. Add to the test here if another operator turns out to need it.
+  for w in ${plan[@]+"${plan[@]}"}; do
+    if [ "$w" = "kserve" ]; then
+      cert_manager_needed_by="${cert_manager_needed_by:+${cert_manager_needed_by}, }operator ${w}"
+    fi
   done
+  local install_cm=false
+  case "${CERT_MANAGER}" in
+    auto) [ -n "${cert_manager_needed_by}" ] && install_cm=true ;;
+    true) install_cm=true ;;
+    false)
+      if [ -n "${cert_manager_needed_by}" ]; then
+        echo "error: CERT_MANAGER=false but cert-manager is required by: ${cert_manager_needed_by}" >&2
+        exit 2
+      fi
+      ;;
+    *)
+      echo "error: unknown CERT_MANAGER '${CERT_MANAGER}' (want: auto, true, false)" >&2
+      exit 2
+      ;;
+  esac
 
   if [ "$plan_only" = true ]; then
-    echo "base: kind cluster, cert-manager, fake-gpu-operator, karta"
+    echo "base: kind cluster, fake-gpu-operator, karta (webhook: ${KARTA_WEBHOOK_MODE})"
+    if [ "${install_cm}" = true ]; then
+      echo "cert-manager: yes (${cert_manager_needed_by:-CERT_MANAGER=true})"
+    else
+      echo "cert-manager: no"
+    fi
     if [ "${#plan[@]}" -gt 0 ]; then echo "workloads: ${plan[*]}"; else echo "workloads: (none)"; fi
     exit 0
   fi
 
   require_tools
   group "build image + kind cluster"; setup_cluster; endgroup
-  group "cert-manager ${CERT_MANAGER_VERSION}"; install_cert_manager; endgroup
+  if [ "${install_cm}" = true ]; then
+    group "cert-manager ${CERT_MANAGER_VERSION}"; install_cert_manager; endgroup
+  fi
   group "fake-gpu-operator ${FAKE_GPU_VERSION}"; install_fake_gpu; endgroup
   # Fresh provision, fresh version list (gitignored; read by the e2e flows).
   : > "${OPERATORS_DIR}/.installed-versions-${CLUSTER_NAME}"
@@ -241,9 +373,9 @@ main() {
     summary "|---|---|---|---|---|"
     for w in "${plan[@]}"; do run_operator "$w"; done
   fi
-  group "karta operator"; install_karta; endgroup
+  group "karta operator (webhook: ${KARTA_WEBHOOK_MODE})"; install_karta; endgroup
 
-  echo "==> environment ready (cluster: ${CLUSTER_NAME})."
+  echo "==> environment ready (cluster: ${CLUSTER_NAME}, webhook: ${KARTA_WEBHOOK_MODE})."
   if [ "${CLUSTER_NAME}" != "${DEFAULT_CLUSTER}" ]; then
     echo "    this cluster has its own kubeconfig: ${KUBECONFIG}"
     echo "    export KUBECONFIG=${KUBECONFIG} to use kubectl against it"

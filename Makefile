@@ -243,7 +243,7 @@ E2E_TIMEOUT ?= 30m
 empty :=
 space := $(empty) $(empty)
 comma := ,
-E2E_LABELS ?= $(subst $(space),$(comma),$(strip $(filter-out all,$(WORKLOADS))))
+E2E_LABELS ?= $(subst $(space),$(comma),$(strip $(filter-out all none,$(WORKLOADS))))
 
 # FLOW="scaled" narrows a record to one flow by name (focuses the spec with that title);
 # without WORKLOADS it matches that flow name across all workload types.
@@ -251,12 +251,23 @@ ifneq ($(strip $(FLOW)),)
 E2E_FOCUS := $(strip $(FLOW))
 endif
 
+# Which webhook and serving-cert arrangement Karta is installed with, and whether
+# cert-manager is installed at all. Defaults match hack/e2e/global.env; see it for
+# the accepted values. The controller e2e runs one cluster per webhook mode.
+KARTA_WEBHOOK_MODE ?= auto
+CERT_MANAGER ?= auto
+
 # Pick which operators to install:
 #   make e2e-up                          # everything
 #   make e2e-up WORKLOADS="jobset lws"   # a subset - one provision, deps resolved once
+#   make e2e-up WORKLOADS=none           # base only, no workload operators
+#   make e2e-up WORKLOADS=none KARTA_WEBHOOK_MODE=disabled
 .PHONY: e2e-up
-e2e-up: ## Provision a kind cluster + operators (WORKLOADS="jobset kuberay" for a subset, or "all"; CLUSTER_NAME=<name> for an isolated parallel cluster)
-	CLUSTER_NAME=$(CLUSTER_NAME) ./hack/e2e/up.sh $(WORKLOADS)
+e2e-up: ## Provision a kind cluster + operators (WORKLOADS="jobset kuberay" for a subset, "all", or "none" for base only; KARTA_WEBHOOK_MODE=auto|cert-manager|disabled; CLUSTER_NAME=<name> for an isolated parallel cluster)
+	CLUSTER_NAME=$(CLUSTER_NAME) \
+	KARTA_WEBHOOK_MODE=$(KARTA_WEBHOOK_MODE) \
+	CERT_MANAGER=$(CERT_MANAGER) \
+	./hack/e2e/up.sh $(WORKLOADS)
 
 .PHONY: e2e-down
 e2e-down: ## Tear down the e2e cluster (set CLUSTER_NAME for a named one)
