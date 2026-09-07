@@ -75,10 +75,11 @@ EOF
 # report ready while the API server still has an empty caBundle, and the first admission
 # call fails with an x509 error that looks nothing like the real cause.
 wait_for_ca_injection() {
-  local target ca i
+  local target ca
   for target in ${KARTA_WEBHOOK_CONFIGS}; do
     ca=""
-    for i in $(seq 1 60); do
+    # The counter is a throwaway: 60 tries at 2s is the 120s budget in the message.
+    for _ in $(seq 1 60); do
       ca="$(kubectl get "${target}" -o jsonpath='{.webhooks[0].clientConfig.caBundle}' 2>/dev/null || true)"
       [ -n "${ca}" ] && break
       sleep 2
