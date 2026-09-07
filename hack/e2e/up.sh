@@ -28,9 +28,10 @@ if [ -z "${KUBECONFIG:-}" ] && [ "${CLUSTER_NAME}" != "${DEFAULT_CLUSTER}" ]; th
   mkdir -p "$(dirname "${KUBECONFIG}")"
   export KUBECONFIG
 fi
-# The per-operator install.sh/verify.sh run as subprocesses; export the context
-# they need so they inherit it (version pins come from global.env via _common.sh).
-export CLUSTER_NAME IMAGE REPO_ROOT
+# The per-operator install.sh/verify.sh and install-karta-operator.sh run as
+# subprocesses; export the context they need so they inherit it (version pins and
+# the KARTA_* defaults come from global.env via _common.sh).
+export CLUSTER_NAME IMAGE REPO_ROOT KARTA_WEBHOOK_MODE
 
 # Workload operators selectable on the command line, in canonical install order:
 # a dependency always appears before its dependents (knative before kserve,
@@ -134,110 +135,6 @@ install_fake_gpu() {
     --set computeDomainDraPlugin.enabled=true --wait --timeout 3m >/dev/null
 }
 
-# Webhook resource names rendered by the chart (charts/karta/templates/_helpers.tpl).
-# The service name doubles as the serving-cert SAN, so the Certificate below must
-# agree with it.
-KARTA_WEBHOOK_SERVICE="karta-operator-webhook"
-KARTA_WEBHOOK_SECRET="karta-operator-webhook-cert"
-KARTA_WEBHOOK_CONFIGS="mutatingwebhookconfiguration/karta-operator-mutating validatingwebhookconfiguration/karta-operator-validating"
-# Name of the cert-manager Certificate created for KARTA_WEBHOOK_MODE=cert-manager.
-KARTA_WEBHOOK_CERT="karta-webhook-cert"
-
-# install_karta_certificate issues the webhook serving cert with cert-manager, for
-# the cert-manager route. The chart deliberately ships no Issuer or Certificate:
-# provisionMode=manual only mounts the Secret and stamps the caBundle annotation, so
-# supplying these is the caller's half of the contract. Applying them before the
-# helm install means the Secret exists by the time the operator pod starts.
-install_karta_certificate() {
-  kubectl create namespace "${KARTA_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
-  kubectl apply -f - >/dev/null <<EOF
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: karta-selfsigned
-  namespace: ${KARTA_NAMESPACE}
-spec:
-  selfSigned: {}
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: ${KARTA_WEBHOOK_CERT}
-  namespace: ${KARTA_NAMESPACE}
-spec:
-  secretName: ${KARTA_WEBHOOK_SECRET}
-  issuerRef:
-    name: karta-selfsigned
-    kind: Issuer
-  dnsNames:
-    - ${KARTA_WEBHOOK_SERVICE}.${KARTA_NAMESPACE}.svc
-    - ${KARTA_WEBHOOK_SERVICE}.${KARTA_NAMESPACE}.svc.cluster.local
-EOF
-  kubectl wait --for=condition=Ready "certificate/${KARTA_WEBHOOK_CERT}" \
-    -n "${KARTA_NAMESPACE}" --timeout=120s
-}
-
-# wait_for_ca_injection blocks until cainjector has stamped a caBundle onto both webhook
-# configs. It cannot run before the helm install, because cainjector only acts on configs
-# that already carry the inject-ca-from annotation, and helm is what creates them.
-#
-# Nothing else covers this. In auto mode the operator's own rotator writes the caBundle
-# before it reports ready, so rollout_wait is an implicit gate; in manual mode the operator
-# never touches it, and cainjector works asynchronously. Without this wait up.sh can report
-# the environment ready while the API server still has an empty caBundle, and the first
-# admission call fails with an x509 error that looks nothing like the real cause.
-wait_for_ca_injection() {
-  local target ca i
-  for target in ${KARTA_WEBHOOK_CONFIGS}; do
-    ca=""
-    for i in $(seq 1 60); do
-      ca="$(kubectl get "${target}" -o jsonpath='{.webhooks[0].clientConfig.caBundle}' 2>/dev/null || true)"
-      [ -n "${ca}" ] && break
-      sleep 2
-    done
-    if [ -z "${ca}" ]; then
-      fail "cainjector did not populate caBundle on ${target} within 120s"
-      exit 1
-    fi
-  done
-}
-
-install_karta() {
-  kubectl apply --server-side -f "${REPO_ROOT}/charts/karta/crds/"
-
-  # One --set list per route. Only the webhook and cert values differ; everything
-  # else about the install is identical, so a route can never drift in some other way.
-  local webhook_values=()
-  case "${KARTA_WEBHOOK_MODE}" in
-    auto)
-      webhook_values=(--set webhook.enabled=true --set webhook.cert.provisionMode=auto)
-      ;;
-    cert-manager)
-      install_karta_certificate
-      webhook_values=(
-        --set webhook.enabled=true
-        --set webhook.cert.provisionMode=manual
-        # cainjector reads this annotation off the webhook configs and writes the
-        # issuing CA into their caBundle. The operator never touches it in manual mode.
-        --set-string "webhook.cert.annotations.cert-manager\.io/inject-ca-from=${KARTA_NAMESPACE}/${KARTA_WEBHOOK_CERT}"
-      )
-      ;;
-    disabled)
-      webhook_values=(--set webhook.enabled=false)
-      ;;
-  esac
-
-  helm upgrade -i karta "${REPO_ROOT}/charts/karta" -n "${KARTA_NAMESPACE}" --create-namespace \
-    --set image.repository="${IMAGE%:*}" --set image.tag="${IMAGE##*:}" \
-    --set resources.limits.memory="${KARTA_OPERATOR_MEMORY}" \
-    "${webhook_values[@]}" >/dev/null
-  rollout_wait "${KARTA_NAMESPACE}" deploy/karta-operator 120s
-  # Only the cert-manager route needs this; see wait_for_ca_injection for why the other
-  # two are already covered.
-  [ "${KARTA_WEBHOOK_MODE}" = "cert-manager" ] && wait_for_ca_injection
-  return 0
-}
-
 # --- selectable workload operators -------------------------------------------
 
 # run_operator <name>: run the operator's standalone install.sh then verify.sh,
@@ -338,8 +235,8 @@ main() {
     done
   fi
 
-  # Validate the route here, not in install_karta, so --list rejects a typo too and
-  # a bad value costs nothing instead of failing after a full provision.
+  # Validate the route here as well as in install-karta-operator.sh, so --list rejects a typo
+  # and a bad value costs nothing instead of failing after a full provision.
   case "${KARTA_WEBHOOK_MODE}" in
     auto | cert-manager | disabled) ;;
     *)
@@ -403,7 +300,11 @@ main() {
     summary "|---|---|---|---|---|"
     for w in "${plan[@]}"; do run_operator "$w"; done
   fi
-  group "karta operator (webhook: ${KARTA_WEBHOOK_MODE})"; install_karta; endgroup
+  # Karta is the system under test, not infrastructure, so its install is a standalone
+  # script like the workload operators. Same contract: any non-zero exit fails the run.
+  group "karta operator (webhook: ${KARTA_WEBHOOK_MODE})"
+  bash "${REPO_ROOT}/hack/e2e/install-karta-operator.sh" || { endgroup; fail "karta install failed"; exit 1; }
+  endgroup
 
   echo "==> environment ready (cluster: ${CLUSTER_NAME}, webhook: ${KARTA_WEBHOOK_MODE})."
   if [ "${CLUSTER_NAME}" != "${DEFAULT_CLUSTER}" ]; then

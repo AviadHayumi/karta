@@ -12,17 +12,18 @@ as it installs, so a broken install fails provisioning rather than a later run.
 
 ```
 hack/e2e/
-  up.sh                 orchestrator: base + selected operators (install then verify)
-  down.sh               tear the cluster down (and its kubeconfig for named clusters)
-  global.env            single source of truth for versions and runtime defaults
-  kind-config.yaml      kind cluster shape (1 control-plane + 2 workers)
+  up.sh                      orchestrator: base + selected operators (install then verify)
+  down.sh                    tear the cluster down (and its kubeconfig for named clusters)
+  install-karta-operator.sh  standalone: installs Karta in the selected webhook route
+  global.env                 single source of truth for versions and runtime defaults
+  kind-config.yaml           kind cluster shape (1 control-plane + 2 workers)
   operators/
-    _common.sh          shared helpers + GitHub Actions logging, sourced by every script
+    _common.sh               shared helpers + GitHub Actions logging, sourced by every script
     <name>/
-      install.sh        standalone: installs the operator (run as a subprocess)
-      verify.sh         standalone: smoke-tests it via run_smoke
-      smoke.yaml        the throwaway workload the smoke test applies
-      <config>.yaml     optional co-located config (e.g. grove/values.yaml)
+      install.sh             standalone: installs the operator (run as a subprocess)
+      verify.sh              standalone: smoke-tests it via run_smoke
+      smoke.yaml             the throwaway workload the smoke test applies
+      <config>.yaml          optional co-located config (e.g. grove/values.yaml)
 ```
 
 ## Usage
@@ -68,11 +69,18 @@ route's operator writes. Two controllers then fight over one key, and the
 no-cert-manager claim below quietly stops holding. CI is unaffected, since a fresh
 runner has no cluster to reuse.
 
+The install itself lives in `install-karta-operator.sh`, a standalone script `up.sh` runs last,
+on the same exit-code contract as the workload operators. Karta is the system under
+test rather than cluster infrastructure, so it gets its own file; run it directly
+against the current context to reinstall Karta without reprovisioning the cluster.
+
 The chart deliberately ships no `Issuer` or `Certificate`: `provisionMode: manual`
 only mounts the Secret and stamps the injection annotation, so supplying them is the
-caller's half of the contract. `install_karta_certificate` in `up.sh` is that half,
-and it applies them before the helm install so the Secret exists when the operator
-pod starts.
+caller's half of the contract. `install_certificate` is that half, and it has to run
+before the helm install rather than from a test: controller-runtime reads the serving
+cert at startup, so an operator pod that starts without the Secret crashloops instead
+of waiting for it. After the install, `wait_for_ca_injection` blocks until cainjector
+has stamped a caBundle onto both webhook configs, which nothing else gates on.
 
 ## cert-manager
 
