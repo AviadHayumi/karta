@@ -227,12 +227,13 @@ operator-image-push: ## Push the operator image
 	$(CONTAINER_TOOL) push $(IMAGE)
 
 .PHONY: operator-image-buildx-push
-operator-image-buildx-push: ## Build and push a multi-arch operator image via BuildKit (requires Docker)
+operator-image-buildx-push: ## Build and push a multi-arch operator image with an SBOM attestation via BuildKit (requires Docker)
 	@[ "$(CONTAINER_TOOL)" = "docker" ] || { echo "Error: operator-image-buildx-push requires CONTAINER_TOOL=docker (got '$(CONTAINER_TOOL)')" >&2; exit 1; }
 	$(CONTAINER_TOOL) buildx build $(BUILD_ARGS) \
 		--platform $(PLATFORMS_CSV) \
 		--build-arg GO_LDFLAGS="$(GO_LDFLAGS)" \
 		--tag $(IMAGE) \
+		--attest type=sbom \
 		-f operator/Dockerfile \
 		--push \
 		.
@@ -327,6 +328,7 @@ CRD_CONFIGMAP_MAX_BYTES ?= 1000000
 .PHONY: helm-validate
 helm-validate: ## Validate the chart renders and the CRD ConfigMap fits in etcd
 	helm template $(KARTA_CHART_DIR)
+	helm template $(KARTA_CHART_DIR) --set fipsMode=only
 	@set -e; tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; helm template $(KARTA_CHART_DIR) -s templates/hooks/pre/crd-upgrader-configmap.yaml > "$$tmp"; s=$$(wc -c < "$$tmp"); echo "crd-upgrader ConfigMap: $$s bytes (max $(CRD_CONFIGMAP_MAX_BYTES))"; test $$s -le $(CRD_CONFIGMAP_MAX_BYTES) || { echo "error: CRD ConfigMap is $$s bytes, over the $(CRD_CONFIGMAP_MAX_BYTES) limit; it must fit in a single ~1 MiB etcd object"; exit 1; }
 
 ##@ Air-gap
