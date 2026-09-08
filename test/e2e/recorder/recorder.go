@@ -217,22 +217,6 @@ func (f *Flow) buildRecording(obs *observation) *Recording {
 	return out
 }
 
-// Rejudge judges every STATE event's stored object again with the registered predicates, refreshing its
-// phases and state, and rebuilds the summary. It migrates existing recordings across format or predicate
-// changes without a cluster; the objects themselves are untouched.
-func (r *Recorder) Rejudge(rec *Recording) {
-	for i := range rec.Events {
-		e := &rec.Events[i]
-		if e.Kind != EventState {
-			continue
-		}
-		phases := judge(&unstructured.Unstructured{Object: e.Object}, r.states)
-		e.Phases = phaseStrings(phases)
-		e.State = string(strongest(phases))
-	}
-	rec.Summary = summarize(rec.Events)
-}
-
 func phaseStrings(phases []kartav1alpha1.ResourceStatus) []string {
 	out := make([]string, len(phases))
 	for i, p := range phases {
