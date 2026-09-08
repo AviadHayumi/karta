@@ -4,11 +4,11 @@ events:
     apiVersion: batch/v1
     kind: CronJob
     metadata:
-      creationTimestamp: "2026-09-08T15:19:53Z"
+      creationTimestamp: "2026-09-08T15:22:00Z"
       generation: 1
-      name: karta-e2e-cronjob-running
-      namespace: test-vg5xp
-      uid: ec26460f-87a3-4d44-a49c-828e175d157b
+      name: karta-e2e-cronjob-born-suspended
+      namespace: test-mrsft
+      uid: b678ee95-d825-4a80-8e40-e44f3a2fe0aa
     spec:
       concurrencyPolicy: Allow
       failedJobsHistoryLimit: 1
@@ -20,9 +20,7 @@ events:
             spec:
               containers:
               - command:
-                - sh
-                - -c
-                - sleep 30
+                - "true"
                 image: busybox:1.36
                 imagePullPolicy: IfNotPresent
                 name: worker
@@ -37,23 +35,16 @@ events:
               schedulerName: default-scheduler
               securityContext: {}
               terminationGracePeriodSeconds: 30
-      schedule: '* * * * *'
+      schedule: 0 0 1 1 *
       successfulJobsHistoryLimit: 3
-      suspend: false
-    status:
-      active:
-      - apiVersion: batch/v1
-        kind: Job
-        name: karta-e2e-cronjob-running-29814680
-        namespace: test-vg5xp
-        resourceVersion: "1670"
-        uid: 83632c44-20f6-402d-8487-c5a5b0c90325
-      lastScheduleTime: "2026-09-08T15:20:00Z"
+      suspend: true
+    status: {}
   phases:
-  - Running
-  resourceVersion: "1671"
-  state: Running
-flow: running
+  - Initializing
+  - Suspended
+  resourceVersion: "2016"
+  state: Suspended
+flow: born-suspended
 kartaFile: docs/catalog/batch-cronjob-v1.yaml
 kartaName: batch-cronjob-v1
 operator: cronjob
@@ -63,6 +54,7 @@ schemaVersion: 1
 summary:
 - amount: 1
   phases:
-  - Running
+  - Initializing
+  - Suspended
 version: v1.34.0
-want: Running
+want: Suspended
