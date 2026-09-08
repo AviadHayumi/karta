@@ -20,6 +20,7 @@ var (
 	running      = kartav1alpha1.RunningStatus
 	completed    = kartav1alpha1.CompletedStatus
 	failed       = kartav1alpha1.FailedStatus
+	undefined    = kartav1alpha1.UndefinedStatus
 )
 
 var _ = Describe("builder guards", func() {
@@ -235,6 +236,16 @@ var _ = DescribeTable("validateObservedOrder",
 	Entry("undeclared dip fails", steps(initializing, running, completed),
 		visits(initializing, running, initializing, completed), false),
 	Entry("wrong terminal fails", steps(initializing, running, completed), visits(initializing, running), false),
+	Entry("undefined dip is tolerated", steps(initializing, running),
+		visits(initializing, running, undefined, running), true),
+	Entry("undefined between steps is tolerated", steps(initializing, running),
+		visits(initializing, undefined, running), true),
+	Entry("undefined before the first step is tolerated", steps(initializing, running),
+		visits(undefined, initializing, running), true),
+	Entry("dip into a real state stays rejected", steps(initializing, running),
+		visits(initializing, running, completed, running), false),
+	Entry("undefined terminal fails", steps(initializing, running),
+		visits(initializing, running, undefined), false),
 )
 
 var _ = Describe("hasObservedCurrentGeneration", func() {
