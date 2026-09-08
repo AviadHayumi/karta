@@ -107,8 +107,3 @@ func judge(cr *unstructured.Unstructured, states []namedState) []kartav1alpha1.R
 	}
 	return matched
 }
-
-// strongest is the furthest-along phase of a judged frame.
-func strongest(phases []kartav1alpha1.ResourceStatus) kartav1alpha1.ResourceStatus {
-	return phases[len(phases)-1]
-}

@@ -73,7 +73,7 @@ func New(cfg Config) *Recorder {
 	return &Recorder{config: cfg, timeout: timeout}
 }
 
-// AddState registers a state predicate; declare states least- to most-advanced (classify keeps the furthest match).
+// AddState registers a state predicate; declare states least- to most-advanced (the last match is the strongest).
 func (r *Recorder) AddState(name kartav1alpha1.ResourceStatus, match StateCheck) *Recorder {
 	if name == "" {
 		panic("recorder: AddState needs a non-empty state name")
@@ -184,7 +184,7 @@ func (f *Flow) observe(ctx context.Context, workload *unstructured.Unstructured)
 	// event at all: a suspended CronJob never schedules, so its controller never writes status, and a watch
 	// (which replays only events after the create) would wait for the timeout. Record the create response
 	// directly instead.
-	if hasObservedCurrentGeneration(workload) && o.hasReachedTerminal(strongest(judge(workload, f.rec.states))) {
+	if hasObservedCurrentGeneration(workload) && o.hasReachedTerminal(Strongest(judge(workload, f.rec.states))) {
 		o.record(ctx, workload)
 		return o
 	}

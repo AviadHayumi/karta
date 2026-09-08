@@ -36,13 +36,13 @@ func validateObservedOrder(journey []journeyStep, observed []kartav1alpha1.Resou
 		return fmt.Errorf("no states observed (journey %v)", journeyStates)
 	}
 
-	visits := collapseConsecutive(observed)
+	visits := visitsOf(observed)
 	if lastVisit := visits[len(visits)-1]; lastVisit != expectedTerminal {
 		return fmt.Errorf("last observed state is %q, expected terminal %q (journey %v, observed %v)",
 			lastVisit, expectedTerminal, journeyStates, visits)
 	}
-	visits = collapseConsecutive(slices.DeleteFunc(visits, func(s kartav1alpha1.ResourceStatus) bool {
-		return s == kartav1alpha1.UndefinedStatus
+	visits = visitsOf(slices.DeleteFunc(visits, func(state kartav1alpha1.ResourceStatus) bool {
+		return state == kartav1alpha1.UndefinedStatus
 	}))
 
 	// Match the journey against the visits, in order: every journey step either matches the next
@@ -69,13 +69,12 @@ func validateObservedOrder(journey []journeyStep, observed []kartav1alpha1.Resou
 	return nil
 }
 
-// collapseConsecutive folds dwelling in a state into one visit.
-func collapseConsecutive(states []kartav1alpha1.ResourceStatus) []kartav1alpha1.ResourceStatus {
-	out := make([]kartav1alpha1.ResourceStatus, 0, len(states))
-	for _, state := range states {
-		if len(out) == 0 || out[len(out)-1] != state {
-			out = append(out, state)
+func visitsOf(observed []kartav1alpha1.ResourceStatus) []kartav1alpha1.ResourceStatus {
+	visits := make([]kartav1alpha1.ResourceStatus, 0, len(observed))
+	for _, state := range observed {
+		if len(visits) == 0 || visits[len(visits)-1] != state {
+			visits = append(visits, state)
 		}
 	}
-	return out
+	return visits
 }
