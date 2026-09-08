@@ -12,18 +12,18 @@ as it installs, so a broken install fails provisioning rather than a later run.
 
 ```
 hack/e2e/
-  up.sh                      orchestrator: base + selected operators (install then verify)
-  down.sh                    tear the cluster down (and its kubeconfig for named clusters)
-  install-karta-operator.sh  standalone: installs Karta in the selected webhook route
-  global.env                 single source of truth for versions and runtime defaults
-  kind-config.yaml           kind cluster shape (1 control-plane + 2 workers)
+  up.sh                 orchestrator: base + selected operators (install then verify)
+  down.sh               tear the cluster down (and its kubeconfig for named clusters)
+  install.sh            standalone: installs Karta in the selected webhook route
+  global.env            single source of truth for versions and runtime defaults
+  kind-config.yaml      kind cluster shape (1 control-plane + 2 workers)
   operators/
-    _common.sh               shared helpers + GitHub Actions logging, sourced by every script
+    _common.sh          shared helpers + GitHub Actions logging, sourced by every script
     <name>/
-      install.sh             standalone: installs the operator (run as a subprocess)
-      verify.sh              standalone: smoke-tests it via run_smoke
-      smoke.yaml             the throwaway workload the smoke test applies
-      <config>.yaml          optional co-located config (e.g. grove/values.yaml)
+      install.sh        standalone: installs that workload operator (a subprocess)
+      verify.sh         standalone: smoke-tests it via run_smoke
+      smoke.yaml        the throwaway workload the smoke test applies
+      <config>.yaml     optional co-located config (e.g. grove/values.yaml)
 ```
 
 ## Usage
@@ -71,11 +71,12 @@ no-cert-manager claim below quietly stops holding.
 
 CI is unaffected. A fresh runner has no cluster to reuse.
 
-The install itself lives in `install-karta-operator.sh`. `up.sh` runs it last, as a
-standalone script, on the same exit-code contract as the workload operators. Karta is
-the system under test rather than cluster infrastructure, so it gets its own file.
-Run it directly against the current context to reinstall Karta without
-reprovisioning the cluster.
+The install itself lives in `hack/e2e/install.sh`, not to be confused with the
+per-operator `operators/<name>/install.sh`. `up.sh` runs it last, as a standalone
+script, on the same exit-code contract as the workload operators. Karta is the system
+under test rather than cluster infrastructure, so it gets its own file. Run it
+directly against the current context to reinstall Karta without reprovisioning the
+cluster.
 
 The chart deliberately ships no `Issuer` or `Certificate`. `provisionMode: manual`
 only mounts the Secret and stamps the injection annotation. Supplying the pair is the

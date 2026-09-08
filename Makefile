@@ -420,7 +420,7 @@ verify-recordings: ## Fail if any recorded fixture ended with succeeded false (r
 
 # The e2e shell scripts to shellcheck: the provisioner, teardown, the Karta install,
 # the shared helpers, and every per-operator install.sh/verify.sh.
-E2E_SHELL := hack/e2e/up.sh hack/e2e/down.sh hack/e2e/install-karta-operator.sh \
+E2E_SHELL := hack/e2e/up.sh hack/e2e/down.sh hack/e2e/install.sh \
 	hack/e2e/operators/_common.sh \
 	$(wildcard hack/e2e/operators/*/install.sh) \
 	$(wildcard hack/e2e/operators/*/verify.sh)

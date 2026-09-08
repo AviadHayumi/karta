@@ -28,9 +28,9 @@ if [ -z "${KUBECONFIG:-}" ] && [ "${CLUSTER_NAME}" != "${DEFAULT_CLUSTER}" ]; th
   mkdir -p "$(dirname "${KUBECONFIG}")"
   export KUBECONFIG
 fi
-# The per-operator install.sh/verify.sh and install-karta-operator.sh run as
-# subprocesses; export the context they need so they inherit it (version pins and
-# the KARTA_* defaults come from global.env via _common.sh).
+# The per-operator operators/<name>/install.sh and verify.sh, and this directory's
+# own install.sh, all run as subprocesses; export the context they need so they
+# inherit it (version pins and the KARTA_* defaults come from global.env).
 export CLUSTER_NAME IMAGE REPO_ROOT KARTA_WEBHOOK_MODE
 
 # Workload operators selectable on the command line, in canonical install order:
@@ -235,7 +235,7 @@ main() {
     done
   fi
 
-  # Validate the route here as well as in install-karta-operator.sh, so --list rejects a typo
+  # Validate the route here as well as in hack/e2e/install.sh, so --list rejects a typo
   # and a bad value costs nothing instead of failing after a full provision.
   case "${KARTA_WEBHOOK_MODE}" in
     auto | cert-manager | disabled) ;;
@@ -303,7 +303,7 @@ main() {
   # Karta is the system under test, not infrastructure, so its install is a standalone
   # script like the workload operators. Same contract: any non-zero exit fails the run.
   group "karta operator (webhook: ${KARTA_WEBHOOK_MODE})"
-  bash "${REPO_ROOT}/hack/e2e/install-karta-operator.sh" || { endgroup; fail "karta install failed"; exit 1; }
+  bash "${REPO_ROOT}/hack/e2e/install.sh" || { endgroup; fail "karta install failed"; exit 1; }
   endgroup
 
   echo "==> environment ready (cluster: ${CLUSTER_NAME}, webhook: ${KARTA_WEBHOOK_MODE})."
