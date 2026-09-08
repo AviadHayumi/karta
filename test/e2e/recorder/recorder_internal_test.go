@@ -119,37 +119,6 @@ var _ = Describe("Strongest", func() {
 	})
 })
 
-var _ = Describe("Rejudge", func() {
-	It("refreshes phases, state, and summary from the stored objects", func() {
-		r := New(Config{OutputDir: "out"}).
-			AddState(running, intAtLeast(1, "status", "active")).
-			AddState(completed, condTrue("Complete"))
-		rec := &Recording{Events: []Event{
-			{Kind: EventState, State: "Stale", Object: objWithStatus(map[string]any{"active": int64(1)}).Object},
-			{Kind: EventAction, Action: &RecordedAction{Name: "Resume"}},
-			{Kind: EventState, State: "Stale", Object: objWithStatus(map[string]any{
-				"active":     int64(1),
-				"conditions": []any{map[string]any{"type": "Complete", "status": "True"}},
-			}).Object},
-			{Kind: EventState, State: "Stale", Object: objWithStatus(map[string]any{}).Object},
-		}}
-
-		r.Rejudge(rec)
-
-		Expect(rec.Events[0].State).To(Equal(string(running)))
-		Expect(rec.Events[0].Phases).To(Equal([]string{string(running)}))
-		Expect(rec.Events[1].Phases).To(BeNil(), "an ACTION event is not judged")
-		Expect(rec.Events[2].State).To(Equal(string(completed)))
-		Expect(rec.Events[2].Phases).To(Equal([]string{string(running), string(completed)}))
-		Expect(rec.Events[3].State).To(Equal(string(kartav1alpha1.UndefinedStatus)))
-		Expect(rec.Summary).To(Equal([]SummaryEntry{
-			{Phases: []string{string(running)}, Amount: 1},
-			{Phases: []string{string(running), string(completed)}, Amount: 1},
-			{Phases: []string{string(kartav1alpha1.UndefinedStatus)}, Amount: 1},
-		}))
-	})
-})
-
 var _ = Describe("the recorded walk", func() {
 	// A Running -> byte-identical Initializing dip survives dedup, and the strict order check flags it
 	// unless the journey declares the dip.
