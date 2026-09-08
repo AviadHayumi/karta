@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 NVIDIA Corporation
 #
-# A CronJob scheduled every minute. Once it fires, its Job runs `true` and finishes,
-# so status.lastScheduleTime is set and status.active is empty. The Karta library
-# reads a fired, enabled CronJob as Running (lastScheduleTime != null). A distinct
-# name keeps it from colliding with the other CronJob flows.
+# A CronJob scheduled every minute. Once it fires, its Job sleeps for 30 seconds,
+# so status.lastScheduleTime is set and status.active holds the Job while the
+# recorder captures it. The Karta library reads a fired, enabled CronJob as
+# Running (lastScheduleTime != null). A distinct name keeps it from colliding
+# with the other CronJob flows.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
