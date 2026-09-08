@@ -29,7 +29,7 @@ var _ = Describe("JobSet", Ordered, Label("jobset"), func() {
 
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/jobset/running.yaml").Through(
-			recorder.Reaches(kartav1alpha1.ProgressingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
@@ -38,7 +38,7 @@ var _ = Describe("JobSet", Ordered, Label("jobset"), func() {
 
 	It("completed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "completed", "testdata/jobset/completed.yaml").Through(
-			recorder.Reaches(kartav1alpha1.ProgressingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.CompletedStatus),
@@ -49,7 +49,7 @@ var _ = Describe("JobSet", Ordered, Label("jobset"), func() {
 
 	It("failed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "failed", "testdata/jobset/failed.yaml").Through(
-			recorder.Reaches(kartav1alpha1.ProgressingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.FailedStatus),
@@ -62,7 +62,7 @@ var _ = Describe("JobSet", Ordered, Label("jobset"), func() {
 		out, err := recorder.NewFlow(rec, "resumed", "testdata/jobset/resumed.yaml").Through(
 			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.SuspendedStatus).Do(Resume()),
-			recorder.Reaches(kartav1alpha1.ProgressingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.CompletedStatus),

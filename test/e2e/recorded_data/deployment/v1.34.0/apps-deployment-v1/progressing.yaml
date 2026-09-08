@@ -1,0 +1,145 @@
+events:
+- kind: STATE
+  object:
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        deployment.kubernetes.io/revision: "1"
+      creationTimestamp: "2026-09-08T20:57:24Z"
+      generation: 1
+      name: karta-e2e-deploy-initializing
+      namespace: test-zzhrw
+      uid: 3e09d821-8fcb-4ae4-88cc-715e4114f282
+    spec:
+      progressDeadlineSeconds: 600
+      replicas: 1
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: karta-e2e-deploy-initializing
+      strategy:
+        rollingUpdate:
+          maxSurge: 25%
+          maxUnavailable: 25%
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app: karta-e2e-deploy-initializing
+        spec:
+          containers:
+          - command:
+            - sh
+            - -c
+            - sleep infinity
+            image: busybox:99.99.99
+            imagePullPolicy: IfNotPresent
+            name: worker
+            resources:
+              requests:
+                cpu: 20m
+                memory: 32Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+    status:
+      conditions:
+      - lastTransitionTime: "2026-09-08T20:57:24Z"
+        lastUpdateTime: "2026-09-08T20:57:24Z"
+        message: Created new replica set "karta-e2e-deploy-initializing-5f5996cdc5"
+        reason: NewReplicaSetCreated
+        status: "True"
+        type: Progressing
+  phases:
+  - Undefined
+  resourceVersion: "63721"
+  state: Undefined
+- kind: STATE
+  object:
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        deployment.kubernetes.io/revision: "1"
+      creationTimestamp: "2026-09-08T20:57:24Z"
+      generation: 1
+      name: karta-e2e-deploy-initializing
+      namespace: test-zzhrw
+      uid: 3e09d821-8fcb-4ae4-88cc-715e4114f282
+    spec:
+      progressDeadlineSeconds: 600
+      replicas: 1
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: karta-e2e-deploy-initializing
+      strategy:
+        rollingUpdate:
+          maxSurge: 25%
+          maxUnavailable: 25%
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app: karta-e2e-deploy-initializing
+        spec:
+          containers:
+          - command:
+            - sh
+            - -c
+            - sleep infinity
+            image: busybox:99.99.99
+            imagePullPolicy: IfNotPresent
+            name: worker
+            resources:
+              requests:
+                cpu: 20m
+                memory: 32Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+    status:
+      conditions:
+      - lastTransitionTime: "2026-09-08T20:57:24Z"
+        lastUpdateTime: "2026-09-08T20:57:24Z"
+        message: Created new replica set "karta-e2e-deploy-initializing-5f5996cdc5"
+        reason: NewReplicaSetCreated
+        status: "True"
+        type: Progressing
+      - lastTransitionTime: "2026-09-08T20:57:24Z"
+        lastUpdateTime: "2026-09-08T20:57:24Z"
+        message: Deployment does not have minimum availability.
+        reason: MinimumReplicasUnavailable
+        status: "False"
+        type: Available
+      observedGeneration: 1
+      unavailableReplicas: 1
+  phases:
+  - Progressing
+  resourceVersion: "63725"
+  state: Progressing
+flow: progressing
+kartaFile: docs/catalog/apps-deployment-v1.yaml
+kartaName: apps-deployment-v1
+operator: deployment
+result:
+  succeeded: true
+schemaVersion: 1
+summary:
+- amount: 1
+  phases:
+  - Undefined
+- amount: 1
+  phases:
+  - Progressing
+version: v1.34.0
+want: Progressing
