@@ -35,16 +35,16 @@ var _ = Describe("Deployment (built-in)", Ordered, Label("deployment", "builtin"
 		Expect(err).To(Succeed())
 	})
 
-	// Bad image, no progress deadline: Progressing stays True with Available False, read as Initializing.
-	It("initializing", func(ctx SpecContext) {
-		out, err := recorder.NewFlow(rec, "initializing", "testdata/deployment/initializing.yaml").
+	// Bad image, no progress deadline: Progressing stays True with Available False, read as Progressing.
+	It("progressing", func(ctx SpecContext) {
+		out, err := recorder.NewFlow(rec, "progressing", "testdata/deployment/progressing.yaml").
 			Through(recorder.Reaches(kartav1alpha1.ProgressingStatus)).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
 	})
 
 	// Pinned to a nonexistent node with a 10s progress deadline: Progressing=False/ProgressDeadlineExceeded,
-	// read as Failed. It passes through Initializing first.
+	// read as Failed. It passes through Progressing first.
 	It("failed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "failed", "testdata/deployment/failed.yaml").Through(
 			recorder.Reaches(kartav1alpha1.ProgressingStatus),

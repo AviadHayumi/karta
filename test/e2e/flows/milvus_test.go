@@ -23,7 +23,7 @@ var _ = Describe("Milvus", Ordered, Label("milvus"), func() {
 		rec = recorder.New(cfg).
 			SetTimeout(8*time.Minute).
 			AddState(kartav1alpha1.PendingStatus, PhaseEq("Pending", "status", "status")).
-			AddState(kartav1alpha1.RunningStatus, CondTrue("MilvusReady"))
+			AddState(kartav1alpha1.RunningStatus, PhaseEq("Healthy", "status", "status"))
 	})
 
 	It("running", func(ctx SpecContext) {

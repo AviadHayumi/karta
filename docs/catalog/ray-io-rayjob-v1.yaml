@@ -23,6 +23,10 @@ spec:
         statusMappings:
           pending:
             - byPhase: PENDING
+          progressing:
+            - byExpression:
+                expression: .status.jobDeploymentStatus == "Initializing"
+                expectedResult: "true"
           running:
             - byPhase: RUNNING
           completed:

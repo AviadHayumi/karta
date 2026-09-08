@@ -20,10 +20,6 @@ spec:
           messageFieldName: message
           reasonFieldName: reason
         statusMappings:
-          progressing:
-            - byConditions:
-                - type: Created
-                  status: "True"
           running:
             - byConditions:
                 - type: Running

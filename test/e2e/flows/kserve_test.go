@@ -23,7 +23,7 @@ var _ = Describe("KServe InferenceService", Ordered, Label("kserve"), func() {
 		rec = recorder.New(cfg).
 			SetTimeout(6*time.Minute).
 			AddState(kartav1alpha1.ProgressingStatus, CondStatus("Ready", "Unknown")).
-			AddState(kartav1alpha1.RunningStatus, CondTrue("Ready")).
+			AddState(kartav1alpha1.RunningStatus, AllOf(CondTrue("PredictorReady"), CondTrue("RoutesReady"), CondTrue("LatestDeploymentReady"))).
 			AddState(kartav1alpha1.FailedStatus, CondsFalse("PredictorReady", "PredictorConfigurationReady", "RoutesReady"))
 	})
 

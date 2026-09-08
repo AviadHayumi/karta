@@ -36,6 +36,10 @@ func Rayjob() *v1alpha1.Karta {
 							MessageFieldName: ptr.To("message"),
 						},
 						StatusMappings: v1alpha1.StatusMappings{
+							Progressing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
+								Expression:     `.status.jobDeploymentStatus == "Initializing"`,
+								ExpectedResult: "true",
+							}}},
 							Pending:   []v1alpha1.StatusMatcher{{ByPhase: "PENDING"}},
 							Running:   []v1alpha1.StatusMatcher{{ByPhase: "RUNNING"}},
 							Completed: []v1alpha1.StatusMatcher{{ByPhase: "SUCCEEDED"}},

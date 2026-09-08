@@ -35,8 +35,8 @@ var _ = Describe("Grove PodCliqueSet", Ordered, Label("grove"), func() {
 		Expect(err).To(Succeed())
 	})
 
-	It("initializing", func(ctx SpecContext) {
-		out, err := recorder.NewFlow(rec, "initializing", "testdata/grove/initializing.yaml").Through(recorder.Reaches(kartav1alpha1.ProgressingStatus)).Run(ctx)
+	It("progressing", func(ctx SpecContext) {
+		out, err := recorder.NewFlow(rec, "progressing", "testdata/grove/progressing.yaml").Through(recorder.Reaches(kartav1alpha1.ProgressingStatus)).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
 	})

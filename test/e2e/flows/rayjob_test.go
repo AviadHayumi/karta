@@ -22,6 +22,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 		fx = recorder.Fixture{Operator: "kuberay", Version: operatorVersion("kuberay"), KartaName: "ray-io-rayjob-v1", KartaFile: "docs/catalog/ray-io-rayjob-v1.yaml"}
 		rec = recorder.New(cfg).
 			SetTimeout(6*time.Minute).
+			AddState(kartav1alpha1.ProgressingStatus, PhaseEq("Initializing", "status", "jobDeploymentStatus")).
 			AddState(kartav1alpha1.PendingStatus, PhaseEq("PENDING", "status", "jobStatus")).
 			AddState(kartav1alpha1.RunningStatus, PhaseEq("RUNNING", "status", "jobStatus")).
 			AddState(kartav1alpha1.CompletedStatus, PhaseEq("SUCCEEDED", "status", "jobStatus")).
@@ -33,6 +34,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 	// Initializing and (for terminal flows) Running are Optional.
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/rayjob/running.yaml").Through(
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.PendingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
@@ -42,6 +44,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 
 	It("completed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "completed", "testdata/rayjob/completed.yaml").Through(
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.PendingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.CompletedStatus),
@@ -52,6 +55,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 
 	It("failed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "failed", "testdata/rayjob/failed.yaml").Through(
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.PendingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.FailedStatus),
@@ -62,6 +66,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 
 	It("suspended", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "suspended", "testdata/rayjob/suspended.yaml").Through(
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.PendingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.SuspendedStatus),
 		).Run(ctx)
@@ -71,8 +76,10 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 
 	It("resumed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "resumed", "testdata/rayjob/resumed.yaml").Through(
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.PendingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.SuspendedStatus).Do(Resume()),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.PendingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
