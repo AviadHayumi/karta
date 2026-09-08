@@ -42,7 +42,7 @@ type snapshot struct {
 	phases                  []kartav1alpha1.ResourceStatus
 	cr                      *unstructured.Unstructured
 	action                  *RecordedAction
-	staleObservedGeneration bool // the controller had not observed the spec yet; recorded, but never judged
+	staleObservedGeneration bool // the controller had not observed the spec yet; recorded, but outside the order-checked walk
 }
 
 // watchAndAct watches the workload until the flow finishes or fails, recording each CR it sees and acting
@@ -118,7 +118,7 @@ func (f *Flow) startWatch(ctx context.Context, workload *unstructured.Unstructur
 func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured) (stop bool) {
 	o.lastSeen = cr
 	phases := judge(cr, o.flow.rec.states)
-	state := strongest(phases)
+	state := Strongest(phases)
 	observed := hasObservedCurrentGeneration(cr)
 	o.keep(cr, phases, observed)
 	if !observed {
@@ -131,8 +131,8 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 	return o.hasReachedTerminal(state)
 }
 
-// keep appends cr as a new snapshot judged as phases (the last one is its state), unless it duplicates the
-// last kept one (same content once the volatile fields are stripped).
+// keep appends cr as a new snapshot, unless it duplicates the last kept one (same content once the volatile
+// fields are stripped).
 func (o *observation) keep(cr *unstructured.Unstructured, phases []kartav1alpha1.ResourceStatus, observed bool) {
 	sig := stripVolatileFields(cr)
 	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, sig) {
@@ -140,7 +140,7 @@ func (o *observation) keep(cr *unstructured.Unstructured, phases []kartav1alpha1
 	}
 	o.lastSig = sig
 	o.snapshots = append(o.snapshots, snapshot{
-		state:                   strongest(phases),
+		state:                   Strongest(phases),
 		phases:                  phases,
 		cr:                      cr.DeepCopy(),
 		staleObservedGeneration: !observed,

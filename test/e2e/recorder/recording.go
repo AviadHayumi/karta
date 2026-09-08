@@ -86,8 +86,6 @@ type Reader struct {
 	pos         int
 }
 
-// summarize run-length encodes the STATE events' phases in stream order: consecutive events matching the
-// same phases collapse into one entry counting the frames.
 func summarize(events []Event) []SummaryEntry {
 	var out []SummaryEntry
 	for _, e := range events {
@@ -105,9 +103,9 @@ func summarize(events []Event) []SummaryEntry {
 
 // Strongest returns the furthest-along phase of a frame: phases are stored least- to most-advanced, so the
 // strongest is the last one; a frame that matched nothing is Undefined.
-func Strongest(phases []string) string {
+func Strongest[P ~string](phases []P) P {
 	if len(phases) == 0 {
-		return string(kartav1alpha1.UndefinedStatus)
+		return P(kartav1alpha1.UndefinedStatus)
 	}
 	return phases[len(phases)-1]
 }
