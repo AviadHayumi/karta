@@ -39,10 +39,7 @@ type journeyStep struct {
 
 type ActionType string
 
-const (
-	ActionResume ActionType = "Resume"
-	ActionScale  ActionType = "Scale"
-)
+const ActionSuspend ActionType = "Suspend"
 
 // Action is a merge-patch applied to the workload to drive a transition.
 type Action struct {
