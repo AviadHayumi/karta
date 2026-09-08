@@ -22,14 +22,12 @@ var _ = Describe("RayCluster", Ordered, Label("kuberay", "raycluster"), func() {
 		fx = recorder.Fixture{Operator: "kuberay", Version: operatorVersion("kuberay"), KartaName: "ray-io-raycluster-v1", KartaFile: "docs/catalog/ray-io-raycluster-v1.yaml"}
 		rec = recorder.New(cfg).
 			SetTimeout(8*time.Minute).
-			AddState(kartav1alpha1.InitializingStatus, RayInitializing()).
 			AddState(kartav1alpha1.RunningStatus, PhaseEq("ready", "status", "state")).
 			AddState(kartav1alpha1.SuspendedStatus, RaySuspended())
 	})
 
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/raycluster/running.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
@@ -45,7 +43,6 @@ var _ = Describe("RayCluster", Ordered, Label("kuberay", "raycluster"), func() {
 	It("resumed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "resumed", "testdata/raycluster/resumed.yaml").Through(
 			recorder.Reaches(kartav1alpha1.SuspendedStatus).Do(Resume()),
-			recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())

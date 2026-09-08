@@ -71,35 +71,6 @@ func CondStatus(condType, status string) recorder.StateCheck {
 	}
 }
 
-// CondPending matches when condType is not yet decided: absent, or present with a status other than True
-// or False (typically Unknown while the workload reconciles). Separates "still deploying" from ready or
-// failed, including the early window before the condition is written at all.
-func CondPending(condType string) recorder.StateCheck {
-	return func(u *unstructured.Unstructured) bool {
-		conds, _, _ := unstructured.NestedSlice(u.Object, "status", "conditions")
-		for _, c := range conds {
-			if m, ok := c.(map[string]any); ok && m["type"] == condType {
-				return m["status"] != "True" && m["status"] != "False"
-			}
-		}
-		return true // absent = pending
-	}
-}
-
-// CondNotTrue matches when no condition of condType is present with status True (absent or non-True). A
-// just-created Deployment is Progressing with no Available condition yet, still initializing.
-func CondNotTrue(condType string) recorder.StateCheck {
-	return func(u *unstructured.Unstructured) bool {
-		conds, _, _ := unstructured.NestedSlice(u.Object, "status", "conditions")
-		for _, c := range conds {
-			if m, ok := c.(map[string]any); ok && m["type"] == condType && m["status"] == "True" {
-				return false
-			}
-		}
-		return true
-	}
-}
-
 // CondReason matches when the condition of the given type is True with the given reason. A Deployment is
 // Running only when Progressing is True with reason NewReplicaSetAvailable, so status alone is not enough.
 func CondReason(condType, reason string) recorder.StateCheck {
@@ -153,21 +124,6 @@ func PhaseAny(wants []string, path ...string) recorder.StateCheck {
 			}
 		}
 		return false
-	}
-}
-
-// PhaseNot matches when the string at the path (empty if absent) is none of unwanted. Useful for a
-// catch-all Initializing that tolerates every intermediate operator phase, keying only off the terminal
-// ones (for example any NIMService state that is not Ready or Failed).
-func PhaseNot(unwanted []string, path ...string) recorder.StateCheck {
-	return func(u *unstructured.Unstructured) bool {
-		got, _, _ := unstructured.NestedString(u.Object, path...)
-		for _, w := range unwanted {
-			if got == w {
-				return false
-			}
-		}
-		return true
 	}
 }
 
@@ -243,18 +199,20 @@ func ReplicasDegraded() recorder.StateCheck {
 	}
 }
 
-// ReplicasInitializing matches a StatefulSet still converging: spec.replicas > 0 and either nothing ready
-// (readyReplicas == 0), not all created (updatedReplicas != spec.replicas), or more ready than desired
-// (readyReplicas > spec.replicas, a scale-down still shedding pods).
-func ReplicasInitializing() recorder.StateCheck {
+// StatefulSetProgressing matches a StatefulSet rolling toward its spec: nothing ready yet, the controller
+// has not observed the spec, or the revisions have not converged.
+func StatefulSetProgressing() recorder.StateCheck {
 	return func(u *unstructured.Unstructured) bool {
 		desired, ok, _ := unstructured.NestedInt64(u.Object, "spec", "replicas")
 		if !ok {
 			desired = 1
 		}
 		ready, _, _ := unstructured.NestedInt64(u.Object, "status", "readyReplicas")
-		updated, _, _ := unstructured.NestedInt64(u.Object, "status", "updatedReplicas")
-		return desired > 0 && (ready == 0 || ready > desired || updated != desired)
+		observed, _, _ := unstructured.NestedInt64(u.Object, "status", "observedGeneration")
+		generation, _, _ := unstructured.NestedInt64(u.Object, "metadata", "generation")
+		current, _, _ := unstructured.NestedString(u.Object, "status", "currentRevision")
+		update, _, _ := unstructured.NestedString(u.Object, "status", "updateRevision")
+		return desired > 0 && (ready == 0 || observed != generation || current != update)
 	}
 }
 
@@ -324,31 +282,25 @@ func JobsetRunning() recorder.StateCheck {
 	}
 }
 
-// JobsetInitializing matches a JobSet in progress with no working pods: status exists, no replicatedJob
-// has active or ready pods, and no terminal or suspended condition is set. Covers a just-created JobSet
-// (all counts zero) and the window after a job succeeds but before the JobSet-level Completed condition is
-// set.
-func JobsetInitializing() recorder.StateCheck {
+// JobsetProgressing matches a JobSet whose jobs have active pods but none ready yet: the window between
+// the jobs starting and the first pod coming up.
+func JobsetProgressing() recorder.StateCheck {
 	return func(u *unstructured.Unstructured) bool {
 		rjs, _, _ := unstructured.NestedSlice(u.Object, "status", "replicatedJobsStatus")
-		if len(rjs) == 0 {
-			return false
-		}
-		if CondTrue("Completed", "Failed", "Suspended")(u) {
-			return false
-		}
+		anyActive := false
 		for _, r := range rjs {
 			m, ok := r.(map[string]any)
 			if !ok {
 				continue
 			}
-			ready, _, _ := unstructured.NestedInt64(m, "ready")
-			active, _, _ := unstructured.NestedInt64(m, "active")
-			if ready > 0 || active > 0 {
+			if ready, _, _ := unstructured.NestedInt64(m, "ready"); ready > 0 {
 				return false
 			}
+			if active, _, _ := unstructured.NestedInt64(m, "active"); active > 0 {
+				anyActive = true
+			}
 		}
-		return true
+		return anyActive
 	}
 }
 
@@ -361,34 +313,5 @@ func RaySuspended() recorder.StateCheck {
 		}
 		state, found, _ := unstructured.NestedString(u.Object, "status", "state")
 		return !found || state == "" || state == "suspended"
-	}
-}
-
-// RayJobInitializing matches a RayJob before its job runs: jobStatus PENDING, or empty while the RayJob
-// brings up its cluster and it is not suspended (jobDeploymentStatus Initializing/Running, or empty).
-func RayJobInitializing() recorder.StateCheck {
-	return func(u *unstructured.Unstructured) bool {
-		js, _, _ := unstructured.NestedString(u.Object, "status", "jobStatus")
-		if js == "PENDING" {
-			return true
-		}
-		if js != "" {
-			return false
-		}
-		ds, _, _ := unstructured.NestedString(u.Object, "status", "jobDeploymentStatus")
-		return ds != "Suspended" && ds != "Suspending"
-	}
-}
-
-// RayInitializing matches a RayCluster converging toward ready: not suspended and status.state not yet
-// "ready" or "failed". Covers a fresh provision (state empty) and the resume window where suspend is
-// already false but state still lags at "suspended".
-func RayInitializing() recorder.StateCheck {
-	return func(u *unstructured.Unstructured) bool {
-		if suspend, _, _ := unstructured.NestedBool(u.Object, "spec", "suspend"); suspend {
-			return false
-		}
-		state, _, _ := unstructured.NestedString(u.Object, "status", "state")
-		return state != "ready" && state != "failed"
 	}
 }

@@ -19,7 +19,7 @@ var _ = Describe("MPIJob", Ordered, Label("kubeflow", "mpijob"), func() {
 		installKarta(ctx, "../../docs/catalog/kubeflow-org-mpijob-v2beta1.yaml", "kubeflow-org-mpijob-v2beta1")
 		fx = recorder.Fixture{Operator: "kubeflow", Version: operatorVersion("kubeflow"), KartaName: "kubeflow-org-mpijob-v2beta1", KartaFile: "docs/catalog/kubeflow-org-mpijob-v2beta1.yaml"}
 		rec = recorder.New(cfg).
-			AddState(kartav1alpha1.InitializingStatus, CondTrue("Created")).
+			AddState(kartav1alpha1.ProgressingStatus, CondTrue("Created")).
 			AddState(kartav1alpha1.RunningStatus, CondTrue("Running")).
 			AddState(kartav1alpha1.CompletedStatus, CondTrue("Succeeded")).
 			AddState(kartav1alpha1.FailedStatus, CondTrue("Failed")).
@@ -28,7 +28,7 @@ var _ = Describe("MPIJob", Ordered, Label("kubeflow", "mpijob"), func() {
 
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/mpijob/running.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
@@ -39,9 +39,9 @@ var _ = Describe("MPIJob", Ordered, Label("kubeflow", "mpijob"), func() {
 	// CR reads Initializing again for a tick before the terminal.
 	It("completed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "completed", "testdata/mpijob/completed.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.CompletedStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
@@ -50,9 +50,9 @@ var _ = Describe("MPIJob", Ordered, Label("kubeflow", "mpijob"), func() {
 
 	It("failed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "failed", "testdata/mpijob/failed.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.FailedStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
@@ -69,7 +69,7 @@ var _ = Describe("MPIJob", Ordered, Label("kubeflow", "mpijob"), func() {
 	It("resumed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "resumed", "testdata/mpijob/resumed.yaml").Through(
 			recorder.Reaches(kartav1alpha1.SuspendedStatus).Do(ResumeRunPolicy()),
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())

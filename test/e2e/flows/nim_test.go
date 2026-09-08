@@ -25,21 +25,21 @@ var _ = Describe("NIMService", Ordered, Label("nim"), func() {
 		fx = recorder.Fixture{Operator: "nim", Version: operatorVersion("nim"), KartaName: "apps-nvidia-com-nimservice-v1alpha1", KartaFile: "docs/catalog/apps-nvidia-com-nimservice-v1alpha1.yaml"}
 		rec = recorder.New(cfg).
 			SetTimeout(5*time.Minute).
-			AddState(kartav1alpha1.InitializingStatus, PhaseNot([]string{"Ready", "Failed"}, "status", "state")).
+			AddState(kartav1alpha1.ProgressingStatus, PhaseAny([]string{"NotReady", "PVC-Created"}, "status", "state")).
 			AddState(kartav1alpha1.RunningStatus, PhaseEq("Ready", "status", "state"))
 	})
 
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/nim/running.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
 	})
 
-	It("initializing", func(ctx SpecContext) {
-		out, err := recorder.NewFlow(rec, "initializing", "testdata/nim/initializing.yaml").Through(recorder.Reaches(kartav1alpha1.InitializingStatus)).Run(ctx)
+	It("progressing", func(ctx SpecContext) {
+		out, err := recorder.NewFlow(rec, "progressing", "testdata/nim/progressing.yaml").Through(recorder.Reaches(kartav1alpha1.ProgressingStatus)).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
 	})

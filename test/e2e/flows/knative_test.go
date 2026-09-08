@@ -22,13 +22,13 @@ var _ = Describe("KnativeService", Ordered, Label("knative"), func() {
 		fx = recorder.Fixture{Operator: "knative", Version: operatorVersion("knative"), KartaName: "serving-knative-dev-service-v1", KartaFile: "docs/catalog/serving-knative-dev-service-v1.yaml"}
 		rec = recorder.New(cfg).
 			SetTimeout(5*time.Minute).
-			AddState(kartav1alpha1.InitializingStatus, CondStatus("Ready", "Unknown")).
+			AddState(kartav1alpha1.ProgressingStatus, CondStatus("Ready", "Unknown")).
 			AddState(kartav1alpha1.RunningStatus, CondTrue("Ready"))
 	})
 
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/knative/running.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())

@@ -22,14 +22,14 @@ var _ = Describe("KServe InferenceService", Ordered, Label("kserve"), func() {
 		fx = recorder.Fixture{Operator: "kserve", Version: operatorVersion("kserve"), KartaName: "serving-kserve-io-inferenceservice-v1beta1", KartaFile: "docs/catalog/serving-kserve-io-inferenceservice-v1beta1.yaml"}
 		rec = recorder.New(cfg).
 			SetTimeout(6*time.Minute).
-			AddState(kartav1alpha1.InitializingStatus, CondPending("Ready")).
+			AddState(kartav1alpha1.ProgressingStatus, CondStatus("Ready", "Unknown")).
 			AddState(kartav1alpha1.RunningStatus, CondTrue("Ready")).
 			AddState(kartav1alpha1.FailedStatus, CondsFalse("PredictorReady", "PredictorConfigurationReady", "RoutesReady"))
 	})
 
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/kserve/running.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
@@ -40,7 +40,7 @@ var _ = Describe("KServe InferenceService", Ordered, Label("kserve"), func() {
 	// RoutesReady all False -> Failed.
 	It("failed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "failed", "testdata/kserve/failed.yaml").Through(
-			recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
+			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.FailedStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())

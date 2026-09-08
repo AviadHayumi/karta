@@ -35,6 +35,7 @@ spec:
             - byPhase: Pending
           progressing:
             - byPhase: NotReady
+            - byPhase: PVC-Created
           running:
             - byPhase: Ready
           failed:
