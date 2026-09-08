@@ -36,16 +36,7 @@ func Rayjob() *v1alpha1.Karta {
 							MessageFieldName: ptr.To("message"),
 						},
 						StatusMappings: v1alpha1.StatusMappings{
-							// PENDING once the job is queued, plus the provisioning window before
-							// that: jobStatus empty while the RayJob brings up its cluster and it is
-							// not suspended (jobDeploymentStatus Initializing/Running, or empty).
-							Initializing: []v1alpha1.StatusMatcher{
-								{ByPhase: "PENDING"},
-								{ByExpression: &v1alpha1.ExpressionMatcher{
-									Expression:     `(.status.jobStatus // "") == "" and (.status.jobDeploymentStatus // "") != "Suspended" and (.status.jobDeploymentStatus // "") != "Suspending"`,
-									ExpectedResult: "true",
-								}},
-							},
+							Pending:   []v1alpha1.StatusMatcher{{ByPhase: "PENDING"}},
 							Running:   []v1alpha1.StatusMatcher{{ByPhase: "RUNNING"}},
 							Completed: []v1alpha1.StatusMatcher{{ByPhase: "SUCCEEDED"}},
 							Failed:    []v1alpha1.StatusMatcher{{ByPhase: "FAILED"}},

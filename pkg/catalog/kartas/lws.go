@@ -31,9 +31,9 @@ func LWS() *v1alpha1.Karta {
 						StatusMappings: v1alpha1.StatusMappings{
 							// Progressing while not yet available: Available False, or absent (a
 							// starting LeaderWorkerSet is Progressing before it writes Available).
-							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `(([.status.conditions[]? | select(.type == "Progressing" and .status == "True")] | length) > 0) and (([.status.conditions[]? | select(.type == "Available" and .status == "True")] | length) == 0)`,
-								ExpectedResult: "true",
+							Progressing: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{
+								{Type: "Progressing", Status: ptr.To("True")},
+								{Type: "Available", Status: ptr.To("False")},
 							}}},
 							// Available is the authoritative "all groups ready" signal and stays
 							// True while scaling down sheds an extra pod, so key on it alone rather

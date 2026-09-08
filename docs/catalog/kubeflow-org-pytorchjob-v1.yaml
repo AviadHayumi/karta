@@ -19,7 +19,7 @@ spec:
           statusFieldName: status
           messageFieldName: message
         statusMappings:
-          initializing:
+          progressing:
             - byConditions:
                 - type: Created
                   status: "True"

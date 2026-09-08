@@ -20,11 +20,8 @@ spec:
           typeFieldName: type
           statusFieldName: status
         statusMappings:
-          initializing:
+          pending:
             - byPhase: Pending
-            - byExpression:
-                expression: (.status.status // "") == ""
-                expectedResult: "true"
           running:
             - byPhase: Healthy
           degraded:

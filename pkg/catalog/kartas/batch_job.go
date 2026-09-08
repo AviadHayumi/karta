@@ -35,7 +35,7 @@ func BatchJob() *v1alpha1.Karta {
 							ReasonFieldName:  ptr.To("reason"),
 						},
 						StatusMappings: v1alpha1.StatusMappings{
-							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
+							Progressing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
 								Expression:     "(.status.active // 0) > 0 and (.status.ready // 0) == 0",
 								ExpectedResult: "true",
 							}}},

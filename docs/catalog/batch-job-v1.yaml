@@ -24,7 +24,7 @@ spec:
           messageFieldName: message
           reasonFieldName: reason
         statusMappings:
-          initializing:
+          progressing:
             - byExpression:
                 expression: (.status.active // 0) > 0 and (.status.ready // 0) == 0
                 expectedResult: "true"

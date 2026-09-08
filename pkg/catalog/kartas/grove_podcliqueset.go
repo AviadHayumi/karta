@@ -42,7 +42,7 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 								Expression:     "(.status.availableReplicas // 0) >= (.spec.replicas // 0)",
 								ExpectedResult: "true",
 							}}},
-							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
+							Progressing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
 								Expression:     "(.spec.replicas // 0) > 0 and (.status.availableReplicas // 0) < (.spec.replicas // 0)",
 								ExpectedResult: "true",
 							}}},

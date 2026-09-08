@@ -34,12 +34,10 @@ func Jobset() *v1alpha1.Karta {
 							ReasonFieldName:  ptr.To("reason"),
 						},
 						StatusMappings: v1alpha1.StatusMappings{
-							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								// In progress with no working pods: status exists, no replicatedJob has
-								// active or ready pods, and no terminal or suspended condition is set.
-								// Covers a just-created JobSet (all counts zero) and the window after a
-								// job succeeds but before the JobSet-level Completed condition is set.
-								Expression:     "((.status.replicatedJobsStatus // []) | length) > 0 and ((.status.replicatedJobsStatus // []) | all((.active // 0) == 0 and (.ready // 0) == 0)) and (([.status.conditions[]? | select((.type == \"Completed\" or .type == \"Failed\" or .type == \"Suspended\") and .status == \"True\")] | length) == 0)",
+							Progressing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
+								// Pods created, none ready yet: the window between the jobs starting and
+								// the first pod coming up.
+								Expression:     "(.status.replicatedJobsStatus // []) | any((.active // 0) > 0) and all((.ready // 0) == 0)",
 								ExpectedResult: "true",
 							}}},
 							Running: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
