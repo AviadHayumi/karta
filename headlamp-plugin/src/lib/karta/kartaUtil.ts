@@ -22,11 +22,6 @@ export async function buildTree(definition: Karta, workload: Workload): Promise<
   });
 }
 
-export async function evaluatePhases(definition: Karta, workload: Workload): Promise<string[]> {
-  const karta = await getKartaWasm();
-  return unwrap(karta.evaluatePhases(JSON.stringify(definition), JSON.stringify(workload)), []);
-}
-
 export async function listCatalog(): Promise<Karta[]> {
   const karta = await getKartaWasm();
   return unwrap(karta.listCatalog(), []);

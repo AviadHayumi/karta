@@ -7,46 +7,23 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"syscall/js"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 )
 
-func decodeDefinition(definitionJSON string) (*v1alpha1.Karta, error) {
-	var karta v1alpha1.Karta
-	if err := json.Unmarshal([]byte(definitionJSON), &karta); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal definition: %w", err)
-	}
-	return &karta, nil
-}
-
-func decodeWorkload(workloadJSON string) (*unstructured.Unstructured, error) {
-	var workload map[string]interface{}
-	if err := json.Unmarshal([]byte(workloadJSON), &workload); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal workload: %w", err)
-	}
-	return &unstructured.Unstructured{Object: workload}, nil
-}
-
-// encodeEnvelope marshals v (on success) or err (on failure) into the
-// {data: string|null, error: string|null} JSON envelope every binding returns,
-// so the TS side has one shared contract to unwrap regardless of the call.
-func encodeEnvelope(v any, err error) js.Value {
+// A uniform result envelope gives every TypeScript caller the same unwrap path.
+func encodeEnvelope(result any, resultErr error) js.Value {
 	envelope := map[string]any{"data": nil, "error": nil}
-	if err != nil {
-		envelope["error"] = err.Error()
+	if resultErr != nil {
+		envelope["error"] = resultErr.Error()
 		return js.ValueOf(envelope)
 	}
 
-	data, marshalErr := json.Marshal(v)
+	encodedResult, marshalErr := json.Marshal(result)
 	if marshalErr != nil {
 		envelope["error"] = marshalErr.Error()
 		return js.ValueOf(envelope)
 	}
 
-	envelope["data"] = string(data)
+	envelope["data"] = string(encodedResult)
 	return js.ValueOf(envelope)
 }

@@ -9,50 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
-
-	"github.com/run-ai/karta/test/types"
 )
-
-func marshal(t *testing.T, v any) string {
-	t.Helper()
-	data, err := json.Marshal(v)
-	if err != nil {
-		t.Fatalf("failed to marshal %T: %v", v, err)
-	}
-	return string(data)
-}
-
-func TestDecodeDefinition(t *testing.T) {
-	definition, err := decodeDefinition(marshal(t, types.ReactorKarta()))
-	if err != nil {
-		t.Fatalf("decodeDefinition() error = %v", err)
-	}
-	if definition.Name != "reactor" {
-		t.Errorf("expected definition name = %q, got %q", "reactor", definition.Name)
-	}
-}
-
-func TestDecodeDefinition_InvalidJSON(t *testing.T) {
-	if _, err := decodeDefinition("not json"); err == nil {
-		t.Fatal("expected an error for malformed definition JSON")
-	}
-}
-
-func TestDecodeWorkload(t *testing.T) {
-	workload, err := decodeWorkload(marshal(t, types.NewReactorObject()))
-	if err != nil {
-		t.Fatalf("decodeWorkload() error = %v", err)
-	}
-	if workload.GetKind() == "" {
-		t.Error("expected the decoded workload to carry a kind")
-	}
-}
-
-func TestDecodeWorkload_InvalidJSON(t *testing.T) {
-	if _, err := decodeWorkload("not json"); err == nil {
-		t.Fatal("expected an error for malformed workload JSON")
-	}
-}
 
 func TestEncodeEnvelope_Success(t *testing.T) {
 	env := encodeEnvelope(map[string]string{"hello": "world"}, nil)

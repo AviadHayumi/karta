@@ -52,9 +52,13 @@ generate-mocks: ## Generate mocks using go generate
 	go generate ./pkg/...
 
 .PHONY: test
-test: generate-mocks ## Run tests with mock generation
+test: generate-mocks karta-wasm-test ## Run tests with mock generation
 	go test ./...
 	go -C test/e2e test ./recorder/...
+
+.PHONY: karta-wasm-test
+karta-wasm-test: ## Run tests for the Karta WASM module
+	go -C karta-wasm test ./...
 
 .PHONY: test-replay
 test-replay: ## Replay the recorded fixtures through Karta offline (no cluster)
