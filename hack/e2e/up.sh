@@ -28,9 +28,8 @@ if [ -z "${KUBECONFIG:-}" ] && [ "${CLUSTER_NAME}" != "${DEFAULT_CLUSTER}" ]; th
   mkdir -p "$(dirname "${KUBECONFIG}")"
   export KUBECONFIG
 fi
-# The per-operator operators/<name>/install.sh and verify.sh, and this directory's
-# own install.sh, all run as subprocesses; export the context they need so they
-# inherit it (version pins and the KARTA_* defaults come from global.env).
+# operators/<name>/install.sh and verify.sh, and this directory's own install.sh, all
+# run as subprocesses; export what they need (version pins come from global.env).
 export CLUSTER_NAME IMAGE REPO_ROOT KARTA_WEBHOOK_MODE
 
 # Workload operators selectable on the command line, in canonical install order:
@@ -235,8 +234,7 @@ main() {
     done
   fi
 
-  # Validate the route here as well as in hack/e2e/install.sh, so --list rejects a typo
-  # and a bad value costs nothing instead of failing after a full provision.
+  # Validated here as well as in install.sh, so --list rejects a typo for free.
   case "${KARTA_WEBHOOK_MODE}" in
     auto | cert-manager | disabled) ;;
     *)
@@ -245,14 +243,11 @@ main() {
       ;;
   esac
 
-  # Decide cert-manager from the plan rather than making the caller get it right.
-  # A silent skip would surface much later as an unrelated webhook timeout, so an
-  # explicit CERT_MANAGER=false that contradicts the plan fails here instead.
+  # Derived from the plan rather than left to the caller: a silent skip would surface
+  # much later as an unrelated webhook timeout, so a contradictory false fails here.
   local cert_manager_needed_by=""
   [ "${KARTA_WEBHOOK_MODE}" = "cert-manager" ] && cert_manager_needed_by="KARTA_WEBHOOK_MODE=cert-manager"
-  # kserve is the only operator that needs it: its bundled kserve.yaml ships cert-manager
-  # Certificates, which is why operators/kserve/install.sh has to --force-conflicts over
-  # cainjector's caBundle. Add to the test here if another operator turns out to need it.
+  # kserve alone, because its bundled manifest ships cert-manager Certificates.
   for w in ${plan[@]+"${plan[@]}"}; do
     if [ "$w" = "kserve" ]; then
       cert_manager_needed_by="${cert_manager_needed_by:+${cert_manager_needed_by}, }operator ${w}"
@@ -300,8 +295,7 @@ main() {
     summary "|---|---|---|---|---|"
     for w in "${plan[@]}"; do run_operator "$w"; done
   fi
-  # Karta is the system under test, not infrastructure, so its install is a standalone
-  # script like the workload operators. Same contract: any non-zero exit fails the run.
+  # Standalone script like the workload operators, same exit-code contract.
   group "karta operator (webhook: ${KARTA_WEBHOOK_MODE})"
   bash "${REPO_ROOT}/hack/e2e/install.sh" || { endgroup; fail "karta install failed"; exit 1; }
   endgroup

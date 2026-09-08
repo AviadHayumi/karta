@@ -382,9 +382,7 @@ test-replay: ## Replay the recorded fixtures through Karta offline (no cluster)
 	cd test/e2e && go build ./...
 	cd test/e2e && go test ./replay_tests/...
 
-# Which webhook and serving-cert arrangement Karta is installed with, and whether
-# cert-manager is installed at all. Defaults match hack/e2e/global.env; see it for
-# the accepted values. The controller e2e runs one cluster per webhook mode.
+# Defaults and accepted values live in hack/e2e/global.env.
 KARTA_WEBHOOK_MODE ?= auto
 CERT_MANAGER ?= auto
 
@@ -392,9 +390,8 @@ CERT_MANAGER ?= auto
 #   make e2e-up                          # everything
 #   make e2e-up WORKLOADS="jobset lws"   # a subset - one provision, deps resolved once
 #   make e2e-up WORKLOADS=none           # base only, no workload operators
-#   make e2e-up WORKLOADS=none KARTA_WEBHOOK_MODE=disabled
 .PHONY: e2e-up
-e2e-up: ## Provision a kind cluster + operators (WORKLOADS="jobset kuberay" for a subset, "all", or "none" for base only; KARTA_WEBHOOK_MODE=auto|cert-manager|disabled; CLUSTER_NAME=<name> for an isolated parallel cluster)
+e2e-up: ## Provision a kind cluster + operators (WORKLOADS=<list>|all|none; KARTA_WEBHOOK_MODE=auto|cert-manager|disabled; CLUSTER_NAME for a parallel cluster)
 	CLUSTER_NAME=$(CLUSTER_NAME) \
 	KARTA_WEBHOOK_MODE=$(KARTA_WEBHOOK_MODE) \
 	CERT_MANAGER=$(CERT_MANAGER) \
