@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"syscall/js"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
@@ -30,14 +29,6 @@ func decodeWorkload(workloadJSON string) (*unstructured.Unstructured, error) {
 		return nil, fmt.Errorf("failed to unmarshal workload: %w", err)
 	}
 	return &unstructured.Unstructured{Object: workload}, nil
-}
-
-func decodePods(podsJSON string) ([]corev1.Pod, error) {
-	var pods []corev1.Pod
-	if err := json.Unmarshal([]byte(podsJSON), &pods); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal pods: %w", err)
-	}
-	return pods, nil
 }
 
 // encodeEnvelope marshals v (on success) or err (on failure) into the

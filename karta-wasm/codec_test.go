@@ -10,9 +10,6 @@ import (
 	"errors"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/run-ai/karta/test/types"
 )
 
@@ -54,24 +51,6 @@ func TestDecodeWorkload(t *testing.T) {
 func TestDecodeWorkload_InvalidJSON(t *testing.T) {
 	if _, err := decodeWorkload("not json"); err == nil {
 		t.Fatal("expected an error for malformed workload JSON")
-	}
-}
-
-func TestDecodePods(t *testing.T) {
-	pods, err := decodePods(marshal(t, []corev1.Pod{
-		{ObjectMeta: metav1.ObjectMeta{Name: "worker-0"}},
-	}))
-	if err != nil {
-		t.Fatalf("decodePods() error = %v", err)
-	}
-	if len(pods) != 1 || pods[0].Name != "worker-0" {
-		t.Errorf("expected a single pod named %q, got %#v", "worker-0", pods)
-	}
-}
-
-func TestDecodePods_InvalidJSON(t *testing.T) {
-	if _, err := decodePods("not json"); err == nil {
-		t.Fatal("expected an error for malformed pods JSON")
 	}
 }
 

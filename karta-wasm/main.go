@@ -19,7 +19,6 @@ func main() {
 func registerBindings() {
 	karta := js.Global().Get("Object").New()
 	karta.Set("buildTree", js.FuncOf(jsBuildTree))
-	karta.Set("inferPodComponents", js.FuncOf(jsInferPodComponents))
 	karta.Set("evaluatePhases", js.FuncOf(jsEvaluatePhases))
 	karta.Set("listCatalog", js.FuncOf(jsListCatalog))
 	js.Global().Set("karta", karta)

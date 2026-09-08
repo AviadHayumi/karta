@@ -21,12 +21,6 @@ export interface Workload {
   [field: string]: unknown;
 }
 
-export interface Pod {
-  metadata: { name: string; namespace?: string; labels?: Record<string, string> };
-  status?: { conditions?: { type: string; status: string }[] };
-  [field: string]: unknown;
-}
-
 export interface GroupVersionKind {
   group: string;
   version: string;
@@ -61,12 +55,4 @@ export interface InstanceNode {
 export interface WorkloadTree {
   Status: WorkloadStatus | null;
   Children: ComponentNode[];
-}
-
-export interface PodComponentMatch {
-  /** The pod's place in the pods array passed in. Unmatched pods are left out, so the two do not line up. */
-  podIndex: number;
-  componentName: string;
-  /** Absent when the component is not split into instances. */
-  instanceKey?: string;
 }

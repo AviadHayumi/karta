@@ -14,8 +14,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 const { getKartaWasm } = vi.hoisted(() => ({ getKartaWasm: vi.fn() }));
 vi.mock('./karta', () => ({ getKartaWasm }));
 
-import type { Karta, Pod, Workload } from './karta.types';
-import { buildTree, evaluatePhases, inferPodComponents, listCatalog } from './kartaUtil';
+import type { Karta, Workload } from './karta.types';
+import { buildTree, evaluatePhases, listCatalog } from './kartaUtil';
 
 const KARTA_WASM_DIR = path.resolve(__dirname, '../../../../karta-wasm');
 const WASM_PATH = path.join(KARTA_WASM_DIR, 'karta.wasm');
@@ -98,16 +98,6 @@ describe('against the built-in Pod definition', () => {
       await expect(evaluatePhases(podDefinition, podFixture('Failed'))).resolves.toEqual([
         'Failed',
       ]);
-    });
-  });
-
-  describe('inferPodComponents', () => {
-    it('matches the single pod to the single "pod" component', async () => {
-      const pod = podFixture('Running') as unknown as Pod;
-
-      await expect(
-        inferPodComponents(podDefinition, pod as unknown as Workload, [pod]),
-      ).resolves.toEqual([{ podIndex: 0, componentName: 'pod' }]);
     });
   });
 });
