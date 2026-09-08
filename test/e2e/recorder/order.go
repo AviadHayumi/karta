@@ -69,7 +69,7 @@ func validateObservedOrder(journey []journeyStep, observed []kartav1alpha1.Resou
 	return nil
 }
 
-// collapseConsecutive folds runs of the same state into one visit: dwelling in a state is one visit.
+// collapseConsecutive folds dwelling in a state into one visit.
 func collapseConsecutive(states []kartav1alpha1.ResourceStatus) []kartav1alpha1.ResourceStatus {
 	out := make([]kartav1alpha1.ResourceStatus, 0, len(states))
 	for _, state := range states {

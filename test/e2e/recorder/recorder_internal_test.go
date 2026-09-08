@@ -65,40 +65,24 @@ var _ = Describe("Save", func() {
 	})
 })
 
-var _ = Describe("classify", func() {
-	It("keeps the furthest-along state the workload matches", func() {
-		states := []namedState{
-			{Name: running, Match: intAtLeast(1, "status", "active")},
-			{Name: completed, Match: condTrue("Complete")},
-		}
-		Expect(classify(objWithStatus(map[string]any{"active": int64(1)}), states)).To(Equal(running))
-		both := objWithStatus(map[string]any{
-			"active":     int64(1),
-			"conditions": []any{map[string]any{"type": "Complete", "status": "True"}},
-		})
-		Expect(classify(both, states)).To(Equal(completed))
-		Expect(classify(objWithStatus(map[string]any{}), states)).To(BeEmpty())
-	})
-})
-
 var _ = Describe("judge", func() {
 	states := []namedState{
 		{Name: running, Match: intAtLeast(1, "status", "active")},
 		{Name: completed, Match: condTrue("Complete")},
 	}
 
-	It("keeps every matched state, least- to most-advanced", func() {
+	It("keeps every matched state, least- to most-advanced, with the strongest last", func() {
 		both := objWithStatus(map[string]any{
 			"active":     int64(1),
 			"conditions": []any{map[string]any{"type": "Complete", "status": "True"}},
 		})
 		Expect(judge(both, states)).To(Equal(visits(running, completed)))
+		Expect(strongest(judge(both, states))).To(Equal(completed))
 		Expect(judge(objWithStatus(map[string]any{"active": int64(1)}), states)).To(Equal(visits(running)))
 	})
 
 	It("judges a frame matching nothing as Undefined", func() {
-		Expect(judge(objWithStatus(map[string]any{}), states)).
-			To(Equal(visits(kartav1alpha1.UndefinedStatus)))
+		Expect(judge(objWithStatus(map[string]any{}), states)).To(Equal(visits(undefined)))
 	})
 })
 
