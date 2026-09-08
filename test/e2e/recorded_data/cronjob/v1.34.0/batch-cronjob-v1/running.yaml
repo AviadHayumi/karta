@@ -49,6 +49,8 @@ events:
         resourceVersion: "2325312"
         uid: 87a79273-2d2c-438e-affd-55c29f0d2839
       lastScheduleTime: "2026-08-25T11:51:00Z"
+  phases:
+  - Running
   resourceVersion: "2325314"
   state: Running
 flow: running
@@ -58,5 +60,9 @@ operator: cronjob
 result:
   succeeded: true
 schemaVersion: 1
+summary:
+- amount: 1
+  phases:
+  - Running
 version: v1.34.0
 want: Running

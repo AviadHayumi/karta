@@ -80,6 +80,91 @@ var _ = Describe("classify", func() {
 	})
 })
 
+var _ = Describe("judge", func() {
+	states := []namedState{
+		{Name: running, Match: intAtLeast(1, "status", "active")},
+		{Name: completed, Match: condTrue("Complete")},
+	}
+
+	It("keeps every matched state, least- to most-advanced", func() {
+		both := objWithStatus(map[string]any{
+			"active":     int64(1),
+			"conditions": []any{map[string]any{"type": "Complete", "status": "True"}},
+		})
+		Expect(judge(both, states)).To(Equal(visits(running, completed)))
+		Expect(judge(objWithStatus(map[string]any{"active": int64(1)}), states)).To(Equal(visits(running)))
+	})
+
+	It("judges a frame matching nothing as Undefined", func() {
+		Expect(judge(objWithStatus(map[string]any{}), states)).
+			To(Equal(visits(kartav1alpha1.UndefinedStatus)))
+	})
+})
+
+var _ = Describe("the recording summary", func() {
+	It("run-length encodes the walk, keeping the order and skipping ACTION events", func() {
+		frames := func(phases ...string) Event { return Event{Kind: EventState, Phases: phases} }
+		events := []Event{
+			frames("Initializing"),
+			frames("Initializing"),
+			frames("Initializing", "Running"),
+			{Kind: EventAction, Action: &RecordedAction{Name: "Resume"}},
+			frames("Initializing", "Running"),
+			frames("Initializing"),
+			frames("Completed"),
+		}
+
+		Expect(summarize(events)).To(Equal([]SummaryEntry{
+			{Phases: []string{"Initializing"}, Amount: 2},
+			{Phases: []string{"Initializing", "Running"}, Amount: 2},
+			{Phases: []string{"Initializing"}, Amount: 1},
+			{Phases: []string{"Completed"}, Amount: 1},
+		}))
+	})
+
+	It("summarizes an empty stream to nothing", func() {
+		Expect(summarize(nil)).To(BeEmpty())
+	})
+})
+
+var _ = Describe("Strongest", func() {
+	It("is the last phase, Undefined when the frame matched nothing", func() {
+		Expect(Strongest([]string{"Initializing", "Running"})).To(Equal("Running"))
+		Expect(Strongest(nil)).To(Equal(string(kartav1alpha1.UndefinedStatus)))
+	})
+})
+
+var _ = Describe("Rejudge", func() {
+	It("refreshes phases, state, and summary from the stored objects", func() {
+		r := New(Config{OutputDir: "out"}).
+			AddState(running, intAtLeast(1, "status", "active")).
+			AddState(completed, condTrue("Complete"))
+		rec := &Recording{Events: []Event{
+			{Kind: EventState, State: "Stale", Object: objWithStatus(map[string]any{"active": int64(1)}).Object},
+			{Kind: EventAction, Action: &RecordedAction{Name: "Resume"}},
+			{Kind: EventState, State: "Stale", Object: objWithStatus(map[string]any{
+				"active":     int64(1),
+				"conditions": []any{map[string]any{"type": "Complete", "status": "True"}},
+			}).Object},
+			{Kind: EventState, State: "Stale", Object: objWithStatus(map[string]any{}).Object},
+		}}
+
+		r.Rejudge(rec)
+
+		Expect(rec.Events[0].State).To(Equal(string(running)))
+		Expect(rec.Events[0].Phases).To(Equal([]string{string(running)}))
+		Expect(rec.Events[1].Phases).To(BeNil(), "an ACTION event is not judged")
+		Expect(rec.Events[2].State).To(Equal(string(completed)))
+		Expect(rec.Events[2].Phases).To(Equal([]string{string(running), string(completed)}))
+		Expect(rec.Events[3].State).To(Equal(string(kartav1alpha1.UndefinedStatus)))
+		Expect(rec.Summary).To(Equal([]SummaryEntry{
+			{Phases: []string{string(running)}, Amount: 1},
+			{Phases: []string{string(running), string(completed)}, Amount: 1},
+			{Phases: []string{string(kartav1alpha1.UndefinedStatus)}, Amount: 1},
+		}))
+	})
+})
+
 var _ = Describe("the recorded walk", func() {
 	// A Running -> byte-identical Initializing dip survives dedup, and the strict order check flags it
 	// unless the journey declares the dip.
@@ -101,7 +186,7 @@ var _ = Describe("the recorded walk", func() {
 
 		o := &observation{}
 		for _, cr := range seq {
-			o.keep(cr, classify(cr, states), true)
+			o.keep(cr, judge(cr, states), true)
 		}
 
 		Expect(o.states()).To(Equal([]kartav1alpha1.ResourceStatus{initializing, running, initializing, completed}))
@@ -115,8 +200,8 @@ var _ = Describe("the recorded walk", func() {
 	// order-checked walk.
 	It("keeps a stale frame out of the judged walk", func() {
 		o := &observation{}
-		o.keep(objWithStatus(map[string]any{"active": int64(1)}), initializing, true)
-		o.keep(objWithStatus(map[string]any{"active": int64(2)}), initializing, false)
+		o.keep(objWithStatus(map[string]any{"active": int64(1)}), visits(initializing), true)
+		o.keep(objWithStatus(map[string]any{"active": int64(2)}), visits(initializing), false)
 
 		Expect(o.snapshots).To(HaveLen(2))
 		Expect(o.snapshots[1].staleObservedGeneration).To(BeTrue())

@@ -39,6 +39,9 @@ events:
       successfulJobsHistoryLimit: 3
       suspend: true
     status: {}
+  phases:
+  - Initializing
+  - Suspended
   resourceVersion: "2325316"
   state: Suspended
 flow: suspended
@@ -48,5 +51,10 @@ operator: cronjob
 result:
   succeeded: true
 schemaVersion: 1
+summary:
+- amount: 1
+  phases:
+  - Initializing
+  - Suspended
 version: v1.34.0
 want: Suspended
