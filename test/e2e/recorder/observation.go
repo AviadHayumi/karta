@@ -118,7 +118,7 @@ func (f *Flow) startWatch(ctx context.Context, workload *unstructured.Unstructur
 func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured) (stop bool) {
 	o.lastSeen = cr
 	phases := judge(cr, o.flow.rec.states)
-	state := phases[len(phases)-1]
+	state := strongest(phases)
 	observed := hasObservedCurrentGeneration(cr)
 	o.keep(cr, phases, observed)
 	if !observed {
@@ -140,7 +140,7 @@ func (o *observation) keep(cr *unstructured.Unstructured, phases []kartav1alpha1
 	}
 	o.lastSig = sig
 	o.snapshots = append(o.snapshots, snapshot{
-		state:                   phases[len(phases)-1],
+		state:                   strongest(phases),
 		phases:                  phases,
 		cr:                      cr.DeepCopy(),
 		staleObservedGeneration: !observed,

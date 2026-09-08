@@ -184,7 +184,7 @@ func (f *Flow) observe(ctx context.Context, workload *unstructured.Unstructured)
 	// event at all: a suspended CronJob never schedules, so its controller never writes status, and a watch
 	// (which replays only events after the create) would wait for the timeout. Record the create response
 	// directly instead.
-	if hasObservedCurrentGeneration(workload) && o.hasReachedTerminal(classify(workload, f.rec.states)) {
+	if hasObservedCurrentGeneration(workload) && o.hasReachedTerminal(strongest(judge(workload, f.rec.states))) {
 		o.record(ctx, workload)
 		return o
 	}
@@ -228,7 +228,7 @@ func (r *Recorder) Rejudge(rec *Recording) {
 		}
 		phases := judge(&unstructured.Unstructured{Object: e.Object}, r.states)
 		e.Phases = phaseStrings(phases)
-		e.State = string(phases[len(phases)-1])
+		e.State = string(strongest(phases))
 	}
 	rec.Summary = summarize(rec.Events)
 }

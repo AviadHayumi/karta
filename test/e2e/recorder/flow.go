@@ -91,33 +91,23 @@ func (f *Flow) terminalState() kartav1alpha1.ResourceStatus { return f.journey[l
 func (f *Flow) client() client.Client { return f.rec.config.Cluster.Client }
 func (f *Flow) log() io.Writer        { return f.rec.config.Log }
 
-// classifyAll returns every state the workload matches, judged from its own fields, in declaration order
-// (least- to most-advanced): the last entry is the furthest along.
-func classifyAll(cr *unstructured.Unstructured, states []namedState) []kartav1alpha1.ResourceStatus {
-	var out []kartav1alpha1.ResourceStatus
+// judge returns every state the workload matches, from its own fields, in declaration order (least- to
+// most-advanced). A frame matching nothing is a real gap: it is judged Undefined so the gap stays visible
+// in the walk and the summary, rather than vanishing silently.
+func judge(cr *unstructured.Unstructured, states []namedState) []kartav1alpha1.ResourceStatus {
+	var matched []kartav1alpha1.ResourceStatus
 	for _, s := range states {
 		if s.Match(cr) {
-			out = append(out, s.Name)
+			matched = append(matched, s.Name)
 		}
 	}
-	return out
-}
-
-// judge returns the phases the frame matches, least- to most-advanced. A frame matching nothing is a real
-// gap: it is judged Undefined so it is kept and fails the order check, rather than skipped silently.
-func judge(cr *unstructured.Unstructured, states []namedState) []kartav1alpha1.ResourceStatus {
-	phases := classifyAll(cr, states)
-	if len(phases) == 0 {
+	if len(matched) == 0 {
 		return []kartav1alpha1.ResourceStatus{kartav1alpha1.UndefinedStatus}
 	}
-	return phases
+	return matched
 }
 
-// classify returns the furthest-along state the workload matches, judged from its own fields.
-func classify(cr *unstructured.Unstructured, states []namedState) kartav1alpha1.ResourceStatus {
-	matched := classifyAll(cr, states)
-	if len(matched) == 0 {
-		return ""
-	}
-	return matched[len(matched)-1]
+// strongest is the furthest-along phase of a judged frame.
+func strongest(phases []kartav1alpha1.ResourceStatus) kartav1alpha1.ResourceStatus {
+	return phases[len(phases)-1]
 }
