@@ -39,6 +39,8 @@ events:
       successfulJobsHistoryLimit: 3
       suspend: false
     status: {}
+  phases:
+  - Initializing
   resourceVersion: "2325270"
   state: Initializing
 flow: initializing
@@ -48,5 +50,9 @@ operator: cronjob
 result:
   succeeded: true
 schemaVersion: 1
+summary:
+- amount: 1
+  phases:
+  - Initializing
 version: v1.34.0
 want: Initializing

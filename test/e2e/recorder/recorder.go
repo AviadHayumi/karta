@@ -204,6 +204,7 @@ func (f *Flow) buildRecording(obs *observation) *Recording {
 		out.Events = append(out.Events, Event{
 			Kind:                    EventState,
 			State:                   string(snap.state),
+			Phases:                  phaseStrings(snap.phases),
 			StaleObservedGeneration: snap.staleObservedGeneration,
 			ResourceVersion:         snap.cr.GetResourceVersion(),
 			Object:                  stripVolatileFields(snap.cr),
@@ -211,6 +212,31 @@ func (f *Flow) buildRecording(obs *observation) *Recording {
 		if snap.action != nil {
 			out.Events = append(out.Events, Event{Kind: EventAction, Action: snap.action})
 		}
+	}
+	out.Summary = summarize(out.Events)
+	return out
+}
+
+// Rejudge judges every STATE event's stored object again with the registered predicates, refreshing its
+// phases and state, and rebuilds the summary. It migrates existing recordings across format or predicate
+// changes without a cluster; the objects themselves are untouched.
+func (r *Recorder) Rejudge(rec *Recording) {
+	for i := range rec.Events {
+		e := &rec.Events[i]
+		if e.Kind != EventState {
+			continue
+		}
+		phases := judge(&unstructured.Unstructured{Object: e.Object}, r.states)
+		e.Phases = phaseStrings(phases)
+		e.State = string(phases[len(phases)-1])
+	}
+	rec.Summary = summarize(rec.Events)
+}
+
+func phaseStrings(phases []kartav1alpha1.ResourceStatus) []string {
+	out := make([]string, len(phases))
+	for i, p := range phases {
+		out[i] = string(p)
 	}
 	return out
 }
