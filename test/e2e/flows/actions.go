@@ -12,6 +12,11 @@ import (
 // Flow actions: each builds a recorder.Action, the merge-patch a flow fires to drive a transition the
 // operator will not make itself.
 
+// Suspend sets spec.suspend so a running workload pauses.
+func Suspend() *recorder.Action {
+	return &recorder.Action{Type: recorder.ActionSuspend, Patch: []byte(`{"spec":{"suspend":true}}`)}
+}
+
 // Resume clears spec.suspend so a suspended workload resumes.
 func Resume() *recorder.Action {
 	return &recorder.Action{Type: recorder.ActionResume, Patch: []byte(`{"spec":{"suspend":false}}`)}

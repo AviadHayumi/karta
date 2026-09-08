@@ -39,7 +39,17 @@ var _ = Describe("CronJob (built-in)", Ordered, Label("cronjob", "builtin"), fun
 	})
 
 	It("suspended", func(ctx SpecContext) {
-		out, err := recorder.NewFlow(rec, "suspended", "testdata/cronjob/suspended.yaml").
+		out, err := recorder.NewFlow(rec, "suspended", "testdata/cronjob/suspended.yaml").Through(
+			recorder.Reaches(kartav1alpha1.InitializingStatus),
+			recorder.Reaches(kartav1alpha1.RunningStatus).Do(Suspend()),
+			recorder.Reaches(kartav1alpha1.SuspendedStatus),
+		).Run(ctx)
+		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
+		Expect(err).To(Succeed())
+	})
+
+	It("born-suspended", func(ctx SpecContext) {
+		out, err := recorder.NewFlow(rec, "born-suspended", "testdata/cronjob/born_suspended.yaml").
 			Through(recorder.Reaches(kartav1alpha1.SuspendedStatus)).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
