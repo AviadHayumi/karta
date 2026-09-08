@@ -7,6 +7,7 @@ package main
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"syscall/js"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/test/types"
 )
 
@@ -122,6 +124,56 @@ func TestJsEvaluatePhases(t *testing.T) {
 	}
 	if len(phases) != 1 || phases[0] != "Running" {
 		t.Fatalf("expected phases = [Running], got %#v", phases)
+	}
+}
+
+func TestJsEvaluatePhases_MatchesTreeBuild(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		definition *v1alpha1.Karta
+		workload   any
+	}{
+		{"reactor", types.ReactorKarta(), types.NewReactorObject()},
+		{"pyflow", types.PyFlowKarta(), types.NewPyFlowObject()},
+		{"milvus", types.MilvusKarta(), types.NewMilvusObject()},
+		{"jobgroup", types.JobGroupKarta(), types.NewJobGroupObject()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			definitionJSON := marshal(t, tc.definition)
+			workloadJSON := marshal(t, tc.workload)
+
+			env := jsEvaluatePhases(js.Value{}, []js.Value{
+				js.ValueOf(definitionJSON), js.ValueOf(workloadJSON),
+			}).(js.Value)
+			if !env.Get("error").IsNull() {
+				t.Fatalf("unexpected error: %s", env.Get("error").String())
+			}
+			var phases []string
+			if err := json.Unmarshal([]byte(env.Get("data").String()), &phases); err != nil {
+				t.Fatalf("failed to unmarshal phases: %v", err)
+			}
+
+			treeEnv := jsBuildTree(js.Value{}, []js.Value{
+				js.ValueOf(definitionJSON), js.ValueOf(workloadJSON),
+			}).(js.Value)
+			if !treeEnv.Get("error").IsNull() {
+				t.Fatalf("unexpected error building the tree: %s", treeEnv.Get("error").String())
+			}
+			var built struct {
+				Status *struct{ Phases []string }
+			}
+			if err := json.Unmarshal([]byte(treeEnv.Get("data").String()), &built); err != nil {
+				t.Fatalf("failed to unmarshal tree: %v", err)
+			}
+
+			var want []string
+			if built.Status != nil {
+				want = built.Status.Phases
+			}
+			if !slices.Equal(phases, want) {
+				t.Errorf("phases = %#v, tree.Build's Status.Phases = %#v", phases, want)
+			}
+		})
 	}
 }
 
