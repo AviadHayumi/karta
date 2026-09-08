@@ -11,10 +11,18 @@ export interface Envelope {
   error: string | null;
 }
 
+/**
+ * The raw bindings the WASM module sets on window.karta. Arguments and results
+ * are JSON strings; kartaUtil wraps them in typed calls.
+ */
 export interface KartaWasm {
+  /** Builds the workload tree. Returns a WorkloadTree, including the root status. */
   buildTree(definitionJSON: string, workloadJSON: string): Envelope;
+  /** Matches pods to components. Returns PodComponentMatch[]. Pods with no match are left out. */
   inferPodComponents(definitionJSON: string, workloadJSON: string, podsJSON: string): Envelope;
+  /** Returns the status phases as string[]. Does not build the tree, so read them off buildTree instead when the tree is needed anyway. */
   evaluatePhases(definitionJSON: string, workloadJSON: string): Envelope;
+  /** Returns the definitions built into the module, as Karta[]. */
   listCatalog(): Envelope;
 }
 

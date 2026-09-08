@@ -18,9 +18,12 @@ import (
 )
 
 type PodComponentMatch struct {
-	PodIndex      int     `json:"podIndex"`
-	ComponentName string  `json:"componentName"`
-	InstanceKey   *string `json:"instanceKey,omitempty"`
+	// PodIndex is the pod's place in the pods array passed in. Unmatched pods
+	// are left out, so the two do not line up.
+	PodIndex      int    `json:"podIndex"`
+	ComponentName string `json:"componentName"`
+	// InstanceKey is nil when the component is not split into instances.
+	InstanceKey *string `json:"instanceKey,omitempty"`
 }
 
 func jsBuildTree(_ js.Value, args []js.Value) any {

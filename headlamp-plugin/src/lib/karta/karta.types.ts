@@ -64,7 +64,9 @@ export interface WorkloadTree {
 }
 
 export interface PodComponentMatch {
+  /** The pod's place in the pods array passed in. Unmatched pods are left out, so the two do not line up. */
   podIndex: number;
   componentName: string;
+  /** Absent when the component is not split into instances. */
   instanceKey?: string;
 }
