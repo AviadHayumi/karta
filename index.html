@@ -154,8 +154,10 @@ h2{font-size:33px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px}
 
 /* mobile */
 .editor .body{overflow-x:auto}
+.cols>*,.cols3>*,.demo-grid>*,.statrow>*{min-width:0}
+.editor,.term,.docwin{max-width:100%}
 @media (max-width:900px){
-  .slide{padding:26px 16px 74px;justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .slide{padding:26px 16px 74px;justify-content:flex-start;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
   .wrap{max-width:100%}
   h1{font-size:33px}
   h2{font-size:22px}
