@@ -59,6 +59,14 @@ var _ = Describe("Karta reads the recorded state", func() {
 				Expect(status).NotTo(BeNil(), "Karta read no status from the %q CR", state)
 				Expect(status.MatchedStatuses).To(ContainElement(kartav1alpha1.ResourceStatus(state)),
 					"Karta read %v, recorded state was %q", status.MatchedStatuses, state)
+
+				// A definition that declares references must also read through them offline:
+				// extraction resolves the references against the CRs the recording captured.
+				if len(karta.Spec.StructureDefinition.References) > 0 {
+					_, err := root.GetExtractedInstances(ctx)
+					Expect(err).NotTo(HaveOccurred(),
+						"Karta could not resolve the declared references from the recording at the %q CR", state)
+				}
 			}
 		})
 	}

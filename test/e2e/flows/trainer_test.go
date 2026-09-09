@@ -87,6 +87,7 @@ var _ = Describe("TrainJob (trainer)", Ordered, Label("trainer"), func() {
 			Capturing(runtime).
 			Through(
 				recorder.Reaches(kartav1alpha1.SuspendedStatus).Do(Resume()),
+				recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
 				recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
 				recorder.Reaches(kartav1alpha1.CompletedStatus),
 			).Run(ctx)
