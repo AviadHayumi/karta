@@ -14,6 +14,7 @@ import (
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/pkg/catalog"
+	"github.com/run-ai/karta/pkg/jq/execution"
 	"github.com/run-ai/karta/pkg/resource"
 	"github.com/run-ai/karta/pkg/tree"
 )
@@ -50,6 +51,80 @@ func BuildTree(ctx context.Context, definitionJSON, workloadJSON string) (*tree.
 	}
 	componentFactory := resource.NewComponentFactoryFromObject(definition, workload)
 	return tree.Build(ctx, componentFactory)
+}
+
+// SetField applies a single field write to the workload: it assigns value at
+// the jq path (a plain field path like .spec.schedulerName) and returns the
+// mutated object as JSON. This is the low-level write door; the typed,
+// capability-checked UpdatePodTemplate is the higher-level way.
+func SetField(ctx context.Context, workloadJSON, path string, value any) ([]byte, error) {
+	workload, err := DecodeWorkload(workloadJSON)
+	if err != nil {
+		return nil, err
+	}
+	runner := execution.NewDefaultRunner(workload.Object)
+	if err := runner.Assign(ctx, path, value); err != nil {
+		return nil, fmt.Errorf("assign %s: %w", path, err)
+	}
+	object, err := runner.GetObject()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(object)
+}
+
+// Suspend applies every component's suspend actions to the workload and
+// returns the mutated object as JSON.
+func Suspend(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
+	return applySuspendStateActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
+		return component.Suspend(ctx)
+	})
+}
+
+// Resume applies every component's resume actions to the workload and returns
+// the mutated object as JSON.
+func Resume(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
+	return applySuspendStateActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
+		return component.Resume(ctx)
+	})
+}
+
+func applySuspendStateActions(ctx context.Context, definitionJSON, workloadJSON string, apply func(context.Context, *resource.Component) error) ([]byte, error) {
+	definition, err := DecodeDefinition(definitionJSON)
+	if err != nil {
+		return nil, err
+	}
+	workload, err := DecodeWorkload(workloadJSON)
+	if err != nil {
+		return nil, err
+	}
+	factory := resource.NewComponentFactoryFromObject(definition, workload)
+	root, err := factory.GetRootComponent()
+	if err != nil {
+		return nil, err
+	}
+	children, err := factory.GetChildComponents()
+	if err != nil {
+		return nil, err
+	}
+	for _, component := range children {
+		if !component.HasSuspendDefinition() {
+			continue
+		}
+		if err := apply(ctx, component); err != nil {
+			return nil, err
+		}
+	}
+	if root.HasSuspendDefinition() {
+		if err := apply(ctx, root); err != nil {
+			return nil, err
+		}
+	}
+	object, err := factory.GetResource()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(object)
 }
 
 // ListCatalog returns the Karta definitions embedded at build time.
