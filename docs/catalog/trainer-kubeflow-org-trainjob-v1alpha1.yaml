@@ -46,9 +46,9 @@ spec:
                 - type: Failed
                   status: "True"
           suspended:
-            - byConditions:
-                - type: Suspended
-                  status: "True"
+            - byExpression:
+                expression: variables.isSuspended
+                expectedResult: "true"
       suspendDefinition:
         suspendActions:
           - patch: '{"spec": {"suspend": true}}'
@@ -78,7 +78,7 @@ spec:
     - name: conditions
       expression: object.?status.?conditions.orValue([])
     - name: isSuspended
-      expression: variables.conditions.exists(c, c.type == "Suspended" && c.status == "True")
+      expression: variables.conditions.exists(c, c.type == "Suspended" && c.status == "True") || object.?spec.?suspend.orValue(false) == true
     - name: isTerminal
       expression: variables.conditions.exists(c, (c.type == "Complete" || c.type == "Failed") && c.status == "True")
     - name: jobsActive

@@ -27,7 +27,7 @@ func TrainJob() *v1alpha1.Karta {
 		Spec: v1alpha1.KartaSpec{
 			Variables: []v1alpha1.Variable{
 				{Name: "conditions", Expression: `object.?status.?conditions.orValue([])`},
-				{Name: "isSuspended", Expression: `variables.conditions.exists(c, c.type == "Suspended" && c.status == "True")`},
+				{Name: "isSuspended", Expression: `variables.conditions.exists(c, c.type == "Suspended" && c.status == "True") || object.?spec.?suspend.orValue(false) == true`},
 				{Name: "isTerminal", Expression: `variables.conditions.exists(c, (c.type == "Complete" || c.type == "Failed") && c.status == "True")`},
 				{Name: "jobsActive", Expression: `object.?status.?jobsStatus.orValue([]).exists(j, j.?active.orValue(0) > 0 || j.?ready.orValue(0) > 0)`},
 			},
@@ -82,8 +82,11 @@ func TrainJob() *v1alpha1.Karta {
 							Failed: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{
 								{Type: "Failed", Status: ptr.To("True")},
 							}}},
-							Suspended: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{
-								{Type: "Suspended", Status: ptr.To("True")},
+							Suspended: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
+								// A status-less TrainJob created suspended is suspended from the first
+								// frame, before the controller publishes the condition.
+								Expression:     `variables.isSuspended`,
+								ExpectedResult: "true",
 							}}},
 						},
 					},
