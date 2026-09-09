@@ -4,92 +4,11 @@ events:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
+      creationTimestamp: "2026-09-09T22:46:33Z"
       generation: 1
-      name: trainer-suspended
+      name: trainer-failed
       namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
-    spec:
-      managedBy: trainer.kubeflow.org/trainjob-controller
-      runtimeRef:
-        apiGroup: trainer.kubeflow.org
-        kind: ClusterTrainingRuntime
-        name: karta-busybox
-      suspend: true
-      trainer:
-        command:
-        - sh
-        - -c
-        - sleep 15
-    status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is suspended
-        reason: Suspended
-        status: "True"
-        type: Suspended
-  references:
-  - apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: ClusterTrainingRuntime
-    metadata:
-      annotations:
-        kubectl.kubernetes.io/last-applied-configuration: |
-          {"apiVersion":"trainer.kubeflow.org/v1alpha1","kind":"ClusterTrainingRuntime","metadata":{"annotations":{},"name":"karta-busybox"},"spec":{"mlPolicy":{"numNodes":1,"torch":{}},"template":{"spec":{"replicatedJobs":[{"name":"node","template":{"metadata":{"labels":{"trainer.kubeflow.org/trainjob-ancestor-step":"trainer"}},"spec":{"backoffLimit":0,"template":{"spec":{"containers":[{"command":["sh","-c","sleep 2"],"image":"busybox:1.36","name":"node","resources":{"requests":{"cpu":"10m","memory":"16Mi"}}}],"restartPolicy":"Never"}}}}}]}}}}
-      creationTimestamp: "2026-09-09T20:38:22Z"
-      generation: 2
-      name: karta-busybox
-      uid: 5280924c-df7a-43f6-ae85-c925a86a9c3a
-    spec:
-      mlPolicy:
-        numNodes: 1
-        torch: {}
-      template:
-        spec:
-          replicatedJobs:
-          - groupName: default
-            name: node
-            replicas: 1
-            template:
-              metadata:
-                labels:
-                  trainer.kubeflow.org/trainjob-ancestor-step: trainer
-              spec:
-                backoffLimit: 0
-                template:
-                  spec:
-                    containers:
-                    - command:
-                      - sh
-                      - -c
-                      - sleep 2
-                      image: busybox:1.36
-                      name: node
-                      resources:
-                        requests:
-                          cpu: 10m
-                          memory: 16Mi
-                    restartPolicy: Never
-  resourceVersion: "24782"
-  state: Suspended
-- action:
-    name: Resume
-    operation:
-      patchType: application/merge-patch+json
-      payload:
-        spec:
-          suspend: false
-      verb: PATCH
-  kind: ACTION
-- kind: STATE
-  object:
-    apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: TrainJob
-    metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
-      namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
+      uid: f037dfb8-712a-4fc1-9617-2b66f03b04c7
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -101,86 +20,8 @@ events:
         command:
         - sh
         - -c
-        - sleep 15
+        - sleep 2; exit 1
     status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is suspended
-        reason: Suspended
-        status: "True"
-        type: Suspended
-  references:
-  - apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: ClusterTrainingRuntime
-    metadata:
-      annotations:
-        kubectl.kubernetes.io/last-applied-configuration: |
-          {"apiVersion":"trainer.kubeflow.org/v1alpha1","kind":"ClusterTrainingRuntime","metadata":{"annotations":{},"name":"karta-busybox"},"spec":{"mlPolicy":{"numNodes":1,"torch":{}},"template":{"spec":{"replicatedJobs":[{"name":"node","template":{"metadata":{"labels":{"trainer.kubeflow.org/trainjob-ancestor-step":"trainer"}},"spec":{"backoffLimit":0,"template":{"spec":{"containers":[{"command":["sh","-c","sleep 2"],"image":"busybox:1.36","name":"node","resources":{"requests":{"cpu":"10m","memory":"16Mi"}}}],"restartPolicy":"Never"}}}}}]}}}}
-      creationTimestamp: "2026-09-09T20:38:22Z"
-      generation: 2
-      name: karta-busybox
-      uid: 5280924c-df7a-43f6-ae85-c925a86a9c3a
-    spec:
-      mlPolicy:
-        numNodes: 1
-        torch: {}
-      template:
-        spec:
-          replicatedJobs:
-          - groupName: default
-            name: node
-            replicas: 1
-            template:
-              metadata:
-                labels:
-                  trainer.kubeflow.org/trainjob-ancestor-step: trainer
-              spec:
-                backoffLimit: 0
-                template:
-                  spec:
-                    containers:
-                    - command:
-                      - sh
-                      - -c
-                      - sleep 2
-                      image: busybox:1.36
-                      name: node
-                      resources:
-                        requests:
-                          cpu: 10m
-                          memory: 16Mi
-                    restartPolicy: Never
-  resourceVersion: "24788"
-  state: Suspended
-- kind: STATE
-  object:
-    apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: TrainJob
-    metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
-      namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
-    spec:
-      managedBy: trainer.kubeflow.org/trainjob-controller
-      runtimeRef:
-        apiGroup: trainer.kubeflow.org
-        kind: ClusterTrainingRuntime
-        name: karta-busybox
-      suspend: false
-      trainer:
-        command:
-        - sh
-        - -c
-        - sleep 15
-    status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is suspended
-        reason: Suspended
-        status: "True"
-        type: Suspended
       jobsStatus:
       - active: 0
         failed: 0
@@ -229,97 +70,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "24792"
-  state: Suspended
-- kind: STATE
-  object:
-    apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: TrainJob
-    metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
-      namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
-    spec:
-      managedBy: trainer.kubeflow.org/trainjob-controller
-      runtimeRef:
-        apiGroup: trainer.kubeflow.org
-        kind: ClusterTrainingRuntime
-        name: karta-busybox
-      suspend: false
-      trainer:
-        command:
-        - sh
-        - -c
-        - sleep 15
-    status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is resumed
-        reason: Resumed
-        status: "False"
-        type: Suspended
-      jobsStatus:
-      - active: 0
-        failed: 0
-        name: node
-        ready: 0
-        succeeded: 0
-        suspended: 1
-  references:
-  - apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: ClusterTrainingRuntime
-    metadata:
-      annotations:
-        kubectl.kubernetes.io/last-applied-configuration: |
-          {"apiVersion":"trainer.kubeflow.org/v1alpha1","kind":"ClusterTrainingRuntime","metadata":{"annotations":{},"name":"karta-busybox"},"spec":{"mlPolicy":{"numNodes":1,"torch":{}},"template":{"spec":{"replicatedJobs":[{"name":"node","template":{"metadata":{"labels":{"trainer.kubeflow.org/trainjob-ancestor-step":"trainer"}},"spec":{"backoffLimit":0,"template":{"spec":{"containers":[{"command":["sh","-c","sleep 2"],"image":"busybox:1.36","name":"node","resources":{"requests":{"cpu":"10m","memory":"16Mi"}}}],"restartPolicy":"Never"}}}}}]}}}}
-      creationTimestamp: "2026-09-09T20:38:22Z"
-      generation: 2
-      name: karta-busybox
-      uid: 5280924c-df7a-43f6-ae85-c925a86a9c3a
-    spec:
-      mlPolicy:
-        numNodes: 1
-        torch: {}
-      template:
-        spec:
-          replicatedJobs:
-          - groupName: default
-            name: node
-            replicas: 1
-            template:
-              metadata:
-                labels:
-                  trainer.kubeflow.org/trainjob-ancestor-step: trainer
-              spec:
-                backoffLimit: 0
-                template:
-                  spec:
-                    containers:
-                    - command:
-                      - sh
-                      - -c
-                      - sleep 2
-                      image: busybox:1.36
-                      name: node
-                      resources:
-                        requests:
-                          cpu: 10m
-                          memory: 16Mi
-                    restartPolicy: Never
-  resourceVersion: "24794"
+  resourceVersion: "24721"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
+      creationTimestamp: "2026-09-09T22:46:33Z"
+      generation: 1
+      name: trainer-failed
       namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
+      uid: f037dfb8-712a-4fc1-9617-2b66f03b04c7
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -331,93 +93,8 @@ events:
         command:
         - sh
         - -c
-        - sleep 15
+        - sleep 2; exit 1
     status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is resumed
-        reason: Resumed
-        status: "False"
-        type: Suspended
-      jobsStatus:
-      - active: 0
-        failed: 0
-        name: node
-        ready: 0
-        succeeded: 0
-        suspended: 0
-  references:
-  - apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: ClusterTrainingRuntime
-    metadata:
-      annotations:
-        kubectl.kubernetes.io/last-applied-configuration: |
-          {"apiVersion":"trainer.kubeflow.org/v1alpha1","kind":"ClusterTrainingRuntime","metadata":{"annotations":{},"name":"karta-busybox"},"spec":{"mlPolicy":{"numNodes":1,"torch":{}},"template":{"spec":{"replicatedJobs":[{"name":"node","template":{"metadata":{"labels":{"trainer.kubeflow.org/trainjob-ancestor-step":"trainer"}},"spec":{"backoffLimit":0,"template":{"spec":{"containers":[{"command":["sh","-c","sleep 2"],"image":"busybox:1.36","name":"node","resources":{"requests":{"cpu":"10m","memory":"16Mi"}}}],"restartPolicy":"Never"}}}}}]}}}}
-      creationTimestamp: "2026-09-09T20:38:22Z"
-      generation: 2
-      name: karta-busybox
-      uid: 5280924c-df7a-43f6-ae85-c925a86a9c3a
-    spec:
-      mlPolicy:
-        numNodes: 1
-        torch: {}
-      template:
-        spec:
-          replicatedJobs:
-          - groupName: default
-            name: node
-            replicas: 1
-            template:
-              metadata:
-                labels:
-                  trainer.kubeflow.org/trainjob-ancestor-step: trainer
-              spec:
-                backoffLimit: 0
-                template:
-                  spec:
-                    containers:
-                    - command:
-                      - sh
-                      - -c
-                      - sleep 2
-                      image: busybox:1.36
-                      name: node
-                      resources:
-                        requests:
-                          cpu: 10m
-                          memory: 16Mi
-                    restartPolicy: Never
-  resourceVersion: "24805"
-  state: Initializing
-- kind: STATE
-  object:
-    apiVersion: trainer.kubeflow.org/v1alpha1
-    kind: TrainJob
-    metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
-      namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
-    spec:
-      managedBy: trainer.kubeflow.org/trainjob-controller
-      runtimeRef:
-        apiGroup: trainer.kubeflow.org
-        kind: ClusterTrainingRuntime
-        name: karta-busybox
-      suspend: false
-      trainer:
-        command:
-        - sh
-        - -c
-        - sleep 15
-    status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is resumed
-        reason: Resumed
-        status: "False"
-        type: Suspended
       jobsStatus:
       - active: 1
         failed: 0
@@ -466,18 +143,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "24808"
+  resourceVersion: "24728"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
+      creationTimestamp: "2026-09-09T22:46:33Z"
+      generation: 1
+      name: trainer-failed
       namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
+      uid: f037dfb8-712a-4fc1-9617-2b66f03b04c7
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -489,14 +166,8 @@ events:
         command:
         - sh
         - -c
-        - sleep 15
+        - sleep 2; exit 1
     status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is resumed
-        reason: Resumed
-        status: "False"
-        type: Suspended
       jobsStatus:
       - active: 1
         failed: 0
@@ -545,18 +216,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "24819"
+  resourceVersion: "24741"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
+      creationTimestamp: "2026-09-09T22:46:33Z"
+      generation: 1
+      name: trainer-failed
       namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
+      uid: f037dfb8-712a-4fc1-9617-2b66f03b04c7
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -568,14 +239,8 @@ events:
         command:
         - sh
         - -c
-        - sleep 15
+        - sleep 2; exit 1
     status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is resumed
-        reason: Resumed
-        status: "False"
-        type: Suspended
       jobsStatus:
       - active: 1
         failed: 0
@@ -624,18 +289,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "24875"
+  resourceVersion: "24754"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
+      creationTimestamp: "2026-09-09T22:46:33Z"
+      generation: 1
+      name: trainer-failed
       namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
+      uid: f037dfb8-712a-4fc1-9617-2b66f03b04c7
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -647,19 +312,13 @@ events:
         command:
         - sh
         - -c
-        - sleep 15
+        - sleep 2; exit 1
     status:
-      conditions:
-      - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is resumed
-        reason: Resumed
-        status: "False"
-        type: Suspended
       jobsStatus:
       - active: 0
         failed: 0
         name: node
-        ready: 1
+        ready: 0
         succeeded: 0
         suspended: 0
   references:
@@ -703,18 +362,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "24886"
-  state: Running
+  resourceVersion: "24764"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T22:46:38Z"
-      generation: 2
-      name: trainer-suspended
+      creationTimestamp: "2026-09-09T22:46:33Z"
+      generation: 1
+      name: trainer-failed
       namespace: test-vjh9b
-      uid: b7e6b467-79c3-4647-bea3-ce0e0e486c74
+      uid: f037dfb8-712a-4fc1-9617-2b66f03b04c7
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -726,25 +385,21 @@ events:
         command:
         - sh
         - -c
-        - sleep 15
+        - sleep 2; exit 1
     status:
       conditions:
       - lastTransitionTime: "2026-09-09T22:46:38Z"
-        message: TrainJob is resumed
-        reason: Resumed
-        status: "False"
-        type: Suspended
-      - lastTransitionTime: "2026-09-09T22:46:56Z"
-        message: jobset completed successfully
-        reason: AllJobsCompleted
+        message: 'jobset failed due to one or more job failures (first failed job:
+          trainer-failed-node-0)'
+        reason: FailedJobs
         status: "True"
-        type: Complete
+        type: Failed
       jobsStatus:
       - active: 0
-        failed: 0
+        failed: 1
         name: node
         ready: 0
-        succeeded: 1
+        succeeded: 0
         suspended: 0
   references:
   - apiVersion: trainer.kubeflow.org/v1alpha1
@@ -787,9 +442,9 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "24890"
-  state: Completed
-flow: resumed
+  resourceVersion: "24768"
+  state: Failed
+flow: failed
 kartaFile: docs/catalog/trainer-kubeflow-org-trainjob-v1alpha1.yaml
 kartaName: trainer-kubeflow-org-trainjob-v1alpha1
 operator: trainer
@@ -797,4 +452,4 @@ result:
   succeeded: true
 schemaVersion: 1
 version: v1.34.0
-want: Completed
+want: Failed

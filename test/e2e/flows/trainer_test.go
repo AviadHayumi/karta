@@ -15,7 +15,8 @@ import (
 
 // TrainJob states are judged from its own fields: only Suspended, Complete and Failed exist as
 // conditions; a job with pods active and no terminal condition is running, and one with neither
-// is initializing.
+// is initializing. Suspension requested while pods still drain reads Running, mirroring the
+// karta: suspended is the condition, or spec.suspend with nothing active.
 func trainjobRunning() recorder.StateCheck {
 	return func(cr *unstructured.Unstructured) bool {
 		jobs, _, _ := unstructured.NestedSlice(cr.Object, "status", "jobsStatus")
@@ -32,6 +33,19 @@ func trainjobRunning() recorder.StateCheck {
 		}
 
 		return false
+	}
+}
+
+func trainjobSuspended() recorder.StateCheck {
+	running := trainjobRunning()
+
+	return func(cr *unstructured.Unstructured) bool {
+		if CondTrue("Suspended")(cr) {
+			return true
+		}
+		suspend, _, _ := unstructured.NestedBool(cr.Object, "spec", "suspend")
+
+		return suspend && !running(cr)
 	}
 }
 
@@ -58,8 +72,9 @@ var _ = Describe("TrainJob (trainer)", Ordered, Label("trainer"), func() {
 		rec = recorder.New(cfg).
 			AddState(kartav1alpha1.InitializingStatus, AllOf(CondNotTrue("Complete"), CondNotTrue("Failed"), CondNotTrue("Suspended"))).
 			AddState(kartav1alpha1.RunningStatus, trainjobRunning()).
-			AddState(kartav1alpha1.SuspendedStatus, CondTrue("Suspended")).
-			AddState(kartav1alpha1.CompletedStatus, CondTrue("Complete"))
+			AddState(kartav1alpha1.SuspendedStatus, trainjobSuspended()).
+			AddState(kartav1alpha1.CompletedStatus, CondTrue("Complete")).
+			AddState(kartav1alpha1.FailedStatus, CondTrue("Failed"))
 	})
 
 	It("completed", func(ctx SpecContext) {
@@ -78,6 +93,41 @@ var _ = Describe("TrainJob (trainer)", Ordered, Label("trainer"), func() {
 		out, err := recorder.NewFlow(rec, "suspended", "testdata/trainer/suspended.yaml").
 			Capturing(runtime).
 			Through(recorder.Reaches(kartav1alpha1.SuspendedStatus)).Run(ctx)
+		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
+		Expect(err).To(Succeed())
+	})
+
+	// The full lifecycle: the job runs, is suspended mid-flight, resumes, and completes. Every
+	// transition lands in the recording as its own frame, references captured with each.
+	It("lifecycle", func(ctx SpecContext) {
+		out, err := recorder.NewFlow(rec, "lifecycle", "testdata/trainer/lifecycle.yaml").
+			Capturing(runtime).
+			Through(
+				recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
+				recorder.Reaches(kartav1alpha1.RunningStatus).Do(Suspend()),
+				recorder.Reaches(kartav1alpha1.SuspendedStatus).Do(Resume()),
+				// Right after resume the controller clears Suspended before jobsStatus catches
+				// up, so a stale-active Running frame may precede the re-initialization dip.
+				recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
+				recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
+				recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
+				recorder.Reaches(kartav1alpha1.CompletedStatus),
+			).Run(ctx)
+		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
+		Expect(err).To(Succeed())
+	})
+
+	It("failed", func(ctx SpecContext) {
+		out, err := recorder.NewFlow(rec, "failed", "testdata/trainer/failed.yaml").
+			Capturing(runtime).
+			Through(
+				recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
+				recorder.Reaches(kartav1alpha1.RunningStatus).Optional(),
+				// The pod exits before the Failed condition lands, so jobsStatus zeroes into a
+				// short re-initializing dip first.
+				recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
+				recorder.Reaches(kartav1alpha1.FailedStatus),
+			).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
 	})

@@ -30,9 +30,11 @@ func TrainJob() *v1alpha1.Karta {
 		Spec: v1alpha1.KartaSpec{
 			Variables: []v1alpha1.Variable{
 				{Name: "conditions", Expression: `object.?status.?conditions.orValue([])`},
-				{Name: "isSuspended", Expression: `variables.conditions.exists(c, c.type == "Suspended" && c.status == "True") || object.?spec.?suspend.orValue(false) == true`},
-				{Name: "isTerminal", Expression: `variables.conditions.exists(c, (c.type == "Complete" || c.type == "Failed") && c.status == "True")`},
 				{Name: "jobsActive", Expression: `object.?status.?jobsStatus.orValue([]).exists(j, j.?active.orValue(0) > 0 || j.?ready.orValue(0) > 0)`},
+				// Suspension requested on a job whose pods are still draining reads Running: the
+				// job is suspended once the controller says so or nothing is active anymore.
+				{Name: "isSuspended", Expression: `variables.conditions.exists(c, c.type == "Suspended" && c.status == "True") || (object.?spec.?suspend.orValue(false) == true && !variables.jobsActive)`},
+				{Name: "isTerminal", Expression: `variables.conditions.exists(c, (c.type == "Complete" || c.type == "Failed") && c.status == "True")`},
 			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				References: []v1alpha1.ResourceReference{{
