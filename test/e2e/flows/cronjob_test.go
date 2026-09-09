@@ -20,7 +20,7 @@ var _ = Describe("CronJob (built-in)", Ordered, Label("cronjob", "builtin"), fun
 		fx = recorder.Fixture{Operator: "cronjob", Version: operatorVersion("cronjob"), KartaName: "batch-cronjob-v1", KartaFile: "docs/catalog/batch-cronjob-v1.yaml"}
 		rec = recorder.New(cfg).
 			AddState(kartav1alpha1.PendingStatus, Absent("status", "lastScheduleTime")).
-			AddState(kartav1alpha1.RunningStatus, CronjobFired()).
+			AddState(kartav1alpha1.RunningStatus, CronjobRunning()).
 			AddState(kartav1alpha1.SuspendedStatus, BoolTrue("spec", "suspend"))
 	})
 

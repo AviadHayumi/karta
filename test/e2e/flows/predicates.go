@@ -237,12 +237,13 @@ func ReplicasComingUp() recorder.StateCheck {
 	}
 }
 
-// CronjobFired matches a CronJob that has scheduled at least once (status.lastScheduleTime set). Karta reads
-// a fired, enabled CronJob as Running (suspended wins via the registry order).
-func CronjobFired() recorder.StateCheck {
+// CronjobRunning matches a fired, enabled CronJob (lastScheduleTime set and spec.suspend not true),
+// mirroring the catalog's running matcher.
+func CronjobRunning() recorder.StateCheck {
 	return func(u *unstructured.Unstructured) bool {
 		_, scheduled, _ := unstructured.NestedFieldNoCopy(u.Object, "status", "lastScheduleTime")
-		return scheduled
+		suspended, _, _ := unstructured.NestedBool(u.Object, "spec", "suspend")
+		return scheduled && !suspended
 	}
 }
 
