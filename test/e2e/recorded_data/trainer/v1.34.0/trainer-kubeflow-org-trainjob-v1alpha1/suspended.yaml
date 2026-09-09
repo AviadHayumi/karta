@@ -4,11 +4,11 @@ events:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:00Z"
+      creationTimestamp: "2026-09-09T23:44:36Z"
       generation: 1
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: 64a8e728-f036-4cb8-ae11-1c1ae303ad01
+      namespace: test-49wgg
+      uid: 1ea6243c-a8a4-4217-b877-8ee60822bf90
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -62,7 +62,7 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30442"
+  resourceVersion: "35737"
   state: Suspended
 flow: suspended
 kartaFile: docs/catalog/trainer-kubeflow-org-trainjob-v1alpha1.yaml

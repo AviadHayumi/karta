@@ -4,11 +4,11 @@ events:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:15:42Z"
+      creationTimestamp: "2026-09-09T23:44:18Z"
       generation: 1
       name: trainer-completed
-      namespace: test-tp67s
-      uid: 192e5f2e-33af-4958-a4a0-dbb23cc49586
+      namespace: test-49wgg
+      uid: eff9bf57-1430-4517-82f2-cd9e0f4bf6a8
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -70,18 +70,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30352"
+  resourceVersion: "35645"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:15:42Z"
+      creationTimestamp: "2026-09-09T23:44:18Z"
       generation: 1
       name: trainer-completed
-      namespace: test-tp67s
-      uid: 192e5f2e-33af-4958-a4a0-dbb23cc49586
+      namespace: test-49wgg
+      uid: eff9bf57-1430-4517-82f2-cd9e0f4bf6a8
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -143,18 +143,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30359"
+  resourceVersion: "35653"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:15:42Z"
+      creationTimestamp: "2026-09-09T23:44:18Z"
       generation: 1
       name: trainer-completed
-      namespace: test-tp67s
-      uid: 192e5f2e-33af-4958-a4a0-dbb23cc49586
+      namespace: test-49wgg
+      uid: eff9bf57-1430-4517-82f2-cd9e0f4bf6a8
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -216,18 +216,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30370"
+  resourceVersion: "35667"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:15:42Z"
+      creationTimestamp: "2026-09-09T23:44:18Z"
       generation: 1
       name: trainer-completed
-      namespace: test-tp67s
-      uid: 192e5f2e-33af-4958-a4a0-dbb23cc49586
+      namespace: test-49wgg
+      uid: eff9bf57-1430-4517-82f2-cd9e0f4bf6a8
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -289,18 +289,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30420"
+  resourceVersion: "35717"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:15:42Z"
+      creationTimestamp: "2026-09-09T23:44:18Z"
       generation: 1
       name: trainer-completed
-      namespace: test-tp67s
-      uid: 192e5f2e-33af-4958-a4a0-dbb23cc49586
+      namespace: test-49wgg
+      uid: eff9bf57-1430-4517-82f2-cd9e0f4bf6a8
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -362,18 +362,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30431"
+  resourceVersion: "35723"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:15:42Z"
+      creationTimestamp: "2026-09-09T23:44:18Z"
       generation: 1
       name: trainer-completed
-      namespace: test-tp67s
-      uid: 192e5f2e-33af-4958-a4a0-dbb23cc49586
+      namespace: test-49wgg
+      uid: eff9bf57-1430-4517-82f2-cd9e0f4bf6a8
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -388,7 +388,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:00Z"
+      - lastTransitionTime: "2026-09-09T23:44:36Z"
         message: jobset completed successfully
         reason: AllJobsCompleted
         status: "True"
@@ -441,7 +441,7 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30435"
+  resourceVersion: "35727"
   state: Completed
 flow: completed
 kartaFile: docs/catalog/trainer-kubeflow-org-trainjob-v1alpha1.yaml

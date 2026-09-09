@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 	watchtools "k8s.io/client-go/tools/watch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,8 +40,9 @@ type observation struct {
 	// References are watched, not polled: refCache holds each captured CR's latest state, fed by
 	// one watcher per capture into refEvents, so a reference that changes under an unchanged
 	// workload still cuts a frame the moment it happens.
-	refCache  map[string]*unstructured.Unstructured
-	refEvents chan referenceEvent
+	refCache     map[string]*unstructured.Unstructured
+	refEvents    chan referenceEvent
+	workloadSeen bool // a real workload watch event arrived; before that, reference changes only feed the cache
 }
 
 // referenceEvent is one change to a captured reference, or the death of its watcher.
@@ -85,8 +87,12 @@ func (o *observation) watchAndAct(ctx context.Context) {
 			}
 			o.applyReferenceChange(change)
 			// The evaluation input changed even though the workload did not: cut a frame from the
-			// last-seen workload. Actions and the terminal check belong to workload events only.
-			o.keep(o.lastSeen, o.classify(o.lastSeen), hasObservedCurrentGeneration(o.lastSeen))
+			// last-seen workload. Before the first real workload event there is nothing sound to
+			// pair with, so the change only feeds the cache and rides the first workload frame.
+			// Actions and the terminal check belong to workload events only.
+			if o.workloadSeen {
+				o.keep(o.lastSeen, o.classify(o.lastSeen), hasObservedCurrentGeneration(o.lastSeen))
+			}
 		case event, open := <-watcher.ResultChan():
 			switch {
 			case !open:
@@ -104,6 +110,14 @@ func (o *observation) watchAndAct(ctx context.Context) {
 						event.Object, o.states())
 					return
 				}
+				// Fold every already-delivered reference change first, so a workload update the
+				// controller derived from a reference change pairs with that reference's new
+				// state, not its old one. Independent watches give arrival order, not cluster
+				// order; this narrows the gap to events not yet delivered.
+				if !o.drainReferenceEvents() {
+					return
+				}
+				o.workloadSeen = true
 				if o.record(ctx, cr) {
 					return
 				}
@@ -121,6 +135,23 @@ func (o *observation) classify(cr *unstructured.Unstructured) kartav1alpha1.Reso
 	}
 
 	return state
+}
+
+// drainReferenceEvents folds every reference event that is already waiting, without blocking.
+// A dead watcher discovered here fails the run; ok=false means stop.
+func (o *observation) drainReferenceEvents() (ok bool) {
+	for {
+		select {
+		case change := <-o.refEvents:
+			if change.err != nil {
+				o.failure = fmt.Sprintf("reference watch %s: %v; observed %v; re-record the flow", change.key, change.err, o.states())
+				return false
+			}
+			o.applyReferenceChange(change)
+		default:
+			return true
+		}
+	}
 }
 
 // applyReferenceChange folds one watched change into the cache.
@@ -182,8 +213,12 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 func (o *observation) keep(cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) {
 	refs := o.cachedReferences()
 	signature := map[string]any{"workload": stripVolatileFields(cr)}
-	for _, ref := range refs {
-		signature["ref/"+ref.GetName()] = stripVolatileFields(ref)
+	if o.flow != nil {
+		for _, capture := range o.flow.captures {
+			if object, ok := o.refCache[capture.key()]; ok {
+				signature["ref/"+capture.key()] = stripVolatileFields(object)
+			}
+		}
 	}
 	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, signature) {
 		return
@@ -208,18 +243,45 @@ func (o *observation) cachedReferences() []*unstructured.Unstructured {
 	return out
 }
 
-// startReferenceWatches seeds the cache with each capture's current state and starts a resilient
-// watch per capture, all funneled into refEvents. Starting from the seed's resourceVersion means
-// no change is lost between the seed and the watch; a capture that does not exist yet starts
-// from the list's version, so even its creation is caught.
+// seedReferences fills the cache with each capture's current state and returns each seed's
+// list resourceVersion, the gap-free point a watch may start from.
+func (o *observation) seedReferences(ctx context.Context) (map[string]string, error) {
+	o.refCache = make(map[string]*unstructured.Unstructured, len(o.flow.captures))
+	versions := make(map[string]string, len(o.flow.captures))
+	for _, capture := range o.flow.captures {
+		resource, nameSelector, err := o.flow.referenceResource(capture)
+		if err != nil {
+			return nil, fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
+		}
+		list, err := resource.List(ctx, metav1.ListOptions{FieldSelector: nameSelector})
+		if err != nil {
+			return nil, fmt.Errorf("capture reference %s/%s: seed: %w", capture.GVK.Kind, capture.Name, err)
+		}
+		if len(list.Items) > 0 {
+			o.refCache[capture.key()] = &list.Items[0]
+		}
+		versions[capture.key()] = list.GetResourceVersion()
+	}
+
+	return versions, nil
+}
+
+// startReferenceWatches seeds the cache and starts a resilient watch per capture, all funneled
+// into refEvents. Starting from the seed's resourceVersion means no change is lost between the
+// seed and the watch; a capture that does not exist yet starts from the list's version, so even
+// its creation is caught. The channel is buffered so a slow moment in the main loop (an action
+// PATCH in flight) does not backpressure the watchers.
 func (o *observation) startReferenceWatches(ctx context.Context) error {
 	if len(o.flow.captures) == 0 {
 		return nil
 	}
-	o.refCache = make(map[string]*unstructured.Unstructured, len(o.flow.captures))
-	o.refEvents = make(chan referenceEvent)
+	versions, err := o.seedReferences(ctx)
+	if err != nil {
+		return err
+	}
+	o.refEvents = make(chan referenceEvent, 64)
 	for _, capture := range o.flow.captures {
-		if err := o.watchReference(ctx, capture); err != nil {
+		if err := o.watchReference(ctx, capture, versions[capture.key()]); err != nil {
 			return fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
 		}
 	}
@@ -227,40 +289,49 @@ func (o *observation) startReferenceWatches(ctx context.Context) error {
 	return nil
 }
 
-func (o *observation) watchReference(ctx context.Context, capture CapturedReference) error {
-	gvk := schema.GroupVersionKind{Group: capture.GVK.Group, Version: capture.GVK.Version, Kind: capture.GVK.Kind}
-	mapping, err := o.flow.client().RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+func (o *observation) watchReference(ctx context.Context, capture CapturedReference, sinceVersion string) error {
+	resource, nameSelector, err := o.flow.referenceResource(capture)
 	if err != nil {
-		return fmt.Errorf("rest mapping for %s: %w", gvk, err)
+		return err
 	}
-	namespace := ""
-	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
-		namespace = o.flow.rec.config.Cluster.Namespace
-	}
-
-	resource := o.flow.rec.config.Cluster.Dynamic.Resource(mapping.Resource)
-	nameSelector := fields.OneTermEqualSelector("metadata.name", capture.Name).String()
-	list, err := resource.Namespace(namespace).List(ctx, metav1.ListOptions{FieldSelector: nameSelector})
-	if err != nil {
-		return fmt.Errorf("seed %s: %w", capture.Name, err)
-	}
-	if len(list.Items) > 0 {
-		o.refCache[capture.key()] = &list.Items[0]
-	}
-
-	watcher, err := watchtools.NewRetryWatcherWithContext(ctx, list.GetResourceVersion(), &cache.ListWatch{
+	key := capture.key()
+	watcher, err := watchtools.NewRetryWatcherWithContext(ctx, sinceVersion, &cache.ListWatch{
 		WatchFuncWithContext: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
 			opts.FieldSelector = nameSelector
-			return resource.Namespace(namespace).Watch(ctx, opts)
+			w, err := resource.Watch(ctx, opts)
+			// The RetryWatcher retries a plain HTTP error with the same version forever; an
+			// expired version can never succeed, so surface it as fatal instead of spinning
+			// until the flow times out over silently stale references.
+			if apierrors.IsGone(err) || apierrors.IsResourceExpired(err) {
+				o.sendReferenceEvent(ctx, referenceEvent{key: key, err: fmt.Errorf("watch expired: %w", err)})
+			}
+			return w, err
 		},
 	})
 	if err != nil {
 		return fmt.Errorf("watch %s: %w", capture.Name, err)
 	}
 
-	go o.forwardReferenceEvents(ctx, capture.key(), watcher)
+	go o.forwardReferenceEvents(ctx, key, watcher)
 
 	return nil
+}
+
+// referenceResource resolves a capture to the dynamic resource interface it is read and watched
+// through, scoped to the recorder's namespace for namespaced kinds.
+func (f *Flow) referenceResource(capture CapturedReference) (dynamic.ResourceInterface, string, error) {
+	gvk := schema.GroupVersionKind{Group: capture.GVK.Group, Version: capture.GVK.Version, Kind: capture.GVK.Kind}
+	mapping, err := f.client().RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, "", fmt.Errorf("rest mapping for %s: %w", gvk, err)
+	}
+	namespace := ""
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		namespace = f.rec.config.Cluster.Namespace
+	}
+	nameSelector := fields.OneTermEqualSelector("metadata.name", capture.Name).String()
+
+	return f.rec.config.Cluster.Dynamic.Resource(mapping.Resource).Namespace(namespace), nameSelector, nil
 }
 
 // forwardReferenceEvents relays one watcher's events into the shared channel until the watcher

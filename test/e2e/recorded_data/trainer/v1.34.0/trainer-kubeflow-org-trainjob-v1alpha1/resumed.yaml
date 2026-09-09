@@ -4,11 +4,11 @@ events:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 1
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -23,7 +23,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is suspended
         reason: Suspended
         status: "True"
@@ -69,7 +69,7 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30695"
+  resourceVersion: "35994"
   state: Suspended
 - action:
     name: Resume
@@ -85,11 +85,11 @@ events:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -104,7 +104,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is suspended
         reason: Suspended
         status: "True"
@@ -150,18 +150,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30699"
+  resourceVersion: "35998"
   state: Suspended
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -176,7 +176,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is resumed
         reason: Resumed
         status: "False"
@@ -229,18 +229,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30706"
+  resourceVersion: "36006"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -255,7 +255,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is resumed
         reason: Resumed
         status: "False"
@@ -308,18 +308,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30717"
+  resourceVersion: "36016"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -334,7 +334,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is resumed
         reason: Resumed
         status: "False"
@@ -387,18 +387,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30720"
+  resourceVersion: "36019"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -413,7 +413,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is resumed
         reason: Resumed
         status: "False"
@@ -466,18 +466,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30736"
+  resourceVersion: "36030"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -492,7 +492,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is resumed
         reason: Resumed
         status: "False"
@@ -545,18 +545,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30787"
+  resourceVersion: "36080"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -571,7 +571,7 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is resumed
         reason: Resumed
         status: "False"
@@ -624,18 +624,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30795"
+  resourceVersion: "36090"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:33Z"
+      creationTimestamp: "2026-09-09T23:45:09Z"
       generation: 2
       name: trainer-suspended
-      namespace: test-tp67s
-      uid: a912e0e1-8fae-456e-b9f0-3c39f4754e76
+      namespace: test-49wgg
+      uid: 6be4627a-0813-4660-ba23-541193be8635
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -650,12 +650,12 @@ events:
         - sleep 15
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: TrainJob is resumed
         reason: Resumed
         status: "False"
         type: Suspended
-      - lastTransitionTime: "2026-09-09T23:16:51Z"
+      - lastTransitionTime: "2026-09-09T23:45:27Z"
         message: jobset completed successfully
         reason: AllJobsCompleted
         status: "True"
@@ -708,7 +708,7 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30799"
+  resourceVersion: "36094"
   state: Completed
 flow: resumed
 kartaFile: docs/catalog/trainer-kubeflow-org-trainjob-v1alpha1.yaml

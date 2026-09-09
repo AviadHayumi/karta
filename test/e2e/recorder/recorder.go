@@ -179,17 +179,24 @@ func (f *Flow) deleteWorkload(ctx context.Context, workload *unstructured.Unstru
 // journey's action steps as their states are reached. Its failure is set if the terminal state was not met.
 func (f *Flow) observe(ctx context.Context, workload *unstructured.Unstructured) *observation {
 	o := &observation{flow: f, workload: workload, lastSeen: workload, pending: actionSteps(f.journey)}
-	if err := o.startReferenceWatches(ctx); err != nil {
-		o.failure = err.Error()
-		return o
-	}
 
 	// A workload whose terminal state is already visible in the create response may never produce a watch
 	// event at all: a suspended CronJob never schedules, so its controller never writes status, and a watch
 	// (which replays only events after the create) would wait for the timeout. Record the create response
-	// directly instead.
+	// directly with a one-shot reference seed; no watcher ever starts, so none is left unconsumed.
 	if hasObservedCurrentGeneration(workload) && o.hasReachedTerminal(classify(workload, f.rec.states)) {
+		if len(f.captures) > 0 {
+			if _, err := o.seedReferences(ctx); err != nil {
+				o.failure = err.Error()
+				return o
+			}
+		}
+		o.workloadSeen = true
 		o.record(ctx, workload)
+		return o
+	}
+	if err := o.startReferenceWatches(ctx); err != nil {
+		o.failure = err.Error()
 		return o
 	}
 	o.watchAndAct(ctx)

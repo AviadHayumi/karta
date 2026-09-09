@@ -4,11 +4,11 @@ events:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:28Z"
+      creationTimestamp: "2026-09-09T23:45:04Z"
       generation: 1
       name: trainer-failed
-      namespace: test-tp67s
-      uid: a8cf5ddf-5b35-4f43-b240-87df2bc48962
+      namespace: test-49wgg
+      uid: d05f6b2d-82ee-4d8c-a688-4ac94ff91753
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -70,18 +70,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30640"
+  resourceVersion: "35930"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:28Z"
+      creationTimestamp: "2026-09-09T23:45:04Z"
       generation: 1
       name: trainer-failed
-      namespace: test-tp67s
-      uid: a8cf5ddf-5b35-4f43-b240-87df2bc48962
+      namespace: test-49wgg
+      uid: d05f6b2d-82ee-4d8c-a688-4ac94ff91753
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -143,18 +143,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30646"
+  resourceVersion: "35937"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:28Z"
+      creationTimestamp: "2026-09-09T23:45:04Z"
       generation: 1
       name: trainer-failed
-      namespace: test-tp67s
-      uid: a8cf5ddf-5b35-4f43-b240-87df2bc48962
+      namespace: test-49wgg
+      uid: d05f6b2d-82ee-4d8c-a688-4ac94ff91753
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -216,18 +216,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30656"
+  resourceVersion: "35951"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:28Z"
+      creationTimestamp: "2026-09-09T23:45:04Z"
       generation: 1
       name: trainer-failed
-      namespace: test-tp67s
-      uid: a8cf5ddf-5b35-4f43-b240-87df2bc48962
+      namespace: test-49wgg
+      uid: d05f6b2d-82ee-4d8c-a688-4ac94ff91753
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -289,18 +289,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30670"
+  resourceVersion: "35964"
   state: Running
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:28Z"
+      creationTimestamp: "2026-09-09T23:45:04Z"
       generation: 1
       name: trainer-failed
-      namespace: test-tp67s
-      uid: a8cf5ddf-5b35-4f43-b240-87df2bc48962
+      namespace: test-49wgg
+      uid: d05f6b2d-82ee-4d8c-a688-4ac94ff91753
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -362,18 +362,18 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30677"
+  resourceVersion: "35976"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: trainer.kubeflow.org/v1alpha1
     kind: TrainJob
     metadata:
-      creationTimestamp: "2026-09-09T23:16:28Z"
+      creationTimestamp: "2026-09-09T23:45:04Z"
       generation: 1
       name: trainer-failed
-      namespace: test-tp67s
-      uid: a8cf5ddf-5b35-4f43-b240-87df2bc48962
+      namespace: test-49wgg
+      uid: d05f6b2d-82ee-4d8c-a688-4ac94ff91753
     spec:
       managedBy: trainer.kubeflow.org/trainjob-controller
       runtimeRef:
@@ -388,7 +388,7 @@ events:
         - sleep 2; exit 1
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T23:16:33Z"
+      - lastTransitionTime: "2026-09-09T23:45:09Z"
         message: 'jobset failed due to one or more job failures (first failed job:
           trainer-failed-node-0)'
         reason: FailedJobs
@@ -442,7 +442,7 @@ events:
                           cpu: 10m
                           memory: 16Mi
                     restartPolicy: Never
-  resourceVersion: "30681"
+  resourceVersion: "35980"
   state: Failed
 flow: failed
 kartaFile: docs/catalog/trainer-kubeflow-org-trainjob-v1alpha1.yaml
