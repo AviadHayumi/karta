@@ -8,6 +8,8 @@
 //
 //	{"op":"buildTree","definition":"<json>","workload":"<json>"}
 //	{"op":"setField","workload":"<json>","path":".spec.schedulerName","value":"kai"}
+//	{"op":"suspend","definition":"<json>","workload":"<json>"}
+//	{"op":"resume","definition":"<json>","workload":"<json>"}
 package main
 
 import (
@@ -45,6 +47,18 @@ func main() {
 			fail(err)
 		}
 		emit(workloadTree)
+	case "suspend":
+		object, err := core.Suspend(ctx, req.Definition, req.Workload)
+		if err != nil {
+			fail(err)
+		}
+		emitRaw(object)
+	case "resume":
+		object, err := core.Resume(ctx, req.Definition, req.Workload)
+		if err != nil {
+			fail(err)
+		}
+		emitRaw(object)
 	case "setField":
 		object, err := core.SetField(ctx, req.Workload, req.Path, req.Value)
 		if err != nil {

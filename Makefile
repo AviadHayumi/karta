@@ -118,6 +118,10 @@ check-lib: fmt-check-lib vet-lib lint-lib validate verify-recordings test-lib te
 
 ##@ Karta WASM (karta-wasm module)
 
+.PHONY: karta-wasi
+karta-wasi: ## Build the WASI door (karta-wasm/karta-wasi.wasm, run it with the sandbox)
+	cd karta-wasm && GOOS=wasip1 GOARCH=wasm go build -trimpath -ldflags="-s -w" -o karta-wasi.wasm .
+
 .PHONY: fmt-karta-wasm
 fmt-karta-wasm: ## Format the karta-wasm module
 	go -C karta-wasm fmt ./...

@@ -73,6 +73,55 @@ func SetField(ctx context.Context, workloadJSON, path string, value any) ([]byte
 	return json.Marshal(object)
 }
 
+// Suspend applies every component's suspend actions to the workload and
+// returns the mutated object as JSON.
+func Suspend(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
+	return applySuspendActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
+		return component.Suspend(ctx)
+	})
+}
+
+// Resume applies every component's resume actions to the workload and returns
+// the mutated object as JSON.
+func Resume(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
+	return applySuspendActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
+		return component.Resume(ctx)
+	})
+}
+
+func applySuspendActions(ctx context.Context, definitionJSON, workloadJSON string, apply func(context.Context, *resource.Component) error) ([]byte, error) {
+	definition, err := DecodeDefinition(definitionJSON)
+	if err != nil {
+		return nil, err
+	}
+	workload, err := DecodeWorkload(workloadJSON)
+	if err != nil {
+		return nil, err
+	}
+	factory := resource.NewComponentFactoryFromObject(definition, workload)
+	root, err := factory.GetRootComponent()
+	if err != nil {
+		return nil, err
+	}
+	children, err := factory.GetChildComponents()
+	if err != nil {
+		return nil, err
+	}
+	for _, component := range append(children, root) {
+		if !component.HasSuspendDefinition() {
+			continue
+		}
+		if err := apply(ctx, component); err != nil {
+			return nil, err
+		}
+	}
+	object, err := factory.GetResource()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(object)
+}
+
 // ListCatalog returns the Karta definitions embedded at build time.
 func ListCatalog() []*v1alpha1.Karta {
 	return catalog.List()

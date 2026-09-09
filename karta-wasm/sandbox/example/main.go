@@ -56,12 +56,33 @@ func main() {
 	fmt.Println("status:", workloadTree.Status.Phases)
 	walk(workloadTree.Children, "  ")
 
-	// 3. mutate a field, in the sandbox, and read the object back
+	// 3. suspend, then resume. offline this flips the workload's suspend
+	// INTENT (the definition's suspendActions, e.g. .spec.suspend) - the
+	// Suspended phase itself appears once the operator reports it in status.
+	suspended := parseRaw(box.Suspend(ctx, definitionJSON, workloadJSON))
+	fmt.Println("after suspend : .spec.suspend =", field(suspended, "spec", "suspend"))
+
+	resumed := parseRaw(box.Resume(ctx, definitionJSON, string(suspended)))
+	fmt.Println("after resume  : .spec.suspend =", field(resumed, "spec", "suspend"))
+
+	// 5. the low-level write door : set one field, read the object back
 	mutated := parseRaw(box.SetField(ctx, workloadJSON, `.metadata.labels.team`, `"ml"`))
 	var object map[string]any
 	json.Unmarshal(mutated, &object)
 	labels := object["metadata"].(map[string]any)["labels"]
 	fmt.Println("after setField .metadata.labels.team=ml ->", labels)
+}
+
+func field(raw json.RawMessage, path ...string) any {
+	var object map[string]any
+	if err := json.Unmarshal(raw, &object); err != nil {
+		panic(err)
+	}
+	var v any = object
+	for _, key := range path {
+		v = v.(map[string]any)[key]
+	}
+	return v
 }
 
 type envelope struct {

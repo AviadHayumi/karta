@@ -35,8 +35,10 @@ the host has two calls, both run in a fresh isolated instance :
 box, _ := sandbox.New(ctx, wasm)   // compile the wasi door once
 defer box.Close(ctx)
 
-tree, _ := box.BuildTree(ctx, definitionJSON, workloadJSON)          // read
-obj,  _ := box.SetField(ctx, workloadJSON, ".metadata.labels.team", `"ml"`) // write one field
+tree, _ := box.BuildTree(ctx, definitionJSON, workloadJSON)                  // read the tree
+obj,  _ := box.Suspend(ctx, definitionJSON, workloadJSON)                    // suspend ( the definition's suspendActions )
+obj,  _  = box.Resume(ctx, definitionJSON, string(obj))                      // resume
+obj,  _  = box.SetField(ctx, workloadJSON, ".metadata.labels.team", `"ml"`)  // low-level single-field write
 ```
 
 `BuildTree` returns the {data, error} envelope holding the workload tree.
@@ -48,18 +50,25 @@ the example builds the tree, PARSES it by walking every (component, instance),
 then mutates a label - all in the sandbox :
 
 ```sh
-cd karta-wasm && GOOS=wasip1 GOARCH=wasm go build -o karta-wasi.wasm .
-go run ./sandbox/example karta-wasi.wasm \
-  ../docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml \
-  ../docs/examples/quickstart/jobset.yaml
+make karta-wasi   # from the repo root : builds karta-wasm/karta-wasi.wasm
+cd karta-wasm/sandbox
+go run ./example ../karta-wasi.wasm \
+  ../../docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml \
+  ../../docs/examples/quickstart/jobset.yaml
 ```
 
 ```
 status: [Running]
   component replicatedjob  instance leader     pods:true
   component replicatedjob  instance workers    pods:true
+after suspend : .spec.suspend = true
+after resume  : .spec.suspend = false
 after setField .metadata.labels.team=ml -> map[team:ml]
 ```
+
+suspend and resume flip the workload's suspend intent ( the definition's
+suspendActions ). the Suspended phase itself shows up once the operator reports
+it in the workload's status.
 
 swap in any catalog definition and workload to try another type.
 

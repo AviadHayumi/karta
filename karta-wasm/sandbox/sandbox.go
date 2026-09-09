@@ -61,6 +61,18 @@ func (s *Sandbox) SetField(ctx context.Context, workloadJSON, path, valueJSON st
 	return s.run(ctx, fmt.Sprintf(`{"op":"setField","workload":%q,"path":%q,"value":%s}`, workloadJSON, path, valueJSON))
 }
 
+// Suspend applies the definition's suspend actions in a fresh instance and
+// returns the {data, error} envelope holding the mutated object.
+func (s *Sandbox) Suspend(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
+	return s.run(ctx, fmt.Sprintf(`{"op":"suspend","definition":%q,"workload":%q}`, definitionJSON, workloadJSON))
+}
+
+// Resume applies the definition's resume actions in a fresh instance and
+// returns the {data, error} envelope holding the mutated object.
+func (s *Sandbox) Resume(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
+	return s.run(ctx, fmt.Sprintf(`{"op":"resume","definition":%q,"workload":%q}`, definitionJSON, workloadJSON))
+}
+
 func (s *Sandbox) run(ctx context.Context, request string) ([]byte, error) {
 	var stdout, stderr bytes.Buffer
 	config := wazero.NewModuleConfig().

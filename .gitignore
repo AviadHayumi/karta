@@ -32,6 +32,7 @@ config/crd/_.yaml
 
 # Generated WASM engine build artifacts (make headlamp-plugin-wasm)
 /karta-wasm/karta.wasm
+/karta-wasm/karta-wasi.wasm
 /karta-wasm/wasm_exec.js
 
 hack/e2e/operators/.installed-versions*
