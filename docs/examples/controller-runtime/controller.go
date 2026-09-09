@@ -107,8 +107,11 @@ func (r *WorkloadReconciler) Reconcile(ctx context.Context, req reconcile.Reques
 	}
 	previousStatus := obj.GetAnnotations()[annotationStatus]
 
-	// Step 2: the single Karta entry point for all read and write operations.
-	factory := resource.NewComponentFactoryFromObject(karta, obj)
+	// Step 2: the single Karta entry point for all read and write operations. The reader lets a
+	// definition that declares references resolve them through the client this controller
+	// already holds; a definition without references never touches it.
+	factory := resource.NewComponentFactoryFromObject(karta, obj,
+		resource.WithReferenceReader(&clientReader{reader: r.Client}))
 	components, err := allComponents(factory)
 	if err != nil {
 		return reconcile.Result{}, err

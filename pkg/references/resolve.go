@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -93,6 +94,14 @@ func resolveOne(ctx context.Context, reader ResourceReader,
 		if err != nil {
 			return ReferenceValue{}, fmt.Errorf("list %s: %w", gvk, err)
 		}
+		// A deterministic order keeps expressions, recordings and bindings stable across readers.
+		sort.Slice(items, func(i, j int) bool {
+			if items[i].GetNamespace() != items[j].GetNamespace() {
+				return items[i].GetNamespace() < items[j].GetNamespace()
+			}
+
+			return items[i].GetName() < items[j].GetName()
+		})
 
 		return NewListValue(items), nil
 	}
