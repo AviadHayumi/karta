@@ -17,9 +17,12 @@ import (
 // is the TrainJob's override coalesced onto the runtime's base - the first definition in the
 // catalog whose reads need more than the workload object.
 func TrainJob() *v1alpha1.Karta {
-	// A ClusterTrainingRuntime template holds one replicated job whose only container carries
-	// the training image and resources, so [0] addresses it deterministically.
-	const runtimeContainer = `references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0]`
+	// The trainer association is the ancestor-step label on the job template and the container
+	// named node, the same pair the trainjob controller targets with spec.trainer overrides;
+	// positional indexing would pick an initializer job on runtimes that declare one.
+	const runtimeContainer = `references.trainingRuntime.spec.template.spec.replicatedJobs` +
+		`.filter(j, j.?template.?metadata.?labels["trainer.kubeflow.org/trainjob-ancestor-step"].orValue("") == "trainer")[0]` +
+		`.template.spec.template.spec.containers.filter(c, c[?"name"].orValue("") == "node")[0]`
 
 	return &v1alpha1.Karta{
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},

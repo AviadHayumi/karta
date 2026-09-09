@@ -15,9 +15,9 @@ spec:
       specDefinition:
         fragmentedPodSpecDefinition:
           resources:
-            expression: object.?spec.?trainer.?resourcesPerNode.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0][?"resources"].orValue(null))
+            expression: object.?spec.?trainer.?resourcesPerNode.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs.filter(j, j.?template.?metadata.?labels["trainer.kubeflow.org/trainjob-ancestor-step"].orValue("") == "trainer")[0].template.spec.template.spec.containers.filter(c, c[?"name"].orValue("") == "node")[0][?"resources"].orValue(null))
           image:
-            expression: object.?spec.?trainer.?image.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0][?"image"].orValue(null))
+            expression: object.?spec.?trainer.?image.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs.filter(j, j.?template.?metadata.?labels["trainer.kubeflow.org/trainjob-ancestor-step"].orValue("") == "trainer")[0].template.spec.template.spec.containers.filter(c, c[?"name"].orValue("") == "node")[0][?"image"].orValue(null))
       scaleDefinition:
         replicas:
           expression: object.?spec.?trainer.?numNodes.orValue(references.trainingRuntime.?spec.?mlPolicy.?numNodes.orValue(1))

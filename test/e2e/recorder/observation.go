@@ -126,8 +126,9 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 		state = kartav1alpha1.UndefinedStatus
 	}
 	observed := hasObservedCurrentGeneration(cr)
-	if !o.keep(ctx, cr, state, observed) {
-		return false
+	if err := o.keep(ctx, cr, state, observed); err != nil {
+		o.failure = err.Error()
+		return true
 	}
 	if !observed {
 		return false
@@ -139,23 +140,26 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 	return o.hasReachedTerminal(state)
 }
 
-// keep appends cr as a new snapshot, unless it duplicates the last kept one (same content once the volatile
-// fields are stripped). A kept frame also captures the flow's declared references; a capture
-// failure other than NotFound ends the run, since a recording with a silently missing reference
-// would replay wrong. Returns false when the run must stop.
-func (o *observation) keep(ctx context.Context, cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) (ok bool) {
-	sig := stripVolatileFields(cr)
-	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, sig) {
-		return true
-	}
+// keep appends cr as a new snapshot, unless it duplicates the last kept one - same workload and
+// same references once the volatile fields are stripped. References are captured before the
+// dedup so a runtime that changed under an unchanged workload still produces a frame, and a
+// capture failure ends the run: a recording with a silently missing reference would replay
+// wrong.
+func (o *observation) keep(ctx context.Context, cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) error {
 	refs, err := o.captureReferences(ctx)
 	if err != nil {
-		o.failure = err.Error()
-		return false
+		return err
 	}
-	o.lastSig = sig
+	signature := map[string]any{"workload": stripVolatileFields(cr)}
+	for _, ref := range refs {
+		signature["ref/"+ref.GetName()] = stripVolatileFields(ref)
+	}
+	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, signature) {
+		return nil
+	}
+	o.lastSig = signature
 	o.snapshots = append(o.snapshots, snapshot{state: state, cr: cr.DeepCopy(), staleObservedGeneration: !observed, refs: refs})
-	return true
+	return nil
 }
 
 // captureReferences fetches the flow's declared references as they are right now. A reference
@@ -189,7 +193,8 @@ func (o *observation) captureReferences(ctx context.Context) ([]*unstructured.Un
 	return out, nil
 }
 
-// isNamespaced reports whether the object's kind is namespace-scoped.
+// isNamespaced asks the cluster for the kind's scope: a capture may name a namespaced or a
+// cluster-scoped resource, and only the RESTMapper knows which.
 func (f *Flow) isNamespaced(object *unstructured.Unstructured) (bool, error) {
 	gvk := object.GroupVersionKind()
 	mapping, err := f.client().RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)

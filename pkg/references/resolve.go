@@ -58,6 +58,9 @@ func resolveOne(ctx context.Context, reader ResourceReader,
 	switch {
 	case ref.Lookup != nil:
 		name, err := evaluateString(ctx, runner, ref.Lookup.NameExpression)
+		if err == nil && name == "" {
+			err = errors.New("resolved to an empty name")
+		}
 		if err != nil {
 			return ReferenceValue{}, fmt.Errorf("nameExpression: %w", err)
 		}
@@ -71,10 +74,10 @@ func resolveOne(ctx context.Context, reader ResourceReader,
 			return ReferenceValue{}, nil
 		}
 		if err != nil {
-			return ReferenceValue{}, err
+			return ReferenceValue{}, fmt.Errorf("get %s %q: %w", gvk, name, err)
 		}
 
-		return LookupValue(object), nil
+		return NewLookupValue(object), nil
 
 	case ref.List != nil:
 		selector, err := buildSelector(ctx, runner, ref.List)
@@ -88,18 +91,19 @@ func resolveOne(ctx context.Context, reader ResourceReader,
 		}
 		items, err := reader.List(ctx, gvk, ListQuery{Namespace: namespace, Selector: selector})
 		if err != nil {
-			return ReferenceValue{}, err
+			return ReferenceValue{}, fmt.Errorf("list %s: %w", gvk, err)
 		}
 
-		return ListValue(items), nil
+		return NewListValue(items), nil
 	}
 
 	return ReferenceValue{}, errors.New("neither lookup nor list is set")
 }
 
-// evaluateString evaluates one expression against the workload and requires a non-empty string
-// result. The whole-value method is used so a list result cannot masquerade as a scalar through
-// stream spreading.
+// evaluateString evaluates one expression against the workload and requires a string result.
+// An empty string is valid here: label values may legitimately be empty, and the one caller
+// that cannot accept it - the lookup name - enforces that itself. The whole-value method is
+// used so a list result cannot masquerade as a scalar through stream spreading.
 func evaluateString(ctx context.Context, runner expression.Runner, expr string) (string, error) {
 	results, err := runner.EvaluateWithVariables(ctx, expr, map[string]any{})
 	if err != nil {
@@ -109,8 +113,8 @@ func evaluateString(ctx context.Context, runner expression.Runner, expr string) 
 		return "", fmt.Errorf("expected a single result, got %d", len(results))
 	}
 	value, ok := results[0].(string)
-	if !ok || value == "" {
-		return "", fmt.Errorf("expected a non-empty string, got %v", results[0])
+	if !ok {
+		return "", fmt.Errorf("expected a string, got %v", results[0])
 	}
 
 	return value, nil
@@ -121,7 +125,7 @@ func evaluateString(ctx context.Context, runner expression.Runner, expr string) 
 func buildSelector(ctx context.Context, runner expression.Runner, list *v1alpha1.ListReference) (labels.Selector, error) {
 	selector := labels.NewSelector()
 	for key, value := range list.MatchLabels {
-		resolved, err := labelValue(ctx, runner, value)
+		resolved, err := resolveLabelValue(ctx, runner, value)
 		if err != nil {
 			return nil, fmt.Errorf("matchLabels[%s]: %w", key, err)
 		}
@@ -138,7 +142,7 @@ func buildSelector(ctx context.Context, runner expression.Runner, list *v1alpha1
 		}
 		values := make([]string, 0, len(req.Values))
 		for _, value := range req.Values {
-			resolved, err := labelValue(ctx, runner, value)
+			resolved, err := resolveLabelValue(ctx, runner, value)
 			if err != nil {
 				return nil, fmt.Errorf("matchExpressions[%s]: %w", req.Key, err)
 			}
@@ -154,7 +158,7 @@ func buildSelector(ctx context.Context, runner expression.Runner, list *v1alpha1
 	return selector, nil
 }
 
-func labelValue(ctx context.Context, runner expression.Runner, value v1alpha1.LabelValue) (string, error) {
+func resolveLabelValue(ctx context.Context, runner expression.Runner, value v1alpha1.LabelValue) (string, error) {
 	switch {
 	case value.Value != nil:
 		return *value.Value, nil

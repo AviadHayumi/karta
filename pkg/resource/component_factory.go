@@ -122,7 +122,7 @@ func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObjec
 	provider := func(ctx context.Context) (map[string]any, error) {
 		switch {
 		case options.hasResolved:
-			return options.resolved.Bindings()
+			return withDeclaredLists(options.resolved, karta).Bindings()
 		case options.reader != nil:
 			resolved, err := references.Resolve(ctx, options.reader, karta, object)
 			if err != nil {
@@ -286,4 +286,21 @@ func validateKubernetesObject(u *unstructured.Unstructured) error {
 		return fmt.Errorf("missing metadata.name or metadata.generateName")
 	}
 	return nil
+}
+
+// withDeclaredLists fills every declared list reference the consumer did not resolve with an
+// empty list, so references.<name>.size() reads zero instead of failing. A missing lookup stays
+// unbound by design: only an expression that reads it fails.
+func withDeclaredLists(resolved references.ResolvedReferences, karta *v1alpha1.Karta) references.ResolvedReferences {
+	filled := make(references.ResolvedReferences, len(resolved))
+	for name, value := range resolved {
+		filled[name] = value
+	}
+	for _, ref := range karta.Spec.StructureDefinition.References {
+		if _, ok := filled[ref.Name]; !ok && ref.List != nil {
+			filled[ref.Name] = references.NewListValue(nil)
+		}
+	}
+
+	return filled
 }

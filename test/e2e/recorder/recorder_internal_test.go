@@ -7,6 +7,8 @@ import (
 	"context"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -213,3 +215,31 @@ func steps(states ...kartav1alpha1.ResourceStatus) []journeyStep {
 func visits(states ...kartav1alpha1.ResourceStatus) []kartav1alpha1.ResourceStatus {
 	return states
 }
+
+var _ = Describe("reference capture failures", func() {
+	It("stops the run and keeps the capture error", func() {
+		o := &observation{}
+		Expect(o.keep(context.Background(), objWithStatus(map[string]any{"active": int64(1)}), initializing, true)).To(Succeed())
+
+		// A fake client with no registered kinds fails the scope lookup; record must stop
+		// immediately so the capture error is not overwritten by the timeout message.
+		o.flow = &Flow{
+			rec:      &Recorder{config: Config{Cluster: Cluster{Client: fake.NewClientBuilder().Build()}}},
+			captures: []CapturedReference{{GVK: kartav1alpha1.GroupVersionKind{Group: "example.com", Version: "v1", Kind: "Missing"}, Name: "missing"}},
+		}
+		stop := o.record(context.Background(), objWithStatus(map[string]any{"active": int64(2)}))
+		Expect(stop).To(BeTrue())
+		Expect(o.failure).To(ContainSubstring("capture reference"))
+	})
+})
+
+var _ = Describe("reference-aware dedup", func() {
+	It("keeps a frame when only the captured reference changed", func() {
+		o := &observation{}
+		cr := objWithStatus(map[string]any{"active": int64(1)})
+
+		Expect(o.keep(context.Background(), cr, initializing, true)).To(Succeed())
+		Expect(o.keep(context.Background(), cr, initializing, true)).To(Succeed(), "identical frame dedups")
+		Expect(o.snapshots).To(HaveLen(1))
+	})
+})

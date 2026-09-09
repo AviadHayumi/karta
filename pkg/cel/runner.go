@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/cel-go/cel"
+	celast "github.com/google/cel-go/common/ast"
 	"github.com/google/cel-go/common/types/ref"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -35,6 +37,7 @@ type runner struct {
 	referencesProvider func(ctx context.Context) (map[string]any, error)
 	refMu              sync.Mutex
 	refValues          map[string]any
+	mentions           map[string]bool
 
 	mu     sync.Mutex
 	source any
@@ -81,16 +84,47 @@ func NewRunnerWithVariables(source any, variables []NamedExpression, opts ...Opt
 	return r, nil
 }
 
-// referencesAny finds every mention of the references binding. Detection is syntactic, like the
-// variables scan above it: an expression that never mentions references never triggers a fetch,
-// and a mention on a branch evaluation would not take still resolves.
+// referencesAny is the fallback scan for an expression that does not parse; the parse error
+// itself surfaces at evaluation, so over-detecting here only costs an early fetch.
 var referencesAny = regexp.MustCompile(`\breferences\b`)
+
+// mentionsReferences reports whether the parsed expression contains a free identifier named
+// references. Detection is syntactic, like the variables scan: a mention on a branch evaluation
+// would not take still resolves. A field or string literal spelled "references" does not count,
+// so a definition reading object.spec.references never triggers a fetch.
+func (r *runner) mentionsReferences(expr string) bool {
+	if cached, ok := r.mentions[expr]; ok {
+		return cached
+	}
+	found := referencesFreeIdent(r.evaluator.env, expr)
+	if r.mentions == nil {
+		r.mentions = map[string]bool{}
+	}
+	r.mentions[expr] = found
+
+	return found
+}
+
+func referencesFreeIdent(env *cel.Env, expr string) bool {
+	parsed, issues := env.Parse(expr)
+	if issues != nil && issues.Err() != nil {
+		return referencesAny.MatchString(expr)
+	}
+	found := false
+	celast.PreOrderVisit(parsed.NativeRep().Expr(), celast.NewExprVisitor(func(e celast.Expr) {
+		if e.Kind() == celast.IdentKind && e.AsIdent() == "references" {
+			found = true
+		}
+	}))
+
+	return found
+}
 
 // needsReferences reports whether any of the expressions, or any of the definition variables the
 // needed set selects, mentions the references binding.
 func (r *runner) needsReferences(neededVars map[string]bool, expressions ...string) bool {
 	for _, expr := range expressions {
-		if referencesAny.MatchString(expr) {
+		if r.mentionsReferences(expr) {
 			return true
 		}
 	}
@@ -98,7 +132,7 @@ func (r *runner) needsReferences(neededVars map[string]bool, expressions ...stri
 		if neededVars != nil && !neededVars[variable.Name] {
 			continue
 		}
-		if referencesAny.MatchString(variable.Expression) {
+		if r.mentionsReferences(variable.Expression) {
 			return true
 		}
 	}
@@ -106,12 +140,12 @@ func (r *runner) needsReferences(neededVars map[string]bool, expressions ...stri
 	return false
 }
 
-// references resolves the definition's references and memoizes a successful result, so
+// resolveReferences resolves the definition's references and memoizes a successful result, so
 // addressing stays stable across a multi-pass write. A failed resolution is not cached: a
 // transient fetch error on one call must not poison every later one. The lock is deliberately
 // held across the provider call - a single flight, so concurrent first readers cannot each hit
 // the cluster.
-func (r *runner) references(ctx context.Context) (map[string]any, error) {
+func (r *runner) resolveReferences(ctx context.Context) (map[string]any, error) {
 	if r.referencesProvider == nil {
 		return nil, expression.ErrReferencesNotSupported
 	}
@@ -139,7 +173,7 @@ func (r *runner) referencesFor(ctx context.Context, neededVars map[string]bool, 
 		return map[string]any{}, nil
 	}
 
-	return r.references(ctx)
+	return r.resolveReferences(ctx)
 }
 
 // ResolveVariables evaluates the definition's variables against the CURRENT document and returns

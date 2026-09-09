@@ -24,7 +24,9 @@ func (r *recordedReader) Get(_ context.Context, gvk schema.GroupVersionKind, nam
 		if !matchesGVK(object, gvk) || object.GetName() != name {
 			continue
 		}
-		if object.GetNamespace() != "" && namespace != "" && object.GetNamespace() != namespace {
+		// A cluster-scoped capture has no namespace and matches any request; a namespaced one
+		// must match exactly, the way a live GET would.
+		if object.GetNamespace() != "" && object.GetNamespace() != namespace {
 			continue
 		}
 
@@ -40,7 +42,7 @@ func (r *recordedReader) List(_ context.Context, gvk schema.GroupVersionKind, qu
 		if !matchesGVK(object, gvk) {
 			continue
 		}
-		if object.GetNamespace() != "" && query.Namespace != "" && object.GetNamespace() != query.Namespace {
+		if object.GetNamespace() != "" && object.GetNamespace() != query.Namespace {
 			continue
 		}
 		if query.Selector != nil && !query.Selector.Matches(labels.Set(object.GetLabels())) {

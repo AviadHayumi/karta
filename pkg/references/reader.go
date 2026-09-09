@@ -53,7 +53,7 @@ type PermissionChecker interface {
 }
 
 // ReferenceValue is the fetched value of one reference: at most one of Object or List is set.
-// Build values with LookupValue and ListValue, which canonicalize the empty cases; the zero
+// Build values with NewLookupValue and NewListValue, which canonicalize the empty cases; the zero
 // value means a lookup that found nothing (the reference stays unbound, so only an expression
 // that reads it fails). Should both fields ever be set, Object wins.
 type ReferenceValue struct {
@@ -63,14 +63,14 @@ type ReferenceValue struct {
 	List []unstructured.Unstructured
 }
 
-// LookupValue is the resolved value of a lookup reference; pass nil for a miss.
-func LookupValue(object *unstructured.Unstructured) ReferenceValue {
+// NewLookupValue is the resolved value of a lookup reference; pass nil for a miss.
+func NewLookupValue(object *unstructured.Unstructured) ReferenceValue {
 	return ReferenceValue{Object: object}
 }
 
-// ListValue is the resolved value of a list reference; a nil slice canonicalizes to empty, so
+// NewListValue is the resolved value of a list reference; a nil slice canonicalizes to empty, so
 // an empty match binds as an empty list rather than staying unbound.
-func ListValue(items []unstructured.Unstructured) ReferenceValue {
+func NewListValue(items []unstructured.Unstructured) ReferenceValue {
 	if items == nil {
 		items = []unstructured.Unstructured{}
 	}

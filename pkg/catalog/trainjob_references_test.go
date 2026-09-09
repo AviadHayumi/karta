@@ -29,13 +29,30 @@ var _ = Describe("TrainJob karta with a resolved runtime", func() {
 			"mlPolicy": map[string]any{"numNodes": int64(1), "torch": map[string]any{}},
 			"template": map[string]any{"spec": map[string]any{"replicatedJobs": []any{
 				map[string]any{
-					"name": "node",
+					"name": "dataset-initializer",
 					"template": map[string]any{"spec": map[string]any{"template": map[string]any{"spec": map[string]any{
 						"containers": []any{map[string]any{
-							"name":  "node",
-							"image": "pytorch/pytorch:2.13.0-cuda13.0-cudnn9-runtime",
+							"name":  "dataset-initializer",
+							"image": "initializer:1",
 						}},
 					}}}},
+				},
+				map[string]any{
+					"name": "node",
+					"template": map[string]any{
+						"metadata": map[string]any{"labels": map[string]any{
+							"trainer.kubeflow.org/trainjob-ancestor-step": "trainer",
+						}},
+						"spec": map[string]any{"template": map[string]any{"spec": map[string]any{
+							"containers": []any{
+								map[string]any{"name": "sidecar", "image": "sidecar:1"},
+								map[string]any{
+									"name":  "node",
+									"image": "pytorch/pytorch:2.13.0-cuda13.0-cudnn9-runtime",
+								},
+							},
+						}}},
+					},
 				},
 			}}},
 		},

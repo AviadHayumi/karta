@@ -194,6 +194,6 @@ var _ = Describe("Resolve", func() {
 		_, err := references.Resolve(ctx, reader, karta, workload)
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring(`reference "trainingRuntime"`))
-		Expect(err.Error()).To(ContainSubstring("non-empty string"))
+		Expect(err.Error()).To(ContainSubstring("expected a string"))
 	})
 })

@@ -13,6 +13,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/utils/ptr"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/pkg/expression"
@@ -147,5 +148,66 @@ var _ = Describe("Factory reference options", func() {
 		Expect(err).NotTo(HaveOccurred())
 		_, err = factory.accessor.(*Accessor).ExtractPodTemplateSpec(ctx, component.Definition())
 		Expect(err).NotTo(HaveOccurred())
+	})
+})
+
+var _ = Describe("Declared list references with pre-resolved values", func() {
+	ctx := context.Background()
+
+	kartaWithList := func() *v1alpha1.Karta {
+		karta := &v1alpha1.Karta{Spec: v1alpha1.KartaSpec{
+			StructureDefinition: v1alpha1.StructureDefinition{
+				RootComponent: v1alpha1.ComponentDefinition{
+					Name: "trainjob",
+					ScaleDefinition: &v1alpha1.ScaleDefinition{
+						Replicas: &v1alpha1.ValueAccessor{Expression: `references.pods.size()`},
+					},
+				},
+				References: []v1alpha1.ResourceReference{{
+					Name: "pods",
+					GVK:  v1alpha1.GroupVersionKind{Version: "v1", Kind: "Pod"},
+					List: &v1alpha1.ListReference{MatchLabels: map[string]v1alpha1.LabelValue{
+						"app": {Value: ptr.To("x")},
+					}},
+				}},
+			},
+		}}
+
+		return karta
+	}
+
+	replicasOf := func(factory *ComponentFactory) (int, error) {
+		component, err := factory.GetRootComponent()
+		Expect(err).NotTo(HaveOccurred())
+		scales, err := factory.accessor.(*Accessor).ExtractScale(ctx, component.Definition())
+		if err != nil {
+			return 0, err
+		}
+		Expect(scales).To(HaveLen(1))
+
+		return int(*scales[0].Replicas), nil
+	}
+
+	pod := &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": "v1", "kind": "Pod", "metadata": map[string]any{"name": "p0"},
+	}}
+
+	It("reads a declared but unresolved list as empty, for nil and for partial maps", func() {
+		for _, resolved := range []references.ResolvedReferences{nil, {}} {
+			replicas, err := replicasOf(NewComponentFactoryFromObject(kartaWithList(),
+				&unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Pod", "metadata": map[string]any{"name": "w"}}},
+				WithReferences(resolved)))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(replicas).To(Equal(0))
+		}
+	})
+
+	It("keeps a resolved list intact", func() {
+		resolved := references.ResolvedReferences{"pods": references.NewListValue([]unstructured.Unstructured{*pod})}
+		replicas, err := replicasOf(NewComponentFactoryFromObject(kartaWithList(),
+			&unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Pod", "metadata": map[string]any{"name": "w"}}},
+			WithReferences(resolved)))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(replicas).To(Equal(1))
 	})
 })
