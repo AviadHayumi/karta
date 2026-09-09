@@ -10,6 +10,7 @@
 //	{"op":"setField","workload":"<json>","path":".spec.schedulerName","value":"kai"}
 //	{"op":"suspend","definition":"<json>","workload":"<json>"}
 //	{"op":"resume","definition":"<json>","workload":"<json>"}
+//	{"op":"listCatalog"}
 package main
 
 import (
@@ -65,6 +66,8 @@ func main() {
 			fail(err)
 		}
 		emitRaw(object)
+	case "listCatalog":
+		emit(core.ListCatalog())
 	default:
 		emitError("unknown op " + req.Op)
 	}

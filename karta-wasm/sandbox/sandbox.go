@@ -73,6 +73,11 @@ func (s *Sandbox) Resume(ctx context.Context, definitionJSON, workloadJSON strin
 	return s.run(ctx, fmt.Sprintf(`{"op":"resume","definition":%q,"workload":%q}`, definitionJSON, workloadJSON))
 }
 
+// ListCatalog returns the definitions built into the wasm, in a fresh instance.
+func (s *Sandbox) ListCatalog(ctx context.Context) ([]byte, error) {
+	return s.run(ctx, `{"op":"listCatalog"}`)
+}
+
 func (s *Sandbox) run(ctx context.Context, request string) ([]byte, error) {
 	var stdout, stderr bytes.Buffer
 	config := wazero.NewModuleConfig().
