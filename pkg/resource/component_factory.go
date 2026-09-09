@@ -5,6 +5,7 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -107,6 +108,8 @@ func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObjec
 
 	provider := func(ctx context.Context) (map[string]any, error) {
 		switch {
+		case options.resolved != nil && options.reader != nil:
+			return nil, errors.New("both WithReferences and WithReferenceReader were provided; pass exactly one")
 		case options.resolved != nil:
 			return options.resolved.Bindings(), nil
 		case options.reader != nil:

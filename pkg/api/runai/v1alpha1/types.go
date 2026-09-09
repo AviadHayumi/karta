@@ -80,6 +80,7 @@ type StructureDefinition struct {
 //
 // A namespaced reference always resolves in the workload's own namespace; there is
 // deliberately no namespace field.
+// +kubebuilder:validation:XValidation:rule="has(self.lookup) != has(self.list)",message="exactly one of lookup or list must be set"
 type ResourceReference struct {
 	// Name is the variable name the reference is exposed under, as references.<name>.
 	// +kubebuilder:validation:Required
@@ -153,6 +154,7 @@ const (
 
 // LabelValue is a single label value: either a literal (Value) or a CEL expression
 // evaluated against the root object (Expression). Exactly one is set.
+// +kubebuilder:validation:XValidation:rule="has(self.value) != has(self.expression)",message="exactly one of value or expression must be set"
 type LabelValue struct {
 	// Value is a literal label value.
 	// +optional

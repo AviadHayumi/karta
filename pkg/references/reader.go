@@ -11,6 +11,7 @@ package references
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -64,22 +65,39 @@ type ReferenceValue struct {
 type ResolvedReferences map[string]ReferenceValue
 
 // Bindings converts the resolved values into the shape the expression engine binds as
-// references.<name>: a lookup is its object content, a list is a list of object contents.
-// A lookup that found nothing is absent from the map, so plain access fails on use and
-// optional access can supply a default.
+// references.<name>: a lookup is its object content, a list is a list of object contents
+// (empty when nothing matched). A lookup that found nothing is absent from the map, so plain
+// access fails on use and optional access can supply a default. Values are normalized through
+// JSON so a referenced object has the same value domain as the workload document, whether it
+// came from a live cluster or a recording.
 func (r ResolvedReferences) Bindings() map[string]any {
 	out := make(map[string]any, len(r))
 	for name, value := range r {
 		switch {
 		case value.Object != nil:
-			out[name] = value.Object.Object
+			out[name] = normalize(value.Object.Object)
 		case value.List != nil:
 			items := make([]any, 0, len(value.List))
 			for _, item := range value.List {
-				items = append(items, item.Object)
+				items = append(items, normalize(item.Object))
 			}
 			out[name] = items
 		}
+	}
+
+	return out
+}
+
+// normalize round-trips a value through JSON, so numbers and structures carry the same Go types
+// the engine reads from the workload document.
+func normalize(value map[string]any) any {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return value
+	}
+	var out any
+	if err := json.Unmarshal(encoded, &out); err != nil {
+		return value
 	}
 
 	return out

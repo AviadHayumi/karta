@@ -1307,6 +1307,10 @@ spec:
                                           description: Value is a literal label value.
                                           type: string
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: exactly one of value or expression
+                                          must be set
+                                        rule: has(self.value) != has(self.expression)
                                     type: array
                                     x-kubernetes-list-type: atomic
                                 required:
@@ -1329,6 +1333,10 @@ spec:
                                     description: Value is a literal label value.
                                     type: string
                                 type: object
+                                x-kubernetes-validations:
+                                - message: exactly one of value or expression must
+                                    be set
+                                  rule: has(self.value) != has(self.expression)
                               description: MatchLabels selects resources whose labels
                                 equal each resolved value.
                               type: object
@@ -1354,6 +1362,9 @@ spec:
                       - gvk
                       - name
                       type: object
+                      x-kubernetes-validations:
+                      - message: exactly one of lookup or list must be set
+                        rule: has(self.lookup) != has(self.list)
                     type: array
                     x-kubernetes-list-map-keys:
                     - name

@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: trainer-kubeflow-org-trainjob-v1alpha1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: trainjob
+      kind:
+        group: trainer.kubeflow.org
+        version: v1alpha1
+        kind: TrainJob
+      specDefinition:
+        fragmentedPodSpecDefinition:
+          resources:
+            expression: object.?spec.?trainer.?resourcesPerNode.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0][?"resources"].orValue(null))
+          image:
+            expression: object.?spec.?trainer.?image.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0][?"image"].orValue(null))
+      scaleDefinition:
+        replicas:
+          expression: object.?spec.?trainer.?numNodes.orValue(references.trainingRuntime.?spec.?mlPolicy.?numNodes.orValue(1))
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+          reasonFieldName: reason
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: '!variables.isTerminal && !variables.isSuspended && !variables.jobsActive'
+                expectedResult: "true"
+          running:
+            - byExpression:
+                expression: '!variables.isTerminal && !variables.isSuspended && variables.jobsActive'
+                expectedResult: "true"
+          completed:
+            - byConditions:
+                - type: Complete
+                  status: "True"
+          failed:
+            - byConditions:
+                - type: Failed
+                  status: "True"
+          suspended:
+            - byConditions:
+                - type: Suspended
+                  status: "True"
+      suspendDefinition:
+        suspendActions:
+          - patch: '{"spec": {"suspend": true}}'
+        resumeActions:
+          - patch: '{"spec": {"suspend": false}}'
+    additionalChildKinds:
+      - group: jobset.x-k8s.io
+        version: v1alpha2
+        kind: JobSet
+    references:
+      - name: trainingRuntime
+        gvk:
+          group: trainer.kubeflow.org
+          version: v1alpha1
+          kind: ClusterTrainingRuntime
+        lookup:
+          nameExpression: object.spec.runtimeRef.name
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: trainjob
+          members:
+            - componentName: trainjob
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"jobset.sigs.k8s.io/jobset-name"].orValue(null)
+  variables:
+    - name: conditions
+      expression: object.?status.?conditions.orValue([])
+    - name: isSuspended
+      expression: variables.conditions.exists(c, c.type == "Suspended" && c.status == "True")
+    - name: isTerminal
+      expression: variables.conditions.exists(c, (c.type == "Complete" || c.type == "Failed") && c.status == "True")
+    - name: jobsActive
+      expression: object.?status.?jobsStatus.orValue([]).exists(j, j.?active.orValue(0) > 0 || j.?ready.orValue(0) > 0)

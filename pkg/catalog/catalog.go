@@ -40,6 +40,7 @@ var definitions = []func() *v1alpha1.Karta{
 	kartas.StatefulSet,
 	kartas.Pod,
 	kartas.Jobset,
+	kartas.TrainJob,
 	kartas.Pytorch,
 	kartas.Mpijob,
 	kartas.Raycluster,

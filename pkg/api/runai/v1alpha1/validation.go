@@ -6,6 +6,7 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
+	"regexp"
 )
 
 var kindsWithoutGroup = map[string]bool{
@@ -241,6 +242,10 @@ func (v *KartaValidator) validateGangScheduling() []error {
 	return errs
 }
 
+// referenceName constrains a reference name to a CEL identifier, so references.<name> always
+// parses.
+var referenceName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
 func (v *KartaValidator) validateReferences() []error {
 	var errs []error
 
@@ -248,6 +253,8 @@ func (v *KartaValidator) validateReferences() []error {
 	for _, ref := range v.karta.Spec.StructureDefinition.References {
 		if ref.Name == "" {
 			errs = append(errs, fmt.Errorf("reference name is empty"))
+		} else if !referenceName.MatchString(ref.Name) {
+			errs = append(errs, fmt.Errorf("reference name %q is not a valid identifier (want %s)", ref.Name, referenceName))
 		}
 		if names[ref.Name] {
 			errs = append(errs, fmt.Errorf("reference name %q is not unique", ref.Name))

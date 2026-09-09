@@ -33,9 +33,8 @@ type runner struct {
 	// consumer provided nothing: an expression that reads references.<name> fails with
 	// expression.ErrReferencesNotSupported.
 	referencesProvider func(ctx context.Context) (map[string]any, error)
-	refOnce            sync.Once
+	refMu              sync.Mutex
 	refValues          map[string]any
-	refErr             error
 
 	mu     sync.Mutex
 	source any
@@ -105,16 +104,28 @@ func (r *runner) needsReferences(needed map[string]bool, expressions ...string) 
 	return false
 }
 
-// references resolves the definition's references once and memoizes the result.
+// references resolves the definition's references and memoizes a successful result, so
+// addressing stays stable across a multi-pass write. A failed resolution is not cached: a
+// transient fetch error on one call must not poison every later one.
 func (r *runner) references(ctx context.Context) (map[string]any, error) {
 	if r.referencesProvider == nil {
 		return nil, expression.ErrReferencesNotSupported
 	}
-	r.refOnce.Do(func() {
-		r.refValues, r.refErr = r.referencesProvider(ctx)
-	})
+	r.refMu.Lock()
+	defer r.refMu.Unlock()
+	if r.refValues != nil {
+		return r.refValues, nil
+	}
+	values, err := r.referencesProvider(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if values == nil {
+		values = map[string]any{}
+	}
+	r.refValues = values
 
-	return r.refValues, r.refErr
+	return r.refValues, nil
 }
 
 // referencesFor returns the references binding for an evaluation: the resolved values when any
@@ -233,7 +244,13 @@ func (r *runner) EvaluateWithVariables(ctx context.Context, expression string, v
 	}
 	needed := neededVariables(r.variables, []string{expression})
 	if _, bound := converted["references"]; !bound {
-		refs, err := r.referencesFor(ctx, needed, expression)
+		// With a frozen variables map the definition variables never re-run, so only the
+		// expression itself decides whether references are needed.
+		scanScope := needed
+		if _, frozen := converted["variables"]; frozen {
+			scanScope = map[string]bool{}
+		}
+		refs, err := r.referencesFor(ctx, scanScope, expression)
 		if err != nil {
 			return nil, err
 		}
