@@ -152,6 +152,29 @@ h2{font-size:33px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px}
 .flashwin{animation:winflash .4s ease}
 @keyframes winflash{30%{box-shadow:0 0 26px rgba(118,185,0,.55)}}
 
+/* mobile */
+.editor .body{overflow-x:auto}
+@media (max-width:900px){
+  .slide{padding:26px 16px 74px;justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .wrap{max-width:100%}
+  h1{font-size:33px}
+  h2{font-size:22px}
+  .sub{font-size:14.5px}
+  .lead{font-size:13.5px}
+  .cols,.cols3,.demo-grid,.statrow{grid-template-columns:1fr;gap:14px}
+  .eline{font-size:11px}
+  .eline .ln{width:28px;flex:0 0 28px;padding-right:8px}
+  .term .body{font-size:11px}
+  .pill{font-size:12px;padding:7px 10px}
+  .tl-label{width:100%;flex:0 0 100%}
+  #hint{display:none}
+  .big{font-size:32px}
+  .kv p{font-size:12.5px}
+  .meta{font-size:11.5px}
+  .playbtn{width:50px;height:50px}
+  .isq{width:46%}
+}
+
 @media print{
   body{overflow:visible;background:#0b0f14}
   .slide{position:relative;opacity:1!important;pointer-events:auto;transform:none!important;page-break-after:always;min-height:100vh}
@@ -169,7 +192,7 @@ h2{font-size:33px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px}
 <div id="hint">← → to move · P to print</div>
 
 <!-- 0 · cover -->
-<section class="slide">
+<section class="slide" data-fxmode="cover">
   <div class="wrap" style="text-align:center">
     <div class="eyebrow">karta engine deep dive</div>
     <h1>jq → cel</h1>
@@ -179,7 +202,7 @@ h2{font-size:33px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px}
 </section>
 
 <!-- 1 · hook -->
-<section class="slide">
+<section class="slide" data-fxmode="pop-slow">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage</div>
     <h2>start with a question jq answers wrong</h2>
@@ -223,7 +246,7 @@ object.status.active > 0
 </section>
 
 <!-- 2 · reads -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage</div>
     <h2>the same read , two spellings</h2>
@@ -258,7 +281,7 @@ object.status.active > 0
 </section>
 
 <!-- 3 · defaults -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage</div>
     <h2>defaults : // vs orValue , and the false trap</h2>
@@ -291,7 +314,7 @@ object.status.active > 0
 </section>
 
 <!-- 4 · streams vs lists -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage</div>
     <h2>streams vs lists : how many things did i just read ?</h2>
@@ -325,7 +348,7 @@ object.status.active > 0
 </section>
 
 <!-- 5 · pipes vs comprehensions -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage</div>
     <h2>pipes become comprehensions</h2>
@@ -360,7 +383,7 @@ object.status.active > 0
 </section>
 
 <!-- 6 · writes -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage · the big one</div>
     <h2>writes : the read path is no longer the write path</h2>
@@ -408,7 +431,7 @@ object.status.active > 0
 </section>
 
 <!-- 7 · same karta both spellings -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage</div>
     <h2>one karta , both spellings , side by side</h2>
@@ -444,7 +467,7 @@ object.status.active > 0
 </section>
 
 <!-- 8 · variables -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 1 · usage</div>
     <h2>variables : name the expression once</h2>
@@ -480,8 +503,91 @@ object.status.active > 0
   </div>
 </section>
 
+<!-- 9a · references design -->
+<section class="slide" data-fxmode="pop">
+  <div class="wrap">
+    <div class="eyebrow">part 1 · usage · design , not shipped yet</div>
+    <h2>references : reading beyond the workload</h2>
+    <div class="lead">some workloads keep half their spec in another object. a trainjob points at a clustertrainingruntime that holds the base pod template - the definition alone never sees it. the references design fixes that : a named pointer to another resource , declared on the structure , resolved by the consumer.</div>
+    <div class="cols">
+      <div data-fx>
+        <span class="tag cel">docs/design/references/high-level-design.md</span>
+        <div class="editor" data-file="structureDefinition · references" data-lang="yaml"><pre class="ecode">references:
+  # single object: references.trainingRuntime
+  - name: trainingRuntime
+    gvk: { group: trainer.kubeflow.org,
+           version: v1alpha1,
+           kind: ClusterTrainingRuntime }
+    lookup:
+      nameExpression: object.spec.runtimeRef.name
+
+  # set of objects: references.pods
+  - name: pods
+    gvk: { group: "", version: v1, kind: Pod }
+    list:
+      matchLabels:
+        training.kubeflow.org/job-name:
+          { expression: object.metadata.name }</pre></div>
+      </div>
+      <div>
+        <div class="kv" data-fx style="margin-bottom:12px">
+          <h3><span class="ic">◆</span> two shapes</h3>
+          <p><code>lookup</code> - one object , read like any object. <code>list</code> - a set , iterated with the comprehension macros , possibly empty.</p>
+        </div>
+        <div class="kv" data-fx style="margin-bottom:12px">
+          <h3><span class="ic">◆</span> karta stays declarative</h3>
+          <p>karta fetches nothing itself. the consumer resolves the references and passes the values in - one more input , like a ValidatingAdmissionPolicy gets its params.</p>
+        </div>
+        <div class="kv" data-fx>
+          <h3><span class="ic">◆</span> bounded by construction</h3>
+          <p>required by use : a lookup that finds nothing only fails the expressions that mention it. and there is no namespace field - a definition can never reach outside the workload's namespace.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9b · references + cel -->
+<section class="slide" data-fxmode="pop">
+  <div class="wrap">
+    <div class="eyebrow">part 1 · usage · design , not shipped yet</div>
+    <h2>and cel reads a reference like any other input</h2>
+    <div class="lead">no new syntax. a reference is just another bound name , so the override-with-fallback read and the aggregate-over-pods status both come out as ordinary cel.</div>
+    <div class="cols">
+      <div data-fx>
+        <div class="editor" data-file="override // base , the cel way" data-lang="yaml"><pre class="ecode">fragmentedPodSpecDefinition:
+  image:
+    expression: >-
+      object.?spec.?trainer.?image.orValue(
+        references.trainingRuntime.spec.template
+          .spec.replicatedJobs[0].template.spec
+          .template.spec.containers[0].image)
+
+# prefer the trainjob's value ,
+# fall back to the runtime's base.</pre></div>
+      </div>
+      <div data-fx>
+        <div class="editor" data-file="status computed from the pods" data-lang="yaml"><pre class="ecode">statusDefinition:
+  statusMappings:
+    running:
+      - byExpression:
+          expression: references.pods.exists(p,
+            p.status.phase == "Running")
+          expectedResult: "true"
+
+# workloads with no usable status of
+# their own : aggregate over their pods.</pre></div>
+      </div>
+    </div>
+    <div class="pillrow">
+      <span class="pill" data-fx><span class="k">reads</span> references are one more bound name , next to <code>object</code> and <code>variables</code></span>
+      <span class="pill" data-fx><span class="k">writes</span> unchanged - patches only ever construct changes to the workload document</span>
+    </div>
+  </div>
+</section>
+
 <!-- 9 · internals map -->
-<section class="slide">
+<section class="slide" data-fxmode="count">
   <div class="wrap">
     <div class="eyebrow">part 2 · internals</div>
     <h2>what actually moved inside</h2>
@@ -501,7 +607,7 @@ object.status.active > 0
 </section>
 
 <!-- 10 · contract -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">part 2 · internals</div>
     <h2>the contract : resource code never meets the engine</h2>
@@ -539,7 +645,7 @@ object.status.active > 0
 </section>
 
 <!-- 11 · evaluator -->
-<section class="slide">
+<section class="slide" data-fxmode="count">
   <div class="wrap">
     <div class="eyebrow">part 2 · internals</div>
     <h2>the evaluator : one env , cached programs , a budget</h2>
@@ -578,7 +684,7 @@ program, err := e.env.Program(ast,
 </section>
 
 <!-- 12 · live demo -->
-<section class="slide">
+<section class="slide" data-fxmode="demo">
   <div class="wrap">
     <div class="eyebrow">part 2 · internals · live</div>
     <h2>watch one write go through the pipeline</h2>
@@ -614,7 +720,7 @@ program, err := e.env.Program(ast,
 </section>
 
 <!-- 13 · proof -->
-<section class="slide">
+<section class="slide" data-fxmode="term">
   <div class="wrap">
     <div class="eyebrow">part 2 · internals</div>
     <h2>how we know it reads the same world</h2>
@@ -634,7 +740,7 @@ PASS  exit 0</pre></div>
 </section>
 
 <!-- 14 · payoff -->
-<section class="slide">
+<section class="slide" data-fxmode="pop">
   <div class="wrap">
     <div class="eyebrow">the payoff</div>
     <h2>what you actually get</h2>
@@ -871,15 +977,13 @@ function demoPlay(){
 /* ---------- navigation + fx dispatch ---------- */
 function runFx(i){
   var s = slides[i];
-  switch(i){
-    case 0: typeIntoFx(); break;
-    case 1: popFx(s, 160); break;
-    case 9: popFx(s, 110); countFx(s); break;
-    case 11: popFx(s, 110); countFx(s); break;
-    case 12: break; /* manual demo */
-    case 13: typeTermFx(s); popFx(s, 140); break;
-    default: popFx(s, 100);
-  }
+  var m = s.dataset.fxmode || "pop";
+  if (m === "cover") typeIntoFx();
+  else if (m === "count"){ popFx(s, 110); countFx(s); }
+  else if (m === "term"){ typeTermFx(s); popFx(s, 140); }
+  else if (m === "demo"){ /* manual */ }
+  else if (m === "pop-slow") popFx(s, 160);
+  else popFx(s, 100);
 }
 function show(i){
   if (i<0 || i>=slides.length) return;
@@ -902,6 +1006,16 @@ document.addEventListener("click", function(e){
   var x = e.clientX / window.innerWidth;
   if (x > 0.62) show(cur+1); else if (x < 0.2) show(cur-1);
 });
+
+var swx=null, swy=null;
+document.addEventListener("touchstart", function(e){ swx=e.touches[0].clientX; swy=e.touches[0].clientY; }, {passive:true});
+document.addEventListener("touchend", function(e){
+  if (swx===null) return;
+  var dx=e.changedTouches[0].clientX-swx, dy=e.changedTouches[0].clientY-swy;
+  swx=swy=null;
+  if (e.target.closest(".demo-grid")) return;
+  if (Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.5){ if(dx<0) show(cur+1); else show(cur-1); }
+}, {passive:true});
 
 buildEditors();
 buildTerms();
