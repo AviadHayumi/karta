@@ -17,6 +17,9 @@ func Milvus() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "milvus-io-milvus-v1beta1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "statusStatus", Expression: `([dyn(object.?status.?status.orValue(null))].filter(v, v != null && v != false) + [""])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "milvus",
@@ -24,10 +27,10 @@ func Milvus() *v1alpha1.Karta {
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						PhaseDefinition: &v1alpha1.PhaseDefinition{
 							// .status.status is an enum string: Healthy, Pending, Unhealthy
-							Path: ".status.status",
+							Expression: `object[?"status"][?"status"].orValue(null)`,
 						},
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:            ".status.conditions",
+							Expression:      `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:   "type",
 							StatusFieldName: "status",
 						},
@@ -37,6 +40,11 @@ func Milvus() *v1alpha1.Karta {
 							},
 							Initializing: []v1alpha1.StatusMatcher{
 								{ByPhase: "Pending"},
+								// Just created: the operator has not written status.status yet.
+								{ByExpression: &v1alpha1.ExpressionMatcher{
+									Expression:     `variables.statusStatus == ""`,
+									ExpectedResult: "true",
+								}},
 							},
 							Degraded: []v1alpha1.StatusMatcher{
 								{ByPhase: "Unhealthy"},
@@ -51,22 +59,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.standalone.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.standalone.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.standalone.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.standalone.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.standalone.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.standalone.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.standalone.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"standalone": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"standalone": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"standalone": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"standalone": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"standalone": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"standalone": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"standalone": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.standalone.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("standalone"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("standalone"),
 							},
 						},
 					},
@@ -76,22 +84,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.proxy.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.proxy.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.proxy.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.proxy.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.proxy.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.proxy.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.proxy.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"proxy": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"proxy": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"proxy": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"proxy": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"proxy": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"proxy": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"proxy": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.proxy.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("proxy"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("proxy"),
 							},
 						},
 					},
@@ -101,22 +109,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.mixCoord.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.mixCoord.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.mixCoord.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.mixCoord.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.mixCoord.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.mixCoord.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.mixCoord.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"mixCoord": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"mixCoord": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"mixCoord": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"mixCoord": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"mixCoord": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"mixCoord": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"mixCoord": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.mixCoord.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("mixcoord"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("mixcoord"),
 							},
 						},
 					},
@@ -126,22 +134,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.dataNode.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.dataNode.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.dataNode.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.dataNode.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.dataNode.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.dataNode.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.dataNode.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"dataNode": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"dataNode": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"dataNode": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"dataNode": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"dataNode": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"dataNode": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"dataNode": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.dataNode.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("datanode"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("datanode"),
 							},
 						},
 					},
@@ -151,22 +159,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.queryNode.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.queryNode.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.queryNode.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.queryNode.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.queryNode.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.queryNode.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.queryNode.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"queryNode": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"queryNode": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"queryNode": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"queryNode": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"queryNode": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"queryNode": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"queryNode": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.queryNode.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("querynode"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("querynode"),
 							},
 						},
 					},
@@ -176,22 +184,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.streamingNode.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.streamingNode.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.streamingNode.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.streamingNode.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.streamingNode.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.streamingNode.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.streamingNode.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"streamingNode": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"streamingNode": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"streamingNode": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"streamingNode": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"streamingNode": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"streamingNode": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"streamingNode": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.streamingNode.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("streamingnode"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("streamingnode"),
 							},
 						},
 					},
@@ -201,22 +209,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.indexNode.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.indexNode.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.indexNode.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.indexNode.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.indexNode.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.indexNode.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.indexNode.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"indexNode": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"indexNode": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"indexNode": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"indexNode": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"indexNode": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"indexNode": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"indexNode": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.indexNode.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("indexnode"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("indexnode"),
 							},
 						},
 					},
@@ -226,22 +234,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.rootCoord.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.rootCoord.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.rootCoord.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.rootCoord.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.rootCoord.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.rootCoord.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.rootCoord.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"rootCoord": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"rootCoord": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"rootCoord": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"rootCoord": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"rootCoord": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"rootCoord": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"rootCoord": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.rootCoord.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("rootcoord"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("rootcoord"),
 							},
 						},
 					},
@@ -251,22 +259,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.dataCoord.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.dataCoord.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.dataCoord.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.dataCoord.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.dataCoord.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.dataCoord.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.dataCoord.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"dataCoord": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"dataCoord": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"dataCoord": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"dataCoord": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"dataCoord": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"dataCoord": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"dataCoord": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.dataCoord.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("datacoord"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("datacoord"),
 							},
 						},
 					},
@@ -276,22 +284,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.queryCoord.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.queryCoord.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.queryCoord.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.queryCoord.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.queryCoord.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.queryCoord.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.queryCoord.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"queryCoord": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"queryCoord": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"queryCoord": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"queryCoord": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"queryCoord": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"queryCoord": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"queryCoord": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.queryCoord.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("querycoord"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("querycoord"),
 							},
 						},
 					},
@@ -301,22 +309,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.indexCoord.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.indexCoord.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.indexCoord.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.indexCoord.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.indexCoord.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.indexCoord.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.indexCoord.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"indexCoord": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"indexCoord": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"indexCoord": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"indexCoord": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"indexCoord": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"indexCoord": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"indexCoord": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.indexCoord.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("indexcoord"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("indexcoord"),
 							},
 						},
 					},
@@ -326,22 +334,22 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.components.cdc.schedulerName"),
-								LabelsPath:            ptr.To(".spec.components.cdc.podLabels"),
-								AnnotationsPath:       ptr.To(".spec.components.cdc.podAnnotations"),
-								ResourcesPath:         ptr.To(".spec.components.cdc.resources"),
-								PriorityClassNamePath: ptr.To(".spec.components.cdc.priorityClassName"),
-								NodeAffinityPath:      ptr.To(".spec.components.cdc.affinity.nodeAffinity"),
-								PodAffinityPath:       ptr.To(".spec.components.cdc.affinity.podAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"components": {"cdc": {"schedulerName": value}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"podLabels"].orValue(null)`, Patch: `{"spec": {"components": {"cdc": {"podLabels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"podAnnotations"].orValue(null)`, Patch: `{"spec": {"components": {"cdc": {"podAnnotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"resources"].orValue(null)`, Patch: `{"spec": {"components": {"cdc": {"resources": value}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"components": {"cdc": {"priorityClassName": value}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"cdc": {"affinity": {"nodeAffinity": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"components": {"cdc": {"affinity": {"podAffinity": value}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.cdc.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("cdc"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("cdc"),
 							},
 						},
 					},
@@ -351,11 +359,11 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								ResourcesPath: ptr.To(".spec.dependencies.etcd.inCluster.values.resources"),
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"resources"].orValue(null)`, Patch: `{"spec": {"dependencies": {"etcd": {"inCluster": {"values": {"resources": value}}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.dependencies.etcd.inCluster.values.replicaCount"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"replicaCount"].orValue(null)`},
 						},
 					},
 					{
@@ -364,7 +372,7 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								ResourcesPath: ptr.To(".spec.dependencies.storage.inCluster.values.resources"),
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"storage"][?"inCluster"][?"values"][?"resources"].orValue(null)`, Patch: `{"spec": {"dependencies": {"storage": {"inCluster": {"values": {"resources": value}}}}}}`, Replace: true},
 							},
 						},
 					},
@@ -374,11 +382,11 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								ResourcesPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.zookeeper.resources"),
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"resources"].orValue(null)`, Patch: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"zookeeper": {"resources": value}}}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.zookeeper.replicaCount"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"replicaCount"].orValue(null)`},
 						},
 					},
 					{
@@ -387,11 +395,11 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								ResourcesPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.bookkeeper.resources"),
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"resources"].orValue(null)`, Patch: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"bookkeeper": {"resources": value}}}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.bookkeeper.replicaCount"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"replicaCount"].orValue(null)`},
 						},
 					},
 					{
@@ -400,11 +408,11 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								ResourcesPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.broker.resources"),
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"resources"].orValue(null)`, Patch: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"broker": {"resources": value}}}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.broker.replicaCount"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"replicaCount"].orValue(null)`},
 						},
 					},
 					{
@@ -413,11 +421,11 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								ResourcesPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.proxy.resources"),
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"resources"].orValue(null)`, Patch: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"proxy": {"resources": value}}}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.dependencies.pulsar.inCluster.values.proxy.replicaCount"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"replicaCount"].orValue(null)`},
 						},
 					},
 				},
@@ -428,16 +436,16 @@ func Milvus() *v1alpha1.Karta {
 						Name: "cluster",
 						Members: []v1alpha1.PodGroupMemberDefinition{
 							{
-								ComponentName:   "querynode",
-								GroupByKeyPaths: []string{`.metadata.labels["app.kubernetes.io/instance"]`},
+								ComponentName:      "querynode",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)`},
 							},
 							{
-								ComponentName:   "datanode",
-								GroupByKeyPaths: []string{`.metadata.labels["app.kubernetes.io/instance"]`},
+								ComponentName:      "datanode",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)`},
 							},
 							{
-								ComponentName:   "streamingnode",
-								GroupByKeyPaths: []string{`.metadata.labels["app.kubernetes.io/instance"]`},
+								ComponentName:      "streamingnode",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)`},
 							},
 						},
 					}},

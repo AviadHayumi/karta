@@ -14,26 +14,46 @@ spec:
         kind: NIMService
       specDefinition:
         fragmentedPodSpecDefinition:
-          schedulerNamePath: .spec.schedulerName
-          labelsPath: .spec.labels
-          annotationsPath: .spec.annotations
-          resourcesPath: .spec.resources
-          podAffinityPath: .spec.affinity.podAffinity
-          nodeAffinityPath: .spec.affinity.nodeAffinity
+          schedulerName:
+            expression: object[?"spec"][?"schedulerName"].orValue(null)
+            patch: '{"spec": {"schedulerName": value}}'
+            replace: true
+          labels:
+            expression: object[?"spec"][?"labels"].orValue(null)
+            patch: '{"spec": {"labels": value}}'
+            replace: true
+          annotations:
+            expression: object[?"spec"][?"annotations"].orValue(null)
+            patch: '{"spec": {"annotations": value}}'
+            replace: true
+          resources:
+            expression: object[?"spec"][?"resources"].orValue(null)
+            patch: '{"spec": {"resources": value}}'
+            replace: true
+          podAffinity:
+            expression: object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)
+            patch: '{"spec": {"affinity": {"podAffinity": value}}}'
+            replace: true
+          nodeAffinity:
+            expression: object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)
+            patch: '{"spec": {"affinity": {"nodeAffinity": value}}}'
+            replace: true
       scaleDefinition:
-        replicasPath: .spec.replicas // 1
+        replicas:
+          expression: variables.specReplicas
       statusDefinition:
         phaseDefinition:
-          path: .status.state
+          expression: object[?"status"][?"state"].orValue(null)
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
         statusMappings:
           initializing:
-            - byPhase: NotReady
-            - byPhase: Pending
+            - byExpression:
+                expression: variables.statusState != "Ready" && variables.statusState != "Failed"
+                expectedResult: "true"
           running:
             - byPhase: Ready
           failed:
@@ -44,5 +64,10 @@ spec:
         - name: service
           members:
             - componentName: nimservice
-              groupByKeyPaths:
-                - .metadata.labels["app.kubernetes.io/name"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/name"].orValue(null)
+  variables:
+    - name: specReplicas
+      expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: statusState
+      expression: ([dyn(object.?status.?state.orValue(null))].filter(v, v != null && v != false) + [""])[0]

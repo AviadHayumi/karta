@@ -14,14 +14,16 @@ spec:
         kind: NIMCache
       specDefinition:
         fragmentedPodSpecDefinition:
-          resourcesPath: '{requests: .spec.resources}'
+          resources:
+            expression: '{"requests": ([dyn(object[?"spec"][?"resources"].orValue(null))].filter(v, type(v) == map) + [{}])[0]}'
       scaleDefinition:
-        replicasPath: "1"
+        replicas:
+          expression: "1"
       statusDefinition:
         phaseDefinition:
-          path: .status.state
+          expression: object[?"status"][?"state"].orValue(null)
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message

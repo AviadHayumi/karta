@@ -17,13 +17,20 @@ func KServe() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "serving-kserve-io-inferenceservice-v1beta1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{{
+				// The predictor holds the container as one of its own values, under a key that
+				// varies by flavor (model, sklearn, pytorch ...). This finds that key once, and
+				// the container read and write both build on it.
+				Name:       "containerKey",
+				Expression: `(([dyn(object[?"spec"][?"predictor"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, string(k)).sort().filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k] && object.spec.predictor[k]["storageUri"] != null && object.spec.predictor[k]["storageUri"] != false) + [""])[0]`,
+			}},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "inferenceservice",
 					Kind: &v1alpha1.GroupVersionKind{Group: "serving.kserve.io", Version: "v1beta1", Kind: "InferenceService"},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							MessageFieldName: ptr.To("message"),
@@ -33,6 +40,13 @@ func KServe() *v1alpha1.Karta {
 								{Type: "PredictorReady", Status: ptr.To("True")},
 								{Type: "RoutesReady", Status: ptr.To("True")},
 								{Type: "LatestDeploymentReady", Status: ptr.To("True")},
+							}}},
+							// Deploying: Ready is not yet decided (absent early, then Unknown while
+							// the predictor, routes, and ingress come up). Failed is the specific
+							// all-False pattern below, where Ready is False, so this stays disjoint.
+							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
+								Expression:     `!([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Ready" && (c.?status.orValue(null) == "True" || c.?status.orValue(null) == "False"))`,
+								ExpectedResult: "true",
 							}}},
 							Failed: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{
 								{Type: "PredictorReady", Status: ptr.To("False")},
@@ -49,24 +63,28 @@ func KServe() *v1alpha1.Karta {
 						OwnerRef: ptr.To("inferenceservice"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.predictor.schedulerName"),
-								LabelsPath:            ptr.To(".spec.predictor.labels"),
-								AnnotationsPath:       ptr.To(".spec.predictor.annotations"),
-								PodAffinityPath:       ptr.To(".spec.predictor.affinity.podAffinity"),
-								NodeAffinityPath:      ptr.To(".spec.predictor.affinity.nodeAffinity"),
-								ContainersPath:        ptr.To(".spec.predictor.containers"),
-								ContainerPath:         ptr.To(`.spec.predictor | ( (.[]?  | select(type =="object" and .storageUri )))`),
-								PriorityClassNamePath: ptr.To(".spec.predictor.priorityClassName"),
+								SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"predictor": {"schedulerName": value}}}`, Replace: true},
+								Labels:        &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"labels"].orValue(null)`, Patch: `{"spec": {"predictor": {"labels": value}}}`, Replace: true},
+								Annotations:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"annotations"].orValue(null)`, Patch: `{"spec": {"predictor": {"annotations": value}}}`, Replace: true},
+								PodAffinity:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"predictor": {"affinity": {"podAffinity": value}}}}`, Replace: true},
+								NodeAffinity:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}`, Replace: true},
+								Containers:    &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"containers"].orValue(null)`, Patch: `{"spec": {"predictor": {"containers": value}}}`, Replace: true},
+								Container: &v1alpha1.ValueAccessor{
+									Expression: `variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null`,
+									Patch:      `variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}`,
+									Replace:    true,
+								},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"predictor": {"priorityClassName": value}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							MinReplicasPath: ptr.To(".spec.predictor.minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.predictor.maxReplicas"),
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"minReplicas"].orValue(null)`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"maxReplicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["component"]`,
-								Value:   ptr.To("predictor"),
+								Expression: `object[?"metadata"][?"labels"][?"component"].orValue(null)`,
+								Value:      ptr.To("predictor"),
 							},
 						},
 					},
@@ -75,17 +93,17 @@ func KServe() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
 						OwnerRef: ptr.To("inferenceservice"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodSpecPath:  ptr.To(".spec.transformer"),
-							MetadataPath: ptr.To(".spec.transformer"),
+							PodSpec:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"].orValue(null)`, Patch: `{"spec": {"transformer": value}}`, Replace: true},
+							Metadata: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"].orValue(null)`, Patch: `{"spec": {"transformer": value}}`, Replace: true},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							MinReplicasPath: ptr.To(".spec.transformer.minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.transformer.maxReplicas"),
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"][?"minReplicas"].orValue(null)`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"][?"maxReplicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["component"]`,
-								Value:   ptr.To("transformer"),
+								Expression: `object[?"metadata"][?"labels"][?"component"].orValue(null)`,
+								Value:      ptr.To("transformer"),
 							},
 						},
 					},
@@ -97,12 +115,12 @@ func KServe() *v1alpha1.Karta {
 						Name: "service",
 						Members: []v1alpha1.PodGroupMemberDefinition{
 							{
-								ComponentName:   "predictor",
-								GroupByKeyPaths: []string{`.metadata.labels["serving.kserve.io/inferenceservice"]`},
+								ComponentName:      "predictor",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"serving.kserve.io/inferenceservice"].orValue(null)`},
 							},
 							{
-								ComponentName:   "transformer",
-								GroupByKeyPaths: []string{`.metadata.labels["serving.kserve.io/inferenceservice"]`},
+								ComponentName:      "transformer",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"serving.kserve.io/inferenceservice"].orValue(null)`},
 							},
 						},
 					}},

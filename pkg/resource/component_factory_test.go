@@ -150,14 +150,14 @@ var _ = Describe("ComponentFactory", func() {
 
 	Context("IsContainSpecDefinition", func() {
 		Context("components with spec definitions", func() {
-			It("should return true when child components have PodTemplateSpecPath", func() {
-				// PyFlowKarta has master/worker with PodTemplateSpecPath
+			It("should return true when child components have PodTemplateSpec", func() {
+				// PyFlowKarta has master/worker with PodTemplateSpec
 				result, err := factory.IsContainSpecDefinition()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(BeTrue())
 			})
 
-			It("should return true when child components have PodSpecPath", func() {
+			It("should return true when child components have PodSpec", func() {
 				// JobGroupKarta has job component with PodSpecPath
 				factory.karta = types.JobGroupKarta()
 				factory = NewComponentFactory(factory.karta, mockAccessor)
@@ -301,7 +301,7 @@ func kartaWithRootSpecOnly() *v1alpha1.Karta {
 						Kind:    "RootSpecOnly",
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpecPath: ptr.To(".spec.template"),
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`},
 					},
 				},
 				ChildComponents: []v1alpha1.ComponentDefinition{

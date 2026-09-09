@@ -2,7 +2,7 @@
 
 ## Background
 
-Karta is a CRD-based Go library that provides a universal abstraction for any Kubernetes workload type. Using JQ-based Karta definitions, it can extract structure (components, hierarchy), status (phase, conditions), scaling (replicas, min/max), and pod specs from any CRD - PyTorchJob, RayCluster, JobSet, KServe, and others.
+Karta is a CRD-based Go library that provides a universal abstraction for any Kubernetes workload type. Using CEL-based Karta definitions, it can extract structure (components, hierarchy), status (phase, conditions), scaling (replicas, min/max), and pod specs from any CRD - PyTorchJob, RayCluster, JobSet, KServe, and others.
 
 We believe Karta's abstraction layer can serve as the foundation for a tool that brings visibility to the k8s workload space - a CLI/web/MCP that understands any workload type out of the box for a live cluster.
 
@@ -280,12 +280,12 @@ Each pod-bearing component carries its desired scale over the scale envelope via
 func Build(ctx context.Context, karta *v1alpha1.Karta, factory *resource.ComponentFactory) (*WorkloadTree, error)
 ```
 
-The builder works top-down, component by component, reading the desired structure entirely from the workload spec. Each component is expanded into instances from its `InstanceIdPath` (for example the JobSet `replicatedJobs[].name` or Dynamo service keys); a component with no instance id path has a single unnamed instance. Each instance then recurses into its child components.
+The builder works top-down, component by component, reading the desired structure entirely from the workload spec. Each component is expanded into instances from its `instanceIds` accessor (for example the JobSet replicated job names or Dynamo service keys); a component with no instance ids has a single unnamed instance. Each instance then recurses into its child components.
 
 
 ### Pod matching (live consumers)
 
-Mapping live pods onto the tree is a separate step from building it. Building stays spec-only so it has no cluster dependency; a consumer that needs per-pod status (phase, node, readiness) or the per-replica breakdown fetches the pods itself and matches them onto the tree. The matching strategy is decoupled behind a `PodMatcher` so each consumer can plug in its own logic via the `pkg/resource` pod selectors (`ReplicaSelector.KeyPath`, `ComponentInstanceSelector`):
+Mapping live pods onto the tree is a separate step from building it. Building stays spec-only so it has no cluster dependency; a consumer that needs per-pod status (phase, node, readiness) or the per-replica breakdown fetches the pods itself and matches them onto the tree. The matching strategy is decoupled behind a `PodMatcher` so each consumer can plug in its own logic via the `pkg/resource` pod selectors (`ReplicaSelector`, `ComponentInstanceSelector`):
 
 ```go
 type PodMatcher interface {

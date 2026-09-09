@@ -17,6 +17,15 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "grove-io-podcliqueset-v1alpha1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "cliques", Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0]`},
+				{Name: "scalingGroups", Expression: `([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0]`},
+				{Name: "cliqueReplicas", Expression: `variables.cliques.map(c, dyn(c.?spec.?replicas.orValue(null))).filter(v, v != null && v != false)`},
+				{Name: "scalingGroupReplicas", Expression: `variables.scalingGroups.map(g, dyn(g.?replicas.orValue(null))).filter(v, v != null && v != false)`},
+				{Name: "statusAvailableReplicas", Expression: `([dyn(object.?status.?availableReplicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+				{Name: "specReplicas", Expression: `([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+				{Name: "specReplicasFloat", Expression: `([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "podcliqueset",
@@ -28,7 +37,7 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 					// child PodClique/Pod resources.
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							ReasonFieldName:  ptr.To("reason"),
@@ -39,11 +48,11 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 							Running: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
 								// Matches when all desired replicas are available (including the
 								// vacuous replicas=0 case, same as k8s Deployment Available=True).
-								Expression:     "(.status.availableReplicas // 0) >= (.spec.replicas // 0)",
+								Expression:     `variables.statusAvailableReplicas >= variables.specReplicas`,
 								ExpectedResult: "true",
 							}}},
 							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     "(.spec.replicas // 0) > 0 and (.status.availableReplicas // 0) < (.spec.replicas // 0)",
+								Expression:     `variables.specReplicas > 0 && variables.statusAvailableReplicas < variables.specReplicas`,
 								ExpectedResult: "true",
 							}}},
 						},
@@ -60,29 +69,29 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 						OwnerRef: ptr.To("podcliqueset"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.template.cliques[].spec.podSpec.schedulerName"),
-								LabelsPath:            ptr.To(".spec.template.cliques[].labels"),
-								AnnotationsPath:       ptr.To(".spec.template.cliques[].annotations"),
-								ContainersPath:        ptr.To(".spec.template.cliques[].spec.podSpec.containers"),
-								ResourceClaimsPath:    ptr.To(".spec.template.cliques[].spec.podSpec.resourceClaims"),
-								PriorityClassNamePath: ptr.To(".spec.template.cliques[].spec.podSpec.priorityClassName"),
-								PodAffinityPath:       ptr.To(".spec.template.cliques[].spec.podSpec.affinity.podAffinity"),
-								NodeAffinityPath:      ptr.To(".spec.template.cliques[].spec.podSpec.affinity.nodeAffinity"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"schedulerName"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/schedulerName", "value": value}]`},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"labels"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/labels", "value": value}]`},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"annotations"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/annotations", "value": value}]`},
+								Containers:        &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"containers"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/containers", "value": value}]`},
+								ResourceClaims:    &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"resourceClaims"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/resourceClaims", "value": value}]`},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"priorityClassName"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/priorityClassName", "value": value}]`},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"affinity"][?"podAffinity"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/podAffinity", "value": value}]`},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"affinity"][?"nodeAffinity"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/nodeAffinity", "value": value}]`},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							// PCS multiplies replicas: total pods = PCS.replicas * clique.replicas
-							ReplicasPath:    ptr.To("(.spec.replicas // 1) * (.spec.template.cliques[].spec.replicas // 1)"),
-							MinReplicasPath: ptr.To(".spec.template.cliques[].spec.autoScalingConfig.minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.template.cliques[].spec.autoScalingConfig.maxReplicas"),
+							Replicas:    &v1alpha1.ValueAccessor{Expression: `(variables.cliqueReplicas.size() > 0 ? variables.cliqueReplicas : [dyn(1.0)]).map(v, variables.specReplicasFloat * v)`},
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"autoScalingConfig"][?"minReplicas"].orValue(null))`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"autoScalingConfig"][?"maxReplicas"].orValue(null))`},
 						},
-						InstanceIdPath: ptr.To(".spec.template.cliques[].name"),
+						InstanceIds: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))`},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentInstanceSelector: &v1alpha1.ComponentInstanceSelector{
-								IdPath: `.metadata.labels["grove.io/podclique"]`,
+								Expression: `object[?"metadata"][?"labels"][?"grove.io/podclique"].orValue(null)`,
 							},
 							ReplicaSelector: &v1alpha1.ReplicaSelector{
-								KeyPath: `.metadata.labels["grove.io/podcliqueset-replica-index"]`,
+								Expression: `object[?"metadata"][?"labels"][?"grove.io/podcliqueset-replica-index"].orValue(null)`,
 							},
 						},
 					},
@@ -93,17 +102,17 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "grove.io", Version: "v1alpha1", Kind: "PodCliqueScalingGroup"},
 						OwnerRef: ptr.To("podcliqueset"),
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath:    ptr.To("(.spec.replicas // 1) * (.spec.template.podCliqueScalingGroups[].replicas // 1)"),
-							MinReplicasPath: ptr.To(".spec.template.podCliqueScalingGroups[].scaleConfig.minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.template.podCliqueScalingGroups[].scaleConfig.maxReplicas"),
+							Replicas:    &v1alpha1.ValueAccessor{Expression: `(variables.scalingGroupReplicas.size() > 0 ? variables.scalingGroupReplicas : [dyn(1.0)]).map(v, variables.specReplicasFloat * v)`},
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"scaleConfig"][?"minReplicas"].orValue(null))`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"scaleConfig"][?"maxReplicas"].orValue(null))`},
 						},
-						InstanceIdPath: ptr.To(".spec.template.podCliqueScalingGroups[].name"),
+						InstanceIds: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))`},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentInstanceSelector: &v1alpha1.ComponentInstanceSelector{
-								IdPath: `.metadata.labels["grove.io/podcliquescalinggroup"]`,
+								Expression: `object[?"metadata"][?"labels"][?"grove.io/podcliquescalinggroup"].orValue(null)`,
 							},
 							ReplicaSelector: &v1alpha1.ReplicaSelector{
-								KeyPath: `.metadata.labels["grove.io/podcliquescalinggroup-replica-index"]`,
+								Expression: `object[?"metadata"][?"labels"][?"grove.io/podcliquescalinggroup-replica-index"].orValue(null)`,
 							},
 						},
 					},
@@ -128,18 +137,12 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 						Name: "podcliqueset-replica",
 						Members: []v1alpha1.PodGroupMemberDefinition{
 							{
-								ComponentName: "clique",
-								GroupByKeyPaths: []string{
-									`.metadata.labels["app.kubernetes.io/part-of"]`,
-									`.metadata.labels["grove.io/podcliqueset-replica-index"]`,
-								},
+								ComponentName:      "clique",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"app.kubernetes.io/part-of"].orValue(null)`, `object[?"metadata"][?"labels"][?"grove.io/podcliqueset-replica-index"].orValue(null)`},
 							},
 							{
-								ComponentName: "scalinggroup",
-								GroupByKeyPaths: []string{
-									`.metadata.labels["app.kubernetes.io/part-of"]`,
-									`.metadata.labels["grove.io/podcliqueset-replica-index"]`,
-								},
+								ComponentName:      "scalinggroup",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"app.kubernetes.io/part-of"].orValue(null)`, `object[?"metadata"][?"labels"][?"grove.io/podcliqueset-replica-index"].orValue(null)`},
 							},
 						},
 					}},

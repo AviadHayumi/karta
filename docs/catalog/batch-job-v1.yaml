@@ -13,12 +13,16 @@ spec:
         version: v1
         kind: Job
       specDefinition:
-        podTemplateSpecPath: .spec.template
+        podTemplateSpec:
+          expression: object[?"spec"][?"template"].orValue(null)
+          patch: '{"spec": {"template": value}}'
+          replace: true
       scaleDefinition:
-        replicasPath: .spec.parallelism // 1
+        replicas:
+          expression: variables.specParallelism
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
@@ -26,23 +30,29 @@ spec:
         statusMappings:
           initializing:
             - byExpression:
-                expression: (.status.active // 0) > 0 and (.status.ready // 0) == 0
+                expression: variables.statusActive > 0 && variables.statusReady == 0
                 expectedResult: "true"
           running:
             - byExpression:
-                expression: (.status.active // 0) > 0 and (.status.ready // 0) > 0
+                expression: variables.statusActive > 0 && variables.statusReady > 0
                 expectedResult: "true"
           completed:
             - byConditions:
                 - type: Complete
                   status: "True"
+            - byConditions:
+                - type: SuccessCriteriaMet
+                  status: "True"
           failed:
             - byConditions:
                 - type: Failed
                   status: "True"
+            - byConditions:
+                - type: FailureTarget
+                  status: "True"
           degraded:
             - byExpression:
-                expression: .spec.parallelism > 1 and (.status.ready // 0) < .spec.parallelism and ((.status.succeeded // 0) > 0 or (.status.failed // 0) > 0)
+                expression: variables.specParallelismZero > 1 && variables.statusReady < variables.specParallelismZero && (variables.statusSucceeded > 0 || variables.statusFailed > 0)
                 expectedResult: "true"
           suspended:
             - byConditions:
@@ -50,16 +60,27 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - path: .spec.suspend
-            value: "true"
+          - patch: '{"spec": {"suspend": true}}'
         resumeActions:
-          - path: .spec.suspend
-            value: "false"
+          - patch: '{"spec": {"suspend": false}}'
   optimizationInstructions:
     gangScheduling:
       podGroups:
         - name: job
           members:
             - componentName: job
-              groupByKeyPaths:
-                - .metadata.labels["batch.kubernetes.io/job-name"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"batch.kubernetes.io/job-name"].orValue(null)
+  variables:
+    - name: specParallelism
+      expression: ([dyn(object[?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: statusActive
+      expression: ([dyn(object.?status.?active.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusReady
+      expression: ([dyn(object.?status.?ready.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: specParallelismZero
+      expression: ([dyn(object.?spec.?parallelism.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusSucceeded
+      expression: ([dyn(object.?status.?succeeded.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusFailed
+      expression: ([dyn(object.?status.?failed.orValue(null))].filter(v, v != null && v != false) + [0])[0]

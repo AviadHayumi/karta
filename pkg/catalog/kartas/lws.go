@@ -17,30 +17,42 @@ func LWS() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "leaderworkerset-x-k8s-io-leaderworkerset-v1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "statusReplicas", Expression: `([dyn(object.?status.?replicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+				{Name: "specReplicas", Expression: `([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`},
+				{Name: "specReplicasFloat", Expression: `([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]`},
+				{Name: "specLeaderWorkerTemplateSize", Expression: `([dyn(object.?spec.?leaderWorkerTemplate.?size.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "leaderworkerset",
 					Kind: &v1alpha1.GroupVersionKind{Group: "leaderworkerset.x-k8s.io", Version: "v1", Kind: "LeaderWorkerSet"},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							MessageFieldName: ptr.To("message"),
 						},
 						StatusMappings: v1alpha1.StatusMappings{
-							Initializing: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{
-								{Type: "Progressing", Status: ptr.To("True")},
-								{Type: "Available", Status: ptr.To("False")},
+							// Progressing while not yet available: Available False, or absent (a
+							// starting LeaderWorkerSet is Progressing before it writes Available).
+							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
+								Expression:     `([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Progressing" && c.?status.orValue(null) == "True") && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Available" && c.?status.orValue(null) == "True")`,
+								ExpectedResult: "true",
 							}}},
+							// Available is the authoritative "all groups ready" signal and stays
+							// True while scaling down sheds an extra pod, so key on it alone rather
+							// than on the replica counts (which lag) or UpdateInProgress (which is
+							// absent mid-scale). This ConditionsDefinition does not extract reason,
+							// so match on status only. The replica-settled expression is a fallback
+							// for when the condition is not populated.
 							Running: []v1alpha1.StatusMatcher{
 								{ByConditions: []v1alpha1.ExpectedCondition{
-									{Type: "Available", Status: ptr.To("True"), Reason: ptr.To("AllGroupsReady")},
-									{Type: "Progressing", Status: ptr.To("False")},
-									{Type: "UpdateInProgress", Status: ptr.To("False")},
+									{Type: "Available", Status: ptr.To("True")},
 								}},
 								{ByExpression: &v1alpha1.ExpressionMatcher{
-									Expression:     "(.status.replicas // 0) > 0 and .status.readyReplicas == .status.replicas and .status.updatedReplicas == .status.replicas",
+									Expression:     `variables.statusReplicas > 0 && object.?status.?readyReplicas.orValue(-1) == object.?status.?replicas.orValue(-2) && object.?status.?updatedReplicas.orValue(-1) == object.?status.?replicas.orValue(-2)`,
 									ExpectedResult: "true",
 								}},
 							},
@@ -57,11 +69,11 @@ func LWS() *v1alpha1.Karta {
 						Name:     "group",
 						OwnerRef: ptr.To("leaderworkerset"),
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.leaderWorkerTemplate.size"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"leaderWorkerTemplate"][?"size"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ReplicaSelector: &v1alpha1.ReplicaSelector{
-								KeyPath: `.metadata.labels["leaderworkerset.sigs.k8s.io/group-index"]`,
+								Expression: `object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null)`,
 							},
 						},
 					},
@@ -70,15 +82,15 @@ func LWS() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"},
 						OwnerRef: ptr.To("group"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.leaderWorkerTemplate.leaderTemplate"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"leaderWorkerTemplate"][?"leaderTemplate"].orValue(null)`, Patch: `{"spec": {"leaderWorkerTemplate": {"leaderTemplate": value}}}`, Replace: true},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.replicas // 1"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specReplicas`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["leaderworkerset.sigs.k8s.io/worker-index"]`,
-								Value:   ptr.To("0"),
+								Expression: `object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/worker-index"].orValue(null)`,
+								Value:      ptr.To("0"),
 							},
 						},
 					},
@@ -87,14 +99,14 @@ func LWS() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"},
 						OwnerRef: ptr.To("group"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.leaderWorkerTemplate.workerTemplate"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)`, Patch: `{"spec": {"leaderWorkerTemplate": {"workerTemplate": value}}}`, Replace: true},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To("(.spec.replicas // 1) * ((.spec.leaderWorkerTemplate.size // 1) - 1)"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specReplicasFloat * (variables.specLeaderWorkerTemplateSize - 1.0)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.annotations["leaderworkerset.sigs.k8s.io/leader-name"]`,
+								Expression: `object[?"metadata"][?"annotations"][?"leaderworkerset.sigs.k8s.io/leader-name"].orValue(null)`,
 							},
 						},
 					},
@@ -105,11 +117,8 @@ func LWS() *v1alpha1.Karta {
 					PodGroups: []v1alpha1.PodGroupDefinition{{
 						Name: "group",
 						Members: []v1alpha1.PodGroupMemberDefinition{{
-							ComponentName: "group",
-							GroupByKeyPaths: []string{
-								`.metadata.labels["leaderworkerset.sigs.k8s.io/name"]`,
-								`.metadata.labels["leaderworkerset.sigs.k8s.io/group-index"] // "0"`,
-							},
+							ComponentName:      "group",
+							GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/name"].orValue(null)`, `([dyn(object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null))].filter(v, v != null && v != false) + ["0"])[0]`},
 						}},
 					}},
 				},

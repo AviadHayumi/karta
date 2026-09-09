@@ -49,9 +49,9 @@ type ComponentDefinition struct {
 	// +kubebuilder:validation:Optional
 	SuspendDefinition *SuspendDefinition `json:"suspendDefinition,omitempty"`
 
-	// InstanceIdPath is the JQ path to the instance id, for components that hold multiple pod definitions (in array or map)
-	// +kubebuilder:validation:Optional
-	InstanceIdPath *string `json:"instanceIdPath,omitempty" jq:"validate"`
+	// InstanceIds is an expression returning the list of instance ids.
+	// +optional
+	InstanceIds *ValueAccessor `json:"instanceIds,omitempty"`
 
 	// PodSelector defines how to identify pods belonging to this component
 	// +kubebuilder:validation:Optional
@@ -62,7 +62,7 @@ type ComponentDefinition struct {
 // suspending or resuming a workload. Each action specifies the target field path
 // and the value to assign, applied via the runner's Assign method.
 type SuspendDefinition struct {
-	// SuspendActions is an ordered list of path/value assignments applied on suspend.
+	// SuspendActions is an ordered list of patches applied on suspend.
 	// Actions are applied in sequence; later actions may overwrite earlier ones.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
@@ -77,33 +77,62 @@ type SuspendDefinition struct {
 	ResumeActions []SuspendAction `json:"resumeActions"`
 }
 
-// SuspendAction is a single field assignment applied during a suspend or resume operation.
-type SuspendAction struct {
-	// Path is a JQ expression that selects the target field (e.g. ".spec.suspend").
-	// Only read/navigation expressions are permitted; assignment operators are not.
+// Variable is a named expression, the same shape a ValidatingAdmissionPolicy variable has.
+type Variable struct {
+	// Name is how expressions reference this variable.
 	// +kubebuilder:validation:Required
-	Path string `json:"path" jq:"validate"`
+	Name string `json:"name"`
 
-	// Value is the JSON-encoded value to assign at the path (e.g. "true", "0", `"paused"`, "null").
+	// Expression computes the variable's value from the workload.
 	// +kubebuilder:validation:Required
-	Value string `json:"value"`
+	Expression string `json:"expression"`
+}
+
+// ValueAccessor reads and writes one workload field without naming a location. Expression is
+// evaluated by the definition's engine and returns the field's value. Patch constructs a partial
+// object that is merged into the workload, with `value` bound to the new value karta computed and
+// `instance` bound to the instance id being written. When set, it takes the place of the sibling
+// path field, and the path interpreter is not involved.
+type ValueAccessor struct {
+	// Expression returns the field's value.
+	// +optional
+	Expression string `json:"expression,omitempty"`
+
+	// Patch constructs the partial object a write merges into the workload.
+	// +optional
+	Patch string `json:"patch,omitempty"`
+
+	// Replace makes the write replace the field instead of merging into it: the patch is first
+	// applied with value bound to null (removing the field, since null deletes) and then with the
+	// real value. A pod template update wants this; an annotations update usually does not.
+	// +optional
+	Replace bool `json:"replace,omitempty"`
+}
+
+// SuspendAction is a single mutation applied during a suspend or resume operation: a patch whose
+// expression constructs a partial object.
+type SuspendAction struct {
+	// Patch is an expression that constructs a partial object, which is merged into the
+	// workload the way a MutatingAdmissionPolicy applyConfiguration mutation is: maps merge
+	// recursively, any other value replaces, and null removes the field.
+	// +kubebuilder:validation:Required
+	Patch string `json:"patch"`
 }
 
 // SpecDefinition defines how to extract pod specifications from a component.
 // Only one of the three options should be provided (PodTemplateSpec, FragmentedPodSpec, PodSpec + Metadata).
 type SpecDefinition struct {
-	// PodTemplateSpecPath is the JQ path to a complete PodTemplateSpec object
-	// +kubebuilder:validation:Optional
-	PodTemplateSpecPath *string `json:"podTemplateSpecPath,omitempty" jq:"validate"`
+	// PodTemplateSpec reads and writes the complete PodTemplateSpec object.
+	// +optional
+	PodTemplateSpec *ValueAccessor `json:"podTemplateSpec,omitempty"`
 
-	// PodSpecPath is the JQ path to a complete PodSpec object
-	// +kubebuilder:validation:Optional
-	PodSpecPath *string `json:"podSpecPath,omitempty" jq:"validate"`
+	// PodSpec reads and writes the complete PodSpec object.
+	// +optional
+	PodSpec *ValueAccessor `json:"podSpec,omitempty"`
 
-	// MetadataPath is the JQ path to the component metadata
-	// May be used only with PodSpecPath, in cases where pod spec and metadata are separated
-	// +kubebuilder:validation:Optional
-	MetadataPath *string `json:"metadataPath,omitempty" jq:"validate"`
+	// Metadata reads and writes this field.
+	// +optional
+	Metadata *ValueAccessor `json:"metadata,omitempty"`
 
 	// FragmentedPodSpecDefinition defines how to extract individual pod spec fields
 	// when they are scattered across different paths in the component
@@ -111,74 +140,73 @@ type SpecDefinition struct {
 	FragmentedPodSpecDefinition *FragmentedPodSpecDefinition `json:"fragmentedPodSpecDefinition,omitempty"`
 }
 
-// FragmentedPodSpecDefinition defines JQ paths to individual pod spec fields
+// FragmentedPodSpecDefinition defines accessors to individual pod spec fields
 // when they are scattered across different locations in the component YAML.
 type FragmentedPodSpecDefinition struct {
-	// SchedulerNamePath is the JQ path to the scheduler name
-	// +kubebuilder:validation:Optional
-	SchedulerNamePath *string `json:"schedulerNamePath,omitempty" jq:"validate"`
+	// SchedulerName reads and writes this field.
+	// +optional
+	SchedulerName *ValueAccessor `json:"schedulerName,omitempty"`
 
-	// LabelsPath is the JQ path to pod labels
-	// +kubebuilder:validation:Optional
-	LabelsPath *string `json:"labelsPath,omitempty" jq:"validate"`
+	// Labels reads and writes this field.
+	// +optional
+	Labels *ValueAccessor `json:"labels,omitempty"`
 
-	// AnnotationsPath is the JQ path to pod annotations
-	// +kubebuilder:validation:Optional
-	AnnotationsPath *string `json:"annotationsPath,omitempty" jq:"validate"`
+	// Annotations reads and writes this field.
+	// +optional
+	Annotations *ValueAccessor `json:"annotations,omitempty"`
 
-	// ResourcesPath is the JQ path to resource requirements
-	// +kubebuilder:validation:Optional
-	ResourcesPath *string `json:"resourcesPath,omitempty" jq:"validate"`
+	// Resources reads and writes this field.
+	// +optional
+	Resources *ValueAccessor `json:"resources,omitempty"`
 
-	// ResourceClaimsPath is the JQ path to DRA resource claims
-	// +kubebuilder:validation:Optional
-	ResourceClaimsPath *string `json:"resourceClaimsPath,omitempty" jq:"validate"`
+	// ResourceClaims reads and writes this field.
+	// +optional
+	ResourceClaims *ValueAccessor `json:"resourceClaims,omitempty"`
 
-	// PodAffinityPath is the JQ path to pod affinity rules
-	// +kubebuilder:validation:Optional
-	PodAffinityPath *string `json:"podAffinityPath,omitempty" jq:"validate"`
+	// PodAffinity reads and writes this field.
+	// +optional
+	PodAffinity *ValueAccessor `json:"podAffinity,omitempty"`
 
-	// NodeAffinityPath is the JQ path to node affinity rules
-	// +kubebuilder:validation:Optional
-	NodeAffinityPath *string `json:"nodeAffinityPath,omitempty" jq:"validate"`
+	// NodeAffinity reads and writes this field.
+	// +optional
+	NodeAffinity *ValueAccessor `json:"nodeAffinity,omitempty"`
 
-	// ContainersPath is the JQ path to containers specifications
-	// +kubebuilder:validation:Optional
-	ContainersPath *string `json:"containersPath,omitempty" jq:"validate"`
+	// Containers reads and writes this field.
+	// +optional
+	Containers *ValueAccessor `json:"containers,omitempty"`
 
-	// ContainesPath is the JQ path to a single container specifications
-	// Used when the component has only one container
-	// +kubebuilder:validation:Optional
-	ContainerPath *string `json:"containerPath,omitempty" jq:"validate"`
+	// Container reads and writes this field.
+	// +optional
+	Container *ValueAccessor `json:"container,omitempty"`
 
-	// PriorityClassNamePath is the JQ path to the priority class name
-	// +kubebuilder:validation:Optional
-	PriorityClassNamePath *string `json:"priorityClassNamePath,omitempty" jq:"validate"`
+	// PriorityClassName reads and writes this field.
+	// +optional
+	PriorityClassName *ValueAccessor `json:"priorityClassName,omitempty"`
 
-	// ImagePath is the JQ path to the container image
-	// +kubebuilder:validation:Optional
-	ImagePath *string `json:"imagePath,omitempty" jq:"validate"`
+	// Image reads and writes this field.
+	// +optional
+	Image *ValueAccessor `json:"image,omitempty"`
 }
 
 // ScaleDefinition defines how to extract scaling information from a component.
 type ScaleDefinition struct {
-	// ReplicasPath is the JQ path to the current replica count
-	// +kubebuilder:validation:Optional
-	ReplicasPath *string `json:"replicasPath,omitempty" jq:"validate"`
+	// Replicas reads and writes this field.
+	// +optional
+	Replicas *ValueAccessor `json:"replicas,omitempty"`
 
-	// MinReplicasPath is the JQ path to the minimum replica count
-	// +kubebuilder:validation:Optional
-	MinReplicasPath *string `json:"minReplicasPath,omitempty" jq:"validate"`
+	// MinReplicas reads and writes this field.
+	// +optional
+	MinReplicas *ValueAccessor `json:"minReplicas,omitempty"`
 
-	// MaxReplicasPath is the JQ path to the maximum replica count
-	// +kubebuilder:validation:Optional
-	MaxReplicasPath *string `json:"maxReplicasPath,omitempty" jq:"validate"`
+	// MaxReplicas reads and writes this field.
+	// +optional
+	MaxReplicas *ValueAccessor `json:"maxReplicas,omitempty"`
 }
 
 // PodSelector defines how to identify pods belonging to a specific component.
 type PodSelector struct {
 	// ComponentTypeSelector determines whether a pod belongs to this component type
-	// by matching a pod label or annotation value via a JQ path.
+	// by matching a pod label or annotation value via an expression.
 	// This is the primary mechanism for pod-to-component membership.
 	// For example, LWS "leader" uses worker-index="0" to identify leader pods,
 	// and LWS "worker" checks for the existence of the leader-name annotation.
@@ -207,10 +235,9 @@ type PodSelector struct {
 }
 
 type ComponentTypeSelector struct {
-	// KeyPath is the JQ path to the identifying key/label on the pod
-	// JQ path is evaluated against individual pod objects, not the root resource spec
-	// +kubebuilder:validation:Required
-	KeyPath string `json:"keyPath" jq:"validate"`
+	// Expression reads and writes this field.
+	// +optional
+	Expression string `json:"expression,omitempty"`
 
 	// Value is the expected value for the key (optional - if nil, only key existence is checked)
 	// +kubebuilder:validation:Optional
@@ -218,18 +245,16 @@ type ComponentTypeSelector struct {
 }
 
 type ComponentInstanceSelector struct {
-	// IdPath is the JQ path to the component instance identifier on the pod
-	// JQ path is evaluated against individual pod objects, not the root resource spec
-	// +kubebuilder:validation:Required
-	IdPath string `json:"idPath" jq:"validate"`
+	// Expression reads and writes this field.
+	// +optional
+	Expression string `json:"expression,omitempty"`
 }
 
 // ReplicaSelector identifies the replica index/group a pod belongs to.
 type ReplicaSelector struct {
-	// KeyPath is the JQ path to the replica identifier on the pod.
-	// The evaluated result should be the replica index or group identifier (e.g., "0", "1").
-	// +kubebuilder:validation:Required
-	KeyPath string `json:"keyPath" jq:"validate"`
+	// Expression reads and writes this field.
+	// +optional
+	Expression string `json:"expression,omitempty"`
 }
 
 // ResourceStatus represents the high-level status of a component.
@@ -282,16 +307,16 @@ type StatusDefinition struct {
 
 // PhaseDefinition defines how to extract a simple phase/state string from the component.
 type PhaseDefinition struct {
-	// Path is the JQ path to the phase/state field
-	// +kubebuilder:validation:Required
-	Path string `json:"path" jq:"validate"`
+	// Expression reads and writes this field.
+	// +optional
+	Expression string `json:"expression,omitempty"`
 }
 
 // ConditionsDefinition defines how to extract Kubernetes-style conditions from the component.
 type ConditionsDefinition struct {
-	// Path is the JQ path to the conditions array
-	// +kubebuilder:validation:Required
-	Path string `json:"path" jq:"validate"`
+	// Expression reads and writes this field.
+	// +optional
+	Expression string `json:"expression,omitempty"`
 
 	// TypeFieldName is the field name for the condition type
 	// +kubebuilder:validation:Optional
@@ -400,16 +425,16 @@ type StatusMatcher struct {
 	// +listType=atomic
 	ByConditions []ExpectedCondition `json:"byConditions,omitempty"`
 
-	// ByExpression is a JQ expression that matches against the object for status matching
+	// ByExpression is an expression that matches against the object for status matching
 	// +kubebuilder:validation:Optional
 	ByExpression *ExpressionMatcher `json:"byExpression,omitempty"`
 }
 
-// ExpressionMatcher defines a JQ expression and its expected result for status matching.
+// ExpressionMatcher defines an expression and its expected result for status matching.
 type ExpressionMatcher struct {
-	// Expression is the JQ expression to evaluate
+	// Expression is the CEL expression to evaluate.
 	// +kubebuilder:validation:Required
-	Expression string `json:"expression" jq:"validate"`
+	Expression string `json:"expression"`
 
 	// ExpectedResult is the expected result value in string format from the expression evaluation
 	// +kubebuilder:validation:Required

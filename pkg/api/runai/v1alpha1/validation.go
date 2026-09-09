@@ -6,8 +6,6 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
-
-	"github.com/run-ai/karta/pkg/jq"
 )
 
 var kindsWithoutGroup = map[string]bool{
@@ -42,10 +40,6 @@ func (v *KartaValidator) Validate() error {
 
 	if instructionErrs := v.validateInstructions(); instructionErrs != nil {
 		errs = append(errs, instructionErrs...)
-	}
-
-	if jqErrs := jq.ValidateJQExpressions(v.karta); jqErrs != nil {
-		errs = append(errs, jqErrs...)
 	}
 
 	return errors.Join(errs...)
@@ -143,10 +137,10 @@ func (v *KartaValidator) validateComponent(component ComponentDefinition) []erro
 	if component.SpecDefinition != nil {
 		counter := 0
 
-		if component.SpecDefinition.PodTemplateSpecPath != nil {
+		if component.SpecDefinition.PodTemplateSpec != nil {
 			counter++
 		}
-		if component.SpecDefinition.PodSpecPath != nil {
+		if component.SpecDefinition.PodSpec != nil {
 			counter++
 		}
 		if component.SpecDefinition.FragmentedPodSpecDefinition != nil {
@@ -167,14 +161,15 @@ func (v *KartaValidator) validateComponent(component ComponentDefinition) []erro
 }
 
 func validateMultiInstanceComponent(component ComponentDefinition) error {
-	if component.InstanceIdPath != nil &&
+	hasInstanceIds := component.InstanceIds != nil && component.InstanceIds.Expression != ""
+	if hasInstanceIds &&
 		(component.PodSelector == nil || component.PodSelector.ComponentInstanceSelector == nil) {
-		return fmt.Errorf("component '%s' has instance id path but no pod component instance selector", component.Name)
+		return fmt.Errorf("component '%s' has instance ids but no pod component instance selector", component.Name)
 	}
 
 	if (component.PodSelector != nil && component.PodSelector.ComponentInstanceSelector != nil) &&
-		component.InstanceIdPath == nil {
-		return fmt.Errorf("component '%s' has pod component instance selector but no instance id path", component.Name)
+		!hasInstanceIds {
+		return fmt.Errorf("component '%s' has pod component instance selector but no instance ids", component.Name)
 	}
 
 	return nil

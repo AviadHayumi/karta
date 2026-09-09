@@ -48,8 +48,8 @@ var _ = Describe("Component", func() {
 				},
 				PodSelector: &v1alpha1.PodSelector{
 					ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-						KeyPath: ".metadata.labels.role",
-						Value:   stringPtr("worker"),
+						Expression: `object[?"metadata"][?"labels"][?"role"].orValue(null)`,
+						Value:      stringPtr("worker"),
 					},
 				},
 			}
@@ -87,7 +87,7 @@ var _ = Describe("Component", func() {
 		It("should return pod selector", func() {
 			selector := component.GetPodSelector()
 			Expect(selector).NotTo(BeNil())
-			Expect(selector.ComponentTypeSelector.KeyPath).To(Equal(".metadata.labels.role"))
+			Expect(selector.ComponentTypeSelector.Expression).To(Equal(`object[?"metadata"][?"labels"][?"role"].orValue(null)`))
 			Expect(*selector.ComponentTypeSelector.Value).To(Equal("worker"))
 		})
 
@@ -100,22 +100,22 @@ var _ = Describe("Component", func() {
 	})
 
 	Context("Pod Definition Detection", func() {
-		It("should detect pod definition with PodTemplateSpecPath", func() {
+		It("should detect pod definition with PodTemplateSpec", func() {
 			component := &Component{
 				definition: v1alpha1.ComponentDefinition{
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpecPath: stringPtr(".spec.template"),
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`},
 					},
 				},
 			}
 			Expect(component.HasPodDefinition()).To(BeTrue())
 		})
 
-		It("should detect pod definition with PodSpecPath", func() {
+		It("should detect pod definition with PodSpec", func() {
 			component := &Component{
 				definition: v1alpha1.ComponentDefinition{
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodSpecPath: stringPtr(".spec.podSpec"),
+						PodSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"podSpec"].orValue(null)`},
 					},
 				},
 			}
@@ -155,19 +155,19 @@ var _ = Describe("Component", func() {
 	})
 
 	Context("Instance ID Logic", func() {
-		It("should return true for HasInstanceIdDefinition when InstanceIdPath is defined", func() {
+		It("should return true for HasInstanceIdDefinition when InstanceIds is defined", func() {
 			component := &Component{
 				definition: v1alpha1.ComponentDefinition{
-					InstanceIdPath: stringPtr(".spec.jobs[].name"),
+					InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.jobs.map(x, x[?"name"].orValue(null))`},
 				},
 			}
 			Expect(component.HasInstanceIdDefinition()).To(BeTrue())
 		})
 
-		It("should return false for HasInstanceIdDefinition when InstanceIdPath is not defined", func() {
+		It("should return false for HasInstanceIdDefinition when InstanceIds is not defined", func() {
 			component := &Component{
 				definition: v1alpha1.ComponentDefinition{
-					// No InstanceIdPath
+					// No InstanceIds
 				},
 			}
 			Expect(component.HasInstanceIdDefinition()).To(BeFalse())
@@ -1085,8 +1085,8 @@ var _ = Describe("Component", func() {
 		var component *Component
 
 		suspendDef := v1alpha1.SuspendDefinition{
-			SuspendActions: []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "true"}},
-			ResumeActions:  []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "false"}},
+			SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
+			ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
 		}
 
 		BeforeEach(func() {

@@ -14,15 +14,18 @@ spec:
         kind: RayJob
       statusDefinition:
         phaseDefinition:
-          path: .status.jobStatus
+          expression: object[?"status"][?"jobStatus"].orValue(null)
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
         statusMappings:
           initializing:
             - byPhase: PENDING
+            - byExpression:
+                expression: variables.statusJobStatus == "" && variables.statusJobDeploymentStatus != "Suspended" && variables.statusJobDeploymentStatus != "Suspending"
+                expectedResult: "true"
           running:
             - byPhase: RUNNING
           completed:
@@ -31,15 +34,13 @@ spec:
             - byPhase: FAILED
           suspended:
             - byExpression:
-                expression: .status.jobDeploymentStatus == "Suspended"
+                expression: variables.statusJobDeploymentStatus == "Suspended" || variables.statusJobDeploymentStatus == "Suspending"
                 expectedResult: "true"
       suspendDefinition:
         suspendActions:
-          - path: .spec.suspend
-            value: "true"
+          - patch: '{"spec": {"suspend": true}}'
         resumeActions:
-          - path: .spec.suspend
-            value: "false"
+          - patch: '{"spec": {"suspend": false}}'
     childComponents:
       - name: head
         kind:
@@ -48,12 +49,16 @@ spec:
           kind: Pod
         ownerRef: rayjob
         specDefinition:
-          podTemplateSpecPath: .spec.rayClusterSpec.headGroupSpec.template
+          podTemplateSpec:
+            expression: object[?"spec"][?"rayClusterSpec"][?"headGroupSpec"][?"template"].orValue(null)
+            patch: '{"spec": {"rayClusterSpec": {"headGroupSpec": {"template": value}}}}'
+            replace: true
         scaleDefinition:
-          replicasPath: "1"
+          replicas:
+            expression: "1"
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["ray.io/node-type"]
+            expression: object[?"metadata"][?"labels"][?"ray.io/node-type"].orValue(null)
             value: head
       - name: worker
         kind:
@@ -62,26 +67,41 @@ spec:
           kind: Pod
         ownerRef: rayjob
         specDefinition:
-          podTemplateSpecPath: .spec.rayClusterSpec.workerGroupSpecs[].template
+          podTemplateSpec:
+            expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))
+            patch: '[{"op": "add", "path": "/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
         scaleDefinition:
-          replicasPath: .spec.rayClusterSpec.workerGroupSpecs[].replicas // 1
-          minReplicasPath: .spec.rayClusterSpec.workerGroupSpecs[].minReplicas
-          maxReplicasPath: .spec.rayClusterSpec.workerGroupSpecs[].maxReplicas
-        instanceIdPath: .spec.rayClusterSpec.workerGroupSpecs[].groupName
+          replicas:
+            expression: '(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])'
+          minReplicas:
+            expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"minReplicas"].orValue(null))
+          maxReplicas:
+            expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"maxReplicas"].orValue(null))
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"groupName"].orValue(null))
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["ray.io/node-type"]
+            expression: object[?"metadata"][?"labels"][?"ray.io/node-type"].orValue(null)
             value: worker
           componentInstanceSelector:
-            idPath: .metadata.labels["ray.io/group"]
+            expression: object[?"metadata"][?"labels"][?"ray.io/group"].orValue(null)
   optimizationInstructions:
     gangScheduling:
       podGroups:
         - name: job
           members:
             - componentName: head
-              groupByKeyPaths:
-                - .metadata.labels["ray.io/cluster"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"ray.io/cluster"].orValue(null)
             - componentName: worker
-              groupByKeyPaths:
-                - .metadata.labels["ray.io/cluster"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"ray.io/cluster"].orValue(null)
+  variables:
+    - name: workerGroups
+      expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0]
+    - name: workerReplicas
+      expression: variables.workerGroups.map(x, dyn(x[?"replicas"].orValue(null))).filter(v, v != null && v != false)
+    - name: statusJobStatus
+      expression: ([dyn(object.?status.?jobStatus.orValue(null))].filter(v, v != null && v != false) + [""])[0]
+    - name: statusJobDeploymentStatus
+      expression: ([dyn(object.?status.?jobDeploymentStatus.orValue(null))].filter(v, v != null && v != false) + [""])[0]

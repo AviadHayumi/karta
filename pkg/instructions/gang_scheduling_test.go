@@ -33,7 +33,10 @@ var _ = Describe("Gang Scheduling", func() {
 							RootComponent: v1alpha1.ComponentDefinition{
 								Name: "simple-job",
 								SpecDefinition: &v1alpha1.SpecDefinition{
-									PodTemplateSpecPath: ptr.To(".spec.template"),
+									PodTemplateSpec: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"template"].orValue(null)`,
+										Patch:      `{"spec": {"template": value}}`,
+									},
 								},
 							},
 						},
@@ -88,12 +91,15 @@ var _ = Describe("Gang Scheduling", func() {
 									Name:     "worker",
 									OwnerRef: ptr.To("pytorch-job"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.worker.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"worker": {"template": value}}}`,
+										},
 									},
 									PodSelector: &v1alpha1.PodSelector{
 										ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-											KeyPath: ".metadata.labels.component",
-											Value:   ptr.To("worker"),
+											Expression: `object[?"metadata"][?"labels"][?"component"].orValue(null)`,
+											Value:      ptr.To("worker"),
 										},
 									},
 								},
@@ -101,12 +107,15 @@ var _ = Describe("Gang Scheduling", func() {
 									Name:     "master",
 									OwnerRef: ptr.To("pytorch-job"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.master.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"master": {"template": value}}}`,
+										},
 									},
 									PodSelector: &v1alpha1.PodSelector{
 										ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-											KeyPath: ".metadata.labels.component",
-											Value:   ptr.To("master"),
+											Expression: `object[?"metadata"][?"labels"][?"component"].orValue(null)`,
+											Value:      ptr.To("master"),
 										},
 									},
 								},
@@ -169,166 +178,6 @@ var _ = Describe("Gang Scheduling", func() {
 			})
 		})
 
-		Context("with filters on gang scheduling members", func() {
-			It("should respect filters when selecting effective component", func() {
-				karta := &v1alpha1.Karta{
-					Spec: v1alpha1.KartaSpec{
-						StructureDefinition: v1alpha1.StructureDefinition{
-							RootComponent: v1alpha1.ComponentDefinition{
-								Name: "worker-set",
-								SpecDefinition: &v1alpha1.SpecDefinition{
-									PodTemplateSpecPath: ptr.To(".spec.template"),
-								},
-							},
-						},
-						Instructions: v1alpha1.OptimizationInstructions{
-							GangScheduling: &v1alpha1.GangSchedulingInstruction{
-								PodGroups: []v1alpha1.PodGroupDefinition{
-									{
-										Name: "gpu-group",
-										Members: []v1alpha1.PodGroupMemberDefinition{
-											{
-												ComponentName: "worker-set",
-												Filters: []string{
-													`.metadata.labels.tier == "gpu"`,
-												},
-											},
-										},
-									},
-									{
-										Name: "cpu-group",
-										Members: []v1alpha1.PodGroupMemberDefinition{
-											{
-												ComponentName: "worker-set",
-												Filters: []string{
-													`.metadata.labels.tier == "cpu"`,
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-
-				summary, err := NewStructureSummary(karta)
-				Expect(err).NotTo(HaveOccurred())
-
-				// Test GPU pod
-				gpuPod := &corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "gpu-worker-pod",
-						Namespace: "default",
-						Labels: map[string]string{
-							"tier": "gpu",
-						},
-					},
-				}
-				gpuQuerier := resource.NewPodQuerier(gpuPod)
-
-				result, err := GetPodGroupingEffectiveComponent(ctx, gpuQuerier, "worker-set", summary)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).NotTo(BeNil())
-				Expect(result.EffectiveComponent).To(Equal("worker-set"))
-				Expect(result.PodGroupName).To(Equal("gpu-group"))
-
-				// Test CPU pod
-				cpuPod := &corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "cpu-worker-pod",
-						Namespace: "default",
-						Labels: map[string]string{
-							"tier": "cpu",
-						},
-					},
-				}
-				cpuQuerier := resource.NewPodQuerier(cpuPod)
-
-				result, err = GetPodGroupingEffectiveComponent(ctx, cpuQuerier, "worker-set", summary)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).NotTo(BeNil())
-				Expect(result.EffectiveComponent).To(Equal("worker-set"))
-				Expect(result.PodGroupName).To(Equal("cpu-group"))
-			})
-		})
-
-		Context("with parent component fallback", func() {
-			It("should fallback to parent when direct component has no matching filters", func() {
-				karta := &v1alpha1.Karta{
-					Spec: v1alpha1.KartaSpec{
-						StructureDefinition: v1alpha1.StructureDefinition{
-							RootComponent: v1alpha1.ComponentDefinition{
-								Name: "pytorch-job",
-							},
-							ChildComponents: []v1alpha1.ComponentDefinition{
-								{
-									Name:     "worker",
-									OwnerRef: ptr.To("pytorch-job"),
-									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.template"),
-									},
-									PodSelector: &v1alpha1.PodSelector{
-										ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-											KeyPath: ".metadata.labels.component",
-											Value:   ptr.To("worker"),
-										},
-									},
-								},
-							},
-						},
-						Instructions: v1alpha1.OptimizationInstructions{
-							GangScheduling: &v1alpha1.GangSchedulingInstruction{
-								PodGroups: []v1alpha1.PodGroupDefinition{
-									{
-										Name: "specific-group",
-										Members: []v1alpha1.PodGroupMemberDefinition{
-											{
-												ComponentName: "worker",
-												Filters: []string{
-													`.metadata.labels.version == "v2"`, // This won't match
-												},
-											},
-										},
-									},
-									{
-										Name: "fallback-group",
-										Members: []v1alpha1.PodGroupMemberDefinition{
-											{
-												ComponentName: "pytorch-job", // Parent fallback, no filters
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-
-				summary, err := NewStructureSummary(karta)
-				Expect(err).NotTo(HaveOccurred())
-
-				// Pod that matches worker selector but not the specific filter
-				pod := &corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "worker-pod",
-						Namespace: "default",
-						Labels: map[string]string{
-							"component": "worker",
-							"version":   "v1", // Doesn't match v2 filter
-						},
-					},
-				}
-				podQuerier := resource.NewPodQuerier(pod)
-
-				result, err := GetPodGroupingEffectiveComponent(ctx, podQuerier, "worker", summary)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).NotTo(BeNil())
-				Expect(result.EffectiveComponent).To(Equal("pytorch-job")) // Fallback to parent
-				Expect(result.PodGroupName).To(Equal("fallback-group"))
-			})
-		})
-
 		Context("with no gang scheduling", func() {
 			It("should return nil when no gang scheduling instructions exist", func() {
 				karta := &v1alpha1.Karta{
@@ -337,7 +186,10 @@ var _ = Describe("Gang Scheduling", func() {
 							RootComponent: v1alpha1.ComponentDefinition{
 								Name: "simple-job",
 								SpecDefinition: &v1alpha1.SpecDefinition{
-									PodTemplateSpecPath: ptr.To(".spec.template"),
+									PodTemplateSpec: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"template"].orValue(null)`,
+										Patch:      `{"spec": {"template": value}}`,
+									},
 								},
 							},
 						},
@@ -373,11 +225,20 @@ var _ = Describe("Gang Scheduling", func() {
 							RootComponent: v1alpha1.ComponentDefinition{
 								Name: "worker",
 								SpecDefinition: &v1alpha1.SpecDefinition{
-									PodTemplateSpecPath: ptr.To(".spec.template"),
+									PodTemplateSpec: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"template"].orValue(null)`,
+										Patch:      `{"spec": {"template": value}}`,
+									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
-									ReplicasPath:    ptr.To(".spec.replicas"),
-									MinReplicasPath: ptr.To(".spec.minReplicas"),
+									Replicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
+										Patch:      `{"spec": {"replicas": value}}`,
+									},
+									MinReplicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
+										Patch:      `{"spec": {"minReplicas": value}}`,
+									},
 								},
 							},
 						},
@@ -414,7 +275,10 @@ var _ = Describe("Gang Scheduling", func() {
 								Name:           "pytorch-job",
 								SpecDefinition: &v1alpha1.SpecDefinition{},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
-									ReplicasPath: ptr.To(".spec.replicas"),
+									Replicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
+										Patch:      `{"spec": {"replicas": value}}`,
+									},
 								},
 							},
 							ChildComponents: []v1alpha1.ComponentDefinition{
@@ -422,20 +286,32 @@ var _ = Describe("Gang Scheduling", func() {
 									Name:     "worker",
 									OwnerRef: ptr.To("pytorch-job"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.worker.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"worker": {"template": value}}}`,
+										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
-										ReplicasPath: ptr.To(".spec.worker.replicas"),
+										Replicas: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"worker"][?"replicas"].orValue(null)`,
+											Patch:      `{"spec": {"worker": {"replicas": value}}}`,
+										},
 									},
 								},
 								{
 									Name:     "master",
 									OwnerRef: ptr.To("pytorch-job"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.master.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"master": {"template": value}}}`,
+										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
-										ReplicasPath: ptr.To(".spec.master.replicas"),
+										Replicas: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"master"][?"replicas"].orValue(null)`,
+											Patch:      `{"spec": {"master": {"replicas": value}}}`,
+										},
 									},
 								},
 							},
@@ -516,19 +392,30 @@ var _ = Describe("Gang Scheduling", func() {
 								Name:           "pytorch-job",
 								SpecDefinition: &v1alpha1.SpecDefinition{},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
-									ReplicasPath: ptr.To(".spec.replicas"),
+									Replicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
+										Patch:      `{"spec": {"replicas": value}}`,
+									},
 								},
 							},
 							ChildComponents: []v1alpha1.ComponentDefinition{
 								{
-									Name:           "worker-array",
-									OwnerRef:       ptr.To("pytorch-job"),
-									InstanceIdPath: ptr.To(".spec.workers[].name"),
+									Name:        "worker-array",
+									OwnerRef:    ptr.To("pytorch-job"),
+									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.workers.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.workers[].template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.workers.map(x, x[?"template"].orValue(null))`,
+											Patch:      `[{"op": "add", "path": "/spec/workers/" + string(index) + "/template", "value": value}]`,
+											Replace:    true,
+										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
-										ReplicasPath: ptr.To(".spec.workers[].replicas"),
+										Replicas: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.workers.map(x, x[?"replicas"].orValue(null))`,
+											Patch:      `[{"op": "add", "path": "/spec/workers/" + string(index) + "/replicas", "value": value}]`,
+											Replace:    true,
+										},
 									},
 								},
 							},
@@ -582,10 +469,16 @@ var _ = Describe("Gang Scheduling", func() {
 									Name:     "worker",
 									OwnerRef: ptr.To("cluster"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"template": value}}`,
+										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
-										ReplicasPath: ptr.To(".spec.replicas"),
+										Replicas: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"replicas"].orValue(null)`,
+											Patch:      `{"spec": {"replicas": value}}`,
+										},
 									},
 								},
 							},
@@ -627,7 +520,10 @@ var _ = Describe("Gang Scheduling", func() {
 								Name:           "job-group",
 								SpecDefinition: &v1alpha1.SpecDefinition{},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
-									ReplicasPath: ptr.To(".spec.size"),
+									Replicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"size"].orValue(null)`,
+										Patch:      `{"spec": {"size": value}}`,
+									},
 								},
 							},
 							ChildComponents: []v1alpha1.ComponentDefinition{
@@ -635,7 +531,10 @@ var _ = Describe("Gang Scheduling", func() {
 									Name:     "worker",
 									OwnerRef: ptr.To("job-group"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"template": value}}`,
+										},
 										// No scale definition
 									},
 								},
@@ -679,11 +578,20 @@ var _ = Describe("Gang Scheduling", func() {
 							RootComponent: v1alpha1.ComponentDefinition{
 								Name: "worker",
 								SpecDefinition: &v1alpha1.SpecDefinition{
-									PodTemplateSpecPath: ptr.To(".spec.template"),
+									PodTemplateSpec: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"template"].orValue(null)`,
+										Patch:      `{"spec": {"template": value}}`,
+									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
-									ReplicasPath:    ptr.To(".spec.replicas"),
-									MinReplicasPath: ptr.To(".spec.minReplicas"),
+									Replicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
+										Patch:      `{"spec": {"replicas": value}}`,
+									},
+									MinReplicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
+										Patch:      `{"spec": {"minReplicas": value}}`,
+									},
 								},
 							},
 						},
@@ -713,11 +621,20 @@ var _ = Describe("Gang Scheduling", func() {
 							RootComponent: v1alpha1.ComponentDefinition{
 								Name: "worker",
 								SpecDefinition: &v1alpha1.SpecDefinition{
-									PodTemplateSpecPath: ptr.To(".spec.template"),
+									PodTemplateSpec: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"template"].orValue(null)`,
+										Patch:      `{"spec": {"template": value}}`,
+									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
-									ReplicasPath:    ptr.To(".spec.replicas"),
-									MinReplicasPath: ptr.To(".spec.minReplicas"),
+									Replicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
+										Patch:      `{"spec": {"replicas": value}}`,
+									},
+									MinReplicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
+										Patch:      `{"spec": {"minReplicas": value}}`,
+									},
 								},
 							},
 						},
@@ -757,11 +674,20 @@ var _ = Describe("Gang Scheduling", func() {
 							RootComponent: v1alpha1.ComponentDefinition{
 								Name: "worker",
 								SpecDefinition: &v1alpha1.SpecDefinition{
-									PodTemplateSpecPath: ptr.To(".spec.template"),
+									PodTemplateSpec: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"template"].orValue(null)`,
+										Patch:      `{"spec": {"template": value}}`,
+									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
-									ReplicasPath:    ptr.To(".spec.replicas"),
-									MinReplicasPath: ptr.To(".spec.minReplicas"),
+									Replicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
+										Patch:      `{"spec": {"replicas": value}}`,
+									},
+									MinReplicas: &v1alpha1.ValueAccessor{
+										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
+										Patch:      `{"spec": {"minReplicas": value}}`,
+									},
 								},
 							},
 						},
@@ -805,14 +731,20 @@ var _ = Describe("Gang Scheduling", func() {
 									Name:     "worker",
 									OwnerRef: ptr.To("pytorch-job"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.worker.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"worker": {"template": value}}}`,
+										},
 									},
 								},
 								{
 									Name:     "master",
 									OwnerRef: ptr.To("pytorch-job"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.master.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"master": {"template": value}}}`,
+										},
 									},
 								},
 							},
@@ -859,21 +791,30 @@ var _ = Describe("Gang Scheduling", func() {
 									Name:     "worker",
 									OwnerRef: ptr.To("job-group"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.master.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"master": {"template": value}}}`,
+										},
 									},
 								},
 								{
 									Name:     "master",
 									OwnerRef: ptr.To("job-group"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.master.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"master": {"template": value}}}`,
+										},
 									},
 								},
 								{
 									Name:     "storage",
 									OwnerRef: ptr.To("cluster"),
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodTemplateSpecPath: ptr.To(".spec.storage.template"),
+										PodTemplateSpec: &v1alpha1.ValueAccessor{
+											Expression: `object[?"spec"][?"storage"][?"template"].orValue(null)`,
+											Patch:      `{"spec": {"storage": {"template": value}}}`,
+										},
 									},
 								},
 							},
@@ -923,14 +864,26 @@ var _ = Describe("Gang Scheduling", func() {
 							},
 							ChildComponents: []v1alpha1.ComponentDefinition{
 								{
-									Name:           "job",
-									InstanceIdPath: ptr.To(".spec.replicatedJobs[].name"),
+									Name:        "job",
+									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodSpecPath: ptr.To(".spec.replicatedJobs[].spec"),
+										PodSpec: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+											Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`,
+											Replace:    true,
+										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
-										ReplicasPath:    ptr.To(".spec.replicatedJobs[].replicas"),
-										MinReplicasPath: ptr.To(".spec.replicatedJobs[].minReplicas"),
+										Replicas: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(x, x[?"replicas"].orValue(null))`,
+											Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/replicas", "value": value}]`,
+											Replace:    true,
+										},
+										MinReplicas: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(x, x[?"minReplicas"].orValue(null))`,
+											Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/minReplicas", "value": value}]`,
+											Replace:    true,
+										},
 									},
 								},
 							},
@@ -996,14 +949,26 @@ var _ = Describe("Gang Scheduling", func() {
 							},
 							ChildComponents: []v1alpha1.ComponentDefinition{
 								{
-									Name:           "job",
-									InstanceIdPath: ptr.To(".spec.replicatedJobs | to_entries[] | .key"),
+									Name:        "job",
+									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(k, string(k)).sort()`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodSpecPath: ptr.To(".spec.replicatedJobs | .[] | .spec"),
+										PodSpec: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"spec"].orValue(null))`,
+											Patch:      `{"spec": {"replicatedJobs": {instance: {"spec": value}}}}`,
+											Replace:    true,
+										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
-										ReplicasPath:    ptr.To(".spec.replicatedJobs | .[] | .replicas"),
-										MinReplicasPath: ptr.To(".spec.replicatedJobs | .[] | .minReplicas"),
+										Replicas: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"replicas"].orValue(null))`,
+											Patch:      `{"spec": {"replicatedJobs": {instance: {"replicas": value}}}}`,
+											Replace:    true,
+										},
+										MinReplicas: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"minReplicas"].orValue(null))`,
+											Patch:      `{"spec": {"replicatedJobs": {instance: {"minReplicas": value}}}}`,
+											Replace:    true,
+										},
 									},
 								},
 							},
@@ -1067,10 +1032,14 @@ var _ = Describe("Gang Scheduling", func() {
 							},
 							ChildComponents: []v1alpha1.ComponentDefinition{
 								{
-									Name:           "job",
-									InstanceIdPath: ptr.To(".spec.replicatedJobs[].name"),
+									Name:        "job",
+									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodSpecPath: ptr.To(".spec.replicatedJobs[].spec"),
+										PodSpec: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+											Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`,
+											Replace:    true,
+										},
 									},
 									// No ScaleDefinition - will use byLeaves method
 								},
@@ -1134,10 +1103,14 @@ var _ = Describe("Gang Scheduling", func() {
 							},
 							ChildComponents: []v1alpha1.ComponentDefinition{
 								{
-									Name:           "job",
-									InstanceIdPath: ptr.To(".spec.replicatedJobs[].name"),
+									Name:        "job",
+									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
-										PodSpecPath: ptr.To(".spec.replicatedJobs[].spec"),
+										PodSpec: &v1alpha1.ValueAccessor{
+											Expression: `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+											Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`,
+											Replace:    true,
+										},
 									},
 								},
 							},

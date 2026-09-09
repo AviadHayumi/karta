@@ -31,7 +31,7 @@ type WorkloadStatus struct {
 // ComponentNode represents one component in the hierarchy.
 //
 // Every component always carries at least one InstanceNode, even a
-// single-instance component (one without an InstanceIdPath), which has exactly
+// single-instance component (one without InstanceIds), which has exactly
 // one InstanceNode with a nil InstanceKey. The shape is deliberately uniform -
 // component -> instance -> component - so consumers can walk the tree without
 // special-casing single- versus multi-instance components.
@@ -44,7 +44,7 @@ type ComponentNode struct {
 }
 
 // InstanceNode represents one instance of a component.
-// InstanceKey is nil for single-instance components (no InstanceIdPath defined).
+// InstanceKey is nil for single-instance components (no InstanceIds defined).
 // ReplicaKey is nil when no ReplicaSelector is defined on the component.
 // Both axes are orthogonal and can co-exist.
 type InstanceNode struct {

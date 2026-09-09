@@ -11,13 +11,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
-	"github.com/run-ai/karta/pkg/jq/execution"
+	celpkg "github.com/run-ai/karta/pkg/cel"
 	"github.com/run-ai/karta/pkg/resource"
 	"github.com/run-ai/karta/test/types"
 )
 
 // These tests exercise the full suspend/resume path end-to-end:
-// types.SuspendablePyFlowKarta → ComponentFactory → Accessor (real JQ runner) → Component.
+// types.SuspendablePyFlowKarta -> ComponentFactory -> Accessor (real CEL runner) -> Component.
 // No mocks are used so every layer is covered.
 var _ = Describe("Suspend and Resume (integration)", func() {
 	var (
@@ -28,11 +28,12 @@ var _ = Describe("Suspend and Resume (integration)", func() {
 		component *resource.Component
 	)
 
-	// sharedSetup wires a real accessor and component to the same JQ runner so
+	// sharedSetup wires a real accessor and component to the same CEL runner so
 	// that mutations applied through component.Suspend/Resume are visible via
 	// accessor.GetObject().
 	sharedSetup := func(k *v1alpha1.Karta, obj *types.PyFlow, name string) (*resource.Accessor, *resource.Component) {
-		runner := execution.NewDefaultRunner(obj)
+		runner, err := celpkg.NewRunner(obj)
+		Expect(err).NotTo(HaveOccurred())
 		a := resource.NewAccessor(runner)
 		factory := resource.NewComponentFactory(k, a)
 		comp, err := factory.GetComponent(name)
@@ -131,12 +132,12 @@ var _ = Describe("Suspend and Resume (integration)", func() {
 		It("should apply all suspend actions in sequence", func() {
 			karta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
 				SuspendActions: []v1alpha1.SuspendAction{
-					{Path: ".spec.suspend", Value: "true"},
-					{Path: `.metadata.annotations["suspended-by"]`, Value: `"karta"`},
+					{Patch: `{"spec": {"suspend": true}}`},
+					{Patch: `{"metadata": {"annotations": {"suspended-by": "karta"}}}`},
 				},
 				ResumeActions: []v1alpha1.SuspendAction{
-					{Path: ".spec.suspend", Value: "false"},
-					{Path: `.metadata.annotations["suspended-by"]`, Value: "null"},
+					{Patch: `{"spec": {"suspend": false}}`},
+					{Patch: `{"metadata": {"annotations": {"suspended-by": null}}}`},
 				},
 			}
 			accessor, component = sharedSetup(karta, pyflow, "pyflow")

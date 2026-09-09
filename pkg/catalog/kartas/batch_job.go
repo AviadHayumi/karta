@@ -16,19 +16,27 @@ func BatchJob() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "batch-job-v1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "specParallelism", Expression: `([dyn(object[?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`},
+				{Name: "statusActive", Expression: `([dyn(object.?status.?active.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+				{Name: "statusReady", Expression: `([dyn(object.?status.?ready.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+				{Name: "specParallelismZero", Expression: `([dyn(object.?spec.?parallelism.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+				{Name: "statusSucceeded", Expression: `([dyn(object.?status.?succeeded.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+				{Name: "statusFailed", Expression: `([dyn(object.?status.?failed.orValue(null))].filter(v, v != null && v != false) + [0])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "job",
 					Kind: &v1alpha1.GroupVersionKind{Group: "batch", Version: "v1", Kind: "Job"},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{
-						ReplicasPath: ptr.To(".spec.parallelism // 1"),
+						Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specParallelism`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpecPath: ptr.To(".spec.template"),
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patch: `{"spec": {"template": value}}`, Replace: true},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							MessageFieldName: ptr.To("message"),
@@ -36,25 +44,31 @@ func BatchJob() *v1alpha1.Karta {
 						},
 						StatusMappings: v1alpha1.StatusMappings{
 							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     "(.status.active // 0) > 0 and (.status.ready // 0) == 0",
+								Expression:     `variables.statusActive > 0 && variables.statusReady == 0`,
 								ExpectedResult: "true",
 							}}},
 							Running: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     "(.status.active // 0) > 0 and (.status.ready // 0) > 0",
+								Expression:     `variables.statusActive > 0 && variables.statusReady > 0`,
 								ExpectedResult: "true",
 							}}},
-							Completed: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{{Type: "Complete", Status: ptr.To("True")}}}},
-							Failed:    []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{{Type: "Failed", Status: ptr.To("True")}}}},
+							Completed: []v1alpha1.StatusMatcher{
+								{ByConditions: []v1alpha1.ExpectedCondition{{Type: "Complete", Status: ptr.To("True")}}},
+								{ByConditions: []v1alpha1.ExpectedCondition{{Type: "SuccessCriteriaMet", Status: ptr.To("True")}}},
+							},
+							Failed: []v1alpha1.StatusMatcher{
+								{ByConditions: []v1alpha1.ExpectedCondition{{Type: "Failed", Status: ptr.To("True")}}},
+								{ByConditions: []v1alpha1.ExpectedCondition{{Type: "FailureTarget", Status: ptr.To("True")}}},
+							},
 							Degraded: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     ".spec.parallelism > 1 and (.status.ready // 0) < .spec.parallelism and ((.status.succeeded // 0) > 0 or (.status.failed // 0) > 0)",
+								Expression:     `variables.specParallelismZero > 1 && variables.statusReady < variables.specParallelismZero && (variables.statusSucceeded > 0 || variables.statusFailed > 0)`,
 								ExpectedResult: "true",
 							}}},
 							Suspended: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{{Type: "Suspended", Status: ptr.To("True")}}}},
 						},
 					},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "true"}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "false"}},
+						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
+						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
 					},
 				},
 			},
@@ -63,8 +77,8 @@ func BatchJob() *v1alpha1.Karta {
 					PodGroups: []v1alpha1.PodGroupDefinition{{
 						Name: "job",
 						Members: []v1alpha1.PodGroupMemberDefinition{{
-							ComponentName:   "job",
-							GroupByKeyPaths: []string{`.metadata.labels["batch.kubernetes.io/job-name"]`},
+							ComponentName:      "job",
+							GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"batch.kubernetes.io/job-name"].orValue(null)`},
 						}},
 					}},
 				},

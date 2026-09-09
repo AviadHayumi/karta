@@ -53,7 +53,7 @@ zero, with no cluster access.
 
 The typed definitions live in a `pkg/catalog/kartas/` subpackage, one file per workload,
 each exposing a single exported constructor that returns a typed `*v1alpha1.Karta`. The
-jq-expression notes currently living in the hand-written YAML comments move into Go comments
+expression notes currently living in the hand-written YAML comments move into Go comments
 on the relevant fields as each definition is ported. The catalog logic lives one level up in
 `pkg/catalog/catalog.go`, keeping the many struct-literal files separate from the small
 catalog surface.
@@ -200,7 +200,7 @@ and license generators are already validated.
 ### 4. Porting the 20 existing samples
 
 - Port each existing `docs/samples/*.yaml` definition to a typed Go file under
-  `pkg/catalog/kartas/`, moving inline jq comments to Go comments. The generator then
+  `pkg/catalog/kartas/`, moving inline YAML comments to Go comments. The generator then
   produces the GVK-slug-named YAML under `docs/catalog/`, and the round-trip test guarantees
   the Go structs reproduce it.
 - Once every definition is ported, `docs/samples/` is deleted: the generated `docs/catalog/`

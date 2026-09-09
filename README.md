@@ -25,7 +25,7 @@ This doesn't scale. Every new workload type means new integration code - schedul
 
 ## The Solution
 
-Karta (*a map to navigate resources*) introduces a CRD that maps the structure of any workload type into a standard schema. Using JQ-based path expressions, a Karta declaratively defines how to locate pod specifications, scaling parameters, and status fields within any workload hierarchy. Define it once, and any controller can use it to:
+Karta (*a map to navigate resources*) introduces a CRD that maps the structure of any workload type into a standard schema. Using CEL expressions, a Karta declaratively defines how to locate pod specifications, scaling parameters, and status fields within any workload hierarchy. Define it once, and any controller can use it to:
 
 - **Extract** pod templates, replica counts, status, and metadata
 - **Update** pod specs, labels, and annotations across all instances
@@ -116,13 +116,15 @@ spec:
         kind: JobSet
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
         statusMappings:
           running:
           - byExpression:
-              expression: "(.status.replicatedJobsStatus // []) | any(.ready > 0 and .active > 0) and all(.failed == 0)"
+              expression: >-
+                object.?status.?replicatedJobsStatus.orValue([]).exists(r, r.?ready.orValue(0) > 0 && r.?active.orValue(0) > 0)
+                && object.?status.?replicatedJobsStatus.orValue([]).all(r, r.?failed.orValue(0) == 0)
               expectedResult: "true"
           completed:
           - byConditions:
@@ -141,10 +143,14 @@ spec:
         kind: Job
       ownerRef: jobset
       specDefinition:
-        podTemplateSpecPath: .spec.replicatedJobs[].template.spec.template
+        podTemplateSpec:
+          expression: object.spec.replicatedJobs.map(x, x[?"template"][?"spec"][?"template"].orValue(null))
+          patch: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
       scaleDefinition:
-        replicasPath: .spec.replicatedJobs[] | .replicas * .template.spec.parallelism
-      instanceIdPath: .spec.replicatedJobs[].name  # Instances: "master", "worker"
+        replicas:
+          expression: object.spec.replicatedJobs.map(j, j.replicas * j.template.spec.parallelism)
+      instanceIds:
+        expression: object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))  # Instances: "master", "worker"
 ```
 
 ### Extract workload information
@@ -177,7 +183,7 @@ status, _ := rootComponent.GetStatus(ctx)
 
 ### Update workload specs
 
-The same paths defined in `specDefinition` are used for both extraction and updates:
+The accessors defined in `specDefinition` are used for both extraction and updates: the expression reads, the patch writes.
 
 ```go
 // Prepare updates per instance
@@ -242,7 +248,7 @@ See [ADOPTERS.md](ADOPTERS.md) for the full list of adopters. If you use Karta, 
 
 ## Documentation
 
-- [Technical Guide](docs/Technical%20Guide.md) - Full Karta spec, path syntax (jq), validation rules
+- [Technical Guide](docs/Technical%20Guide.md) - Full Karta spec, expression syntax (CEL), validation rules
 - [Webhook Certificates](docs/Webhook%20Certificates.md) - Webhook cert modes (auto self-signed or manual) and how to wire cert-manager
 - [Karta definitions](docs/catalog/) - Real-world Karta definitions for common workload types
 - [Runnable examples](docs/examples/) - Offline quickstart and an installable controller-runtime example

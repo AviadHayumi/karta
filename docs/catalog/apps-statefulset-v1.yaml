@@ -13,21 +13,42 @@ spec:
         version: v1
         kind: StatefulSet
       specDefinition:
-        podTemplateSpecPath: .spec.template
+        podTemplateSpec:
+          expression: object[?"spec"][?"template"].orValue(null)
+          patch: '{"spec": {"template": value}}'
+          replace: true
       scaleDefinition:
-        replicasPath: .spec.replicas // 1
+        replicas:
+          expression: variables.specReplicas
       statusDefinition:
         statusMappings:
           initializing:
             - byExpression:
-                expression: (.spec.replicas // 1) > 0 and ((.status.observedGeneration // 0) != (.metadata.generation // 0) or (.status.readyReplicas // 0) == 0 or (.status.updatedReplicas // 0) != (.spec.replicas // 1) or (.status.currentRevision != .status.updateRevision))
+                expression: variables.specReplicasOne > 0 && (variables.statusObservedGeneration != variables.metadataGeneration || variables.statusReadyReplicas == 0 || variables.statusReadyReplicas > variables.specReplicasOne || variables.statusUpdatedReplicas != variables.specReplicasOne || variables.statusCurrentRevision != variables.statusUpdateRevision)
                 expectedResult: "true"
           running:
             - byExpression:
-                expression: (.status.observedGeneration // 0) == (.metadata.generation // 0) and (.status.readyReplicas // 0) == (.spec.replicas // 1) and (.status.updatedReplicas // 0) == (.spec.replicas // 1) and (.status.currentRevision == .status.updateRevision)
+                expression: variables.statusObservedGeneration == variables.metadataGeneration && variables.statusReadyReplicas == variables.specReplicasOne && variables.statusUpdatedReplicas == variables.specReplicasOne && variables.statusCurrentRevision == variables.statusUpdateRevision
                 expectedResult: "true"
           degraded:
             - byExpression:
-                expression: (.status.readyReplicas // 0) > 0 and (.status.readyReplicas // 0) < (.spec.replicas // 1) and (.status.updatedReplicas // 0) == (.spec.replicas // 1) and (.status.currentRevision == .status.updateRevision) and (.status.observedGeneration // 0) == (.metadata.generation // 0)
+                expression: variables.statusReadyReplicas > 0 && variables.statusReadyReplicas < variables.specReplicasOne && variables.statusUpdatedReplicas == variables.specReplicasOne && variables.statusCurrentRevision == variables.statusUpdateRevision && variables.statusObservedGeneration == variables.metadataGeneration
                 expectedResult: "true"
   optimizationInstructions: {}
+  variables:
+    - name: specReplicas
+      expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: statusObservedGeneration
+      expression: ([dyn(object.?status.?observedGeneration.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: metadataGeneration
+      expression: ([dyn(object.?metadata.?generation.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusReadyReplicas
+      expression: ([dyn(object.?status.?readyReplicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: specReplicasOne
+      expression: ([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: statusUpdatedReplicas
+      expression: ([dyn(object.?status.?updatedReplicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusCurrentRevision
+      expression: ([dyn(object.?status.?currentRevision.orValue(null))].filter(v, v != null && v != false) + [""])[0]
+    - name: statusUpdateRevision
+      expression: ([dyn(object.?status.?updateRevision.orValue(null))].filter(v, v != null && v != false) + [""])[0]

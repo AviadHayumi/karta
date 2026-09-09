@@ -14,14 +14,17 @@ spec:
         kind: Milvus
       statusDefinition:
         phaseDefinition:
-          path: .status.status
+          expression: object[?"status"][?"status"].orValue(null)
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
         statusMappings:
           initializing:
             - byPhase: Pending
+            - byExpression:
+                expression: variables.statusStatus == ""
+                expectedResult: "true"
           running:
             - byPhase: Healthy
           degraded:
@@ -35,18 +38,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.standalone.schedulerName
-            labelsPath: .spec.components.standalone.podLabels
-            annotationsPath: .spec.components.standalone.podAnnotations
-            resourcesPath: .spec.components.standalone.resources
-            podAffinityPath: .spec.components.standalone.affinity.podAffinity
-            nodeAffinityPath: .spec.components.standalone.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.standalone.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"standalone"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"standalone": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"standalone": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"standalone"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"standalone": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"standalone": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"standalone"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"standalone": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"standalone"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"standalone": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"standalone"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"standalone": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.standalone.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"standalone"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: standalone
       - name: proxy
         kind:
@@ -56,18 +81,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.proxy.schedulerName
-            labelsPath: .spec.components.proxy.podLabels
-            annotationsPath: .spec.components.proxy.podAnnotations
-            resourcesPath: .spec.components.proxy.resources
-            podAffinityPath: .spec.components.proxy.affinity.podAffinity
-            nodeAffinityPath: .spec.components.proxy.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.proxy.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"proxy"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"proxy": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"proxy"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"proxy": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"proxy"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"proxy": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"proxy"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"proxy": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"proxy"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"proxy": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"proxy"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"proxy": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"proxy"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"proxy": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.proxy.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"proxy"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: proxy
       - name: mixcoord
         kind:
@@ -77,18 +124,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.mixCoord.schedulerName
-            labelsPath: .spec.components.mixCoord.podLabels
-            annotationsPath: .spec.components.mixCoord.podAnnotations
-            resourcesPath: .spec.components.mixCoord.resources
-            podAffinityPath: .spec.components.mixCoord.affinity.podAffinity
-            nodeAffinityPath: .spec.components.mixCoord.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.mixCoord.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"mixCoord": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"mixCoord": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"mixCoord": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"mixCoord": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"mixCoord": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"mixCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"mixCoord": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.mixCoord.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"mixCoord"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: mixcoord
       - name: datanode
         kind:
@@ -98,18 +167,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.dataNode.schedulerName
-            labelsPath: .spec.components.dataNode.podLabels
-            annotationsPath: .spec.components.dataNode.podAnnotations
-            resourcesPath: .spec.components.dataNode.resources
-            podAffinityPath: .spec.components.dataNode.affinity.podAffinity
-            nodeAffinityPath: .spec.components.dataNode.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.dataNode.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"dataNode": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"dataNode": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"dataNode": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"dataNode": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"dataNode": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"dataNode": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"dataNode": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.dataNode.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"dataNode"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: datanode
       - name: querynode
         kind:
@@ -119,18 +210,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.queryNode.schedulerName
-            labelsPath: .spec.components.queryNode.podLabels
-            annotationsPath: .spec.components.queryNode.podAnnotations
-            resourcesPath: .spec.components.queryNode.resources
-            podAffinityPath: .spec.components.queryNode.affinity.podAffinity
-            nodeAffinityPath: .spec.components.queryNode.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.queryNode.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"queryNode": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"queryNode": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"queryNode": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"queryNode": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"queryNode": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"queryNode": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"queryNode": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.queryNode.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"queryNode"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: querynode
       - name: streamingnode
         kind:
@@ -140,18 +253,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.streamingNode.schedulerName
-            labelsPath: .spec.components.streamingNode.podLabels
-            annotationsPath: .spec.components.streamingNode.podAnnotations
-            resourcesPath: .spec.components.streamingNode.resources
-            podAffinityPath: .spec.components.streamingNode.affinity.podAffinity
-            nodeAffinityPath: .spec.components.streamingNode.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.streamingNode.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"streamingNode": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"streamingNode": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"streamingNode": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"streamingNode": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"streamingNode": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"streamingNode": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"streamingNode": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.streamingNode.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"streamingNode"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: streamingnode
       - name: indexnode
         kind:
@@ -161,18 +296,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.indexNode.schedulerName
-            labelsPath: .spec.components.indexNode.podLabels
-            annotationsPath: .spec.components.indexNode.podAnnotations
-            resourcesPath: .spec.components.indexNode.resources
-            podAffinityPath: .spec.components.indexNode.affinity.podAffinity
-            nodeAffinityPath: .spec.components.indexNode.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.indexNode.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"indexNode": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"indexNode": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"indexNode": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"indexNode": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"indexNode": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"indexNode": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"indexNode": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.indexNode.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"indexNode"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: indexnode
       - name: rootcoord
         kind:
@@ -182,18 +339,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.rootCoord.schedulerName
-            labelsPath: .spec.components.rootCoord.podLabels
-            annotationsPath: .spec.components.rootCoord.podAnnotations
-            resourcesPath: .spec.components.rootCoord.resources
-            podAffinityPath: .spec.components.rootCoord.affinity.podAffinity
-            nodeAffinityPath: .spec.components.rootCoord.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.rootCoord.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"rootCoord": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"rootCoord": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"rootCoord": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"rootCoord": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"rootCoord": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"rootCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"rootCoord": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.rootCoord.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"rootCoord"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: rootcoord
       - name: datacoord
         kind:
@@ -203,18 +382,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.dataCoord.schedulerName
-            labelsPath: .spec.components.dataCoord.podLabels
-            annotationsPath: .spec.components.dataCoord.podAnnotations
-            resourcesPath: .spec.components.dataCoord.resources
-            podAffinityPath: .spec.components.dataCoord.affinity.podAffinity
-            nodeAffinityPath: .spec.components.dataCoord.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.dataCoord.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"dataCoord": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"dataCoord": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"dataCoord": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"dataCoord": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"dataCoord": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"dataCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"dataCoord": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.dataCoord.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"dataCoord"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: datacoord
       - name: querycoord
         kind:
@@ -224,18 +425,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.queryCoord.schedulerName
-            labelsPath: .spec.components.queryCoord.podLabels
-            annotationsPath: .spec.components.queryCoord.podAnnotations
-            resourcesPath: .spec.components.queryCoord.resources
-            podAffinityPath: .spec.components.queryCoord.affinity.podAffinity
-            nodeAffinityPath: .spec.components.queryCoord.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.queryCoord.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"queryCoord": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"queryCoord": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"queryCoord": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"queryCoord": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"queryCoord": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"queryCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"queryCoord": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.queryCoord.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"queryCoord"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: querycoord
       - name: indexcoord
         kind:
@@ -245,18 +468,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.indexCoord.schedulerName
-            labelsPath: .spec.components.indexCoord.podLabels
-            annotationsPath: .spec.components.indexCoord.podAnnotations
-            resourcesPath: .spec.components.indexCoord.resources
-            podAffinityPath: .spec.components.indexCoord.affinity.podAffinity
-            nodeAffinityPath: .spec.components.indexCoord.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.indexCoord.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"indexCoord": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"indexCoord": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"indexCoord": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"indexCoord": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"indexCoord": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"indexCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"indexCoord": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.indexCoord.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"indexCoord"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: indexcoord
       - name: cdc
         kind:
@@ -266,18 +511,40 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components.cdc.schedulerName
-            labelsPath: .spec.components.cdc.podLabels
-            annotationsPath: .spec.components.cdc.podAnnotations
-            resourcesPath: .spec.components.cdc.resources
-            podAffinityPath: .spec.components.cdc.affinity.podAffinity
-            nodeAffinityPath: .spec.components.cdc.affinity.nodeAffinity
-            priorityClassNamePath: .spec.components.cdc.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"cdc"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"components": {"cdc": {"schedulerName": value}}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"components"][?"cdc"][?"podLabels"].orValue(null)
+              patch: '{"spec": {"components": {"cdc": {"podLabels": value}}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"components"][?"cdc"][?"podAnnotations"].orValue(null)
+              patch: '{"spec": {"components": {"cdc": {"podAnnotations": value}}}}'
+              replace: true
+            resources:
+              expression: object[?"spec"][?"components"][?"cdc"][?"resources"].orValue(null)
+              patch: '{"spec": {"components": {"cdc": {"resources": value}}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"cdc"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"cdc": {"affinity": {"podAffinity": value}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"cdc"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"components": {"cdc": {"affinity": {"nodeAffinity": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"cdc"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"components": {"cdc": {"priorityClassName": value}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.components.cdc.replicas
+          replicas:
+            expression: object[?"spec"][?"components"][?"cdc"][?"replicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["app.kubernetes.io/component"]
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
             value: cdc
       - name: etcd
         kind:
@@ -287,9 +554,13 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            resourcesPath: .spec.dependencies.etcd.inCluster.values.resources
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"resources"].orValue(null)
+              patch: '{"spec": {"dependencies": {"etcd": {"inCluster": {"values": {"resources": value}}}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.dependencies.etcd.inCluster.values.replicaCount
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"replicaCount"].orValue(null)
       - name: minio
         kind:
           group: apps
@@ -298,7 +569,10 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            resourcesPath: .spec.dependencies.storage.inCluster.values.resources
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"storage"][?"inCluster"][?"values"][?"resources"].orValue(null)
+              patch: '{"spec": {"dependencies": {"storage": {"inCluster": {"values": {"resources": value}}}}}}'
+              replace: true
       - name: pulsar-zookeeper
         kind:
           group: apps
@@ -307,9 +581,13 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            resourcesPath: .spec.dependencies.pulsar.inCluster.values.zookeeper.resources
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"resources"].orValue(null)
+              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"zookeeper": {"resources": value}}}}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.dependencies.pulsar.inCluster.values.zookeeper.replicaCount
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"replicaCount"].orValue(null)
       - name: pulsar-bookkeeper
         kind:
           group: apps
@@ -318,9 +596,13 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            resourcesPath: .spec.dependencies.pulsar.inCluster.values.bookkeeper.resources
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"resources"].orValue(null)
+              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"bookkeeper": {"resources": value}}}}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.dependencies.pulsar.inCluster.values.bookkeeper.replicaCount
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"replicaCount"].orValue(null)
       - name: pulsar-broker
         kind:
           group: apps
@@ -329,9 +611,13 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            resourcesPath: .spec.dependencies.pulsar.inCluster.values.broker.resources
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"resources"].orValue(null)
+              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"broker": {"resources": value}}}}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.dependencies.pulsar.inCluster.values.broker.replicaCount
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"replicaCount"].orValue(null)
       - name: pulsar-proxy
         kind:
           group: apps
@@ -340,20 +626,27 @@ spec:
         ownerRef: milvus
         specDefinition:
           fragmentedPodSpecDefinition:
-            resourcesPath: .spec.dependencies.pulsar.inCluster.values.proxy.resources
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"resources"].orValue(null)
+              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"proxy": {"resources": value}}}}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.dependencies.pulsar.inCluster.values.proxy.replicaCount
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"replicaCount"].orValue(null)
   optimizationInstructions:
     gangScheduling:
       podGroups:
         - name: cluster
           members:
             - componentName: querynode
-              groupByKeyPaths:
-                - .metadata.labels["app.kubernetes.io/instance"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)
             - componentName: datanode
-              groupByKeyPaths:
-                - .metadata.labels["app.kubernetes.io/instance"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)
             - componentName: streamingnode
-              groupByKeyPaths:
-                - .metadata.labels["app.kubernetes.io/instance"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)
+  variables:
+    - name: statusStatus
+      expression: ([dyn(object.?status.?status.orValue(null))].filter(v, v != null && v != false) + [""])[0]

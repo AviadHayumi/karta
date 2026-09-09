@@ -32,6 +32,14 @@ type KartaSpec struct {
 	// Instructions contains optimization-specific instructions for the workload
 	// +kubebuilder:validation:Optional
 	Instructions OptimizationInstructions `json:"optimizationInstructions"`
+
+	// Variables are named expressions available to every expression in the definition as
+	// variables.<name> - the composition mechanism a ValidatingAdmissionPolicy has, for breaking
+	// a complex expression into named parts and evaluating a shared part once per read or write.
+	// Variables are evaluated in order, and a later variable may reference an earlier one.
+	// +optional
+	// +listType=atomic
+	Variables []Variable `json:"variables,omitempty"`
 }
 
 // StructureDefinition defines the hierarchical structure of components in the workload.

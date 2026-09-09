@@ -14,7 +14,7 @@ spec:
         kind: PyTorchJob
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
@@ -41,11 +41,9 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - path: .spec.runPolicy.suspend
-            value: "true"
+          - patch: '{"spec": {"runPolicy": {"suspend": true}}}'
         resumeActions:
-          - path: .spec.runPolicy.suspend
-            value: "false"
+          - patch: '{"spec": {"runPolicy": {"suspend": false}}}'
     childComponents:
       - name: master
         kind:
@@ -54,12 +52,16 @@ spec:
           kind: Pod
         ownerRef: pytorchjob
         specDefinition:
-          podTemplateSpecPath: .spec.pytorchReplicaSpecs.Master.template
+          podTemplateSpec:
+            expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"template"].orValue(null)
+            patch: '{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}'
+            replace: true
         scaleDefinition:
-          replicasPath: .spec.pytorchReplicaSpecs.Master.replicas // 1
+          replicas:
+            expression: variables.specPytorchReplicaSpecsMasterReplicas
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["training.kubeflow.org/replica-type"]
+            expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)
             value: master
       - name: worker
         kind:
@@ -68,14 +70,20 @@ spec:
           kind: Pod
         ownerRef: pytorchjob
         specDefinition:
-          podTemplateSpecPath: .spec.pytorchReplicaSpecs.Worker.template
+          podTemplateSpec:
+            expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)
+            patch: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
+            replace: true
         scaleDefinition:
-          replicasPath: .spec.pytorchReplicaSpecs.Worker.replicas // 1
-          minReplicasPath: .spec.elasticPolicy.minReplicas
-          maxReplicasPath: .spec.elasticPolicy.maxReplicas
+          replicas:
+            expression: variables.specPytorchReplicaSpecsWorkerReplicas
+          minReplicas:
+            expression: object[?"spec"][?"elasticPolicy"][?"minReplicas"].orValue(null)
+          maxReplicas:
+            expression: object[?"spec"][?"elasticPolicy"][?"maxReplicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["training.kubeflow.org/replica-type"]
+            expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)
             value: worker
   optimizationInstructions:
     gangScheduling:
@@ -83,8 +91,13 @@ spec:
         - name: job
           members:
             - componentName: master
-              groupByKeyPaths:
-                - .metadata.labels["training.kubeflow.org/job-name"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)
             - componentName: worker
-              groupByKeyPaths:
-                - .metadata.labels["training.kubeflow.org/job-name"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)
+  variables:
+    - name: specPytorchReplicaSpecsMasterReplicas
+      expression: ([dyn(object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: specPytorchReplicaSpecsWorkerReplicas
+      expression: ([dyn(object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

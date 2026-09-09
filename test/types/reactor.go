@@ -78,10 +78,10 @@ func ReactorKarta() *v1alpha1.Karta {
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						PhaseDefinition: &v1alpha1.PhaseDefinition{
-							Path: ".status.phase",
+							Expression: `object[?"status"][?"phase"].orValue(null)`,
 						},
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							ReasonFieldName:  ptr.To("reason"),
@@ -108,29 +108,49 @@ func ReactorKarta() *v1alpha1.Karta {
 				},
 				ChildComponents: []v1alpha1.ComponentDefinition{
 					{
-						Name:           "service",
-						OwnerRef:       ptr.To("reactor"),
-						InstanceIdPath: ptr.To(".spec.services | to_entries[] | .key"),
+						Name:        "service",
+						OwnerRef:    ptr.To("reactor"),
+						InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.services.map(k, string(k)).sort()`},
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								LabelsPath:      ptr.To(".spec.services | .[] | .labels"),
-								AnnotationsPath: ptr.To(".spec.services | .[] | .annotations"),
-								ContainersPath:  ptr.To(".spec.services | .[] | .containers"),
-								ContainerPath:   ptr.To(".spec.services | .[] | .mainContainer"),
-								ResourcesPath:   ptr.To(".spec.services | .[] | .resources"),
+								Labels: &v1alpha1.ValueAccessor{
+									Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"labels"].orValue(null))`,
+									Patch:      `{"spec": {"services": {instance: {"labels": value}}}}`,
+									Replace:    true,
+								},
+								Annotations: &v1alpha1.ValueAccessor{
+									Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"annotations"].orValue(null))`,
+									Patch:      `{"spec": {"services": {instance: {"annotations": value}}}}`,
+									Replace:    true,
+								},
+								Containers: &v1alpha1.ValueAccessor{
+									Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"containers"].orValue(null))`,
+									Patch:      `{"spec": {"services": {instance: {"containers": value}}}}`,
+									Replace:    true,
+								},
+								Container: &v1alpha1.ValueAccessor{
+									Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"mainContainer"].orValue(null))`,
+									Patch:      `{"spec": {"services": {instance: {"mainContainer": value}}}}`,
+									Replace:    true,
+								},
+								Resources: &v1alpha1.ValueAccessor{
+									Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"resources"].orValue(null))`,
+									Patch:      `{"spec": {"services": {instance: {"resources": value}}}}`,
+									Replace:    true,
+								},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath:    ptr.To(".spec.services | .[] | .replicas"),
-							MinReplicasPath: ptr.To(".spec.services | .[] | .minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.services | .[] | .maxReplicas"),
+							Replicas:    &v1alpha1.ValueAccessor{Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"replicas"].orValue(null))`},
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"minReplicas"].orValue(null))`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"maxReplicas"].orValue(null))`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: ".metadata.labels.service-name",
+								Expression: `object[?"metadata"][?"labels"][?"service-name"].orValue(null)`,
 							},
 							ComponentInstanceSelector: &v1alpha1.ComponentInstanceSelector{
-								IdPath: ".metadata.labels.service-name",
+								Expression: `object[?"metadata"][?"labels"][?"service-name"].orValue(null)`,
 							},
 						},
 					},

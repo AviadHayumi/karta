@@ -67,7 +67,7 @@ func JobGroupKarta() *v1alpha1.Karta {
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:            ".status.conditions",
+							Expression:      `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:   "type",
 							StatusFieldName: "status",
 						},
@@ -87,22 +87,34 @@ func JobGroupKarta() *v1alpha1.Karta {
 				},
 				ChildComponents: []v1alpha1.ComponentDefinition{
 					{
-						Name:           "job",
-						OwnerRef:       ptr.To("jobgroup"),
-						InstanceIdPath: ptr.To(".spec.replicatedJobs[].name"),
+						Name:     "job",
+						OwnerRef: ptr.To("jobgroup"),
+						InstanceIds: &v1alpha1.ValueAccessor{
+							Expression: `object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))`,
+						},
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodSpecPath:  ptr.To(".spec.replicatedJobs[].spec"),
-							MetadataPath: ptr.To(".spec.replicatedJobs[].metadata"),
+							PodSpec: &v1alpha1.ValueAccessor{
+								Expression: `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+								Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`,
+								Replace:    true,
+							},
+							Metadata: &v1alpha1.ValueAccessor{
+								Expression: `object.spec.replicatedJobs.map(x, x[?"metadata"].orValue(null))`,
+								Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/metadata", "value": value}]`,
+								Replace:    true,
+							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.replicatedJobs[].replicas"),
+							Replicas: &v1alpha1.ValueAccessor{
+								Expression: `object.spec.replicatedJobs.map(x, x[?"replicas"].orValue(null))`,
+							},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: ".metadata.labels.job-name",
+								Expression: `object[?"metadata"][?"labels"][?"job-name"].orValue(null)`,
 							},
 							ComponentInstanceSelector: &v1alpha1.ComponentInstanceSelector{
-								IdPath: ".metadata.labels.job-name",
+								Expression: `object[?"metadata"][?"labels"][?"job-name"].orValue(null)`,
 							},
 						},
 					},

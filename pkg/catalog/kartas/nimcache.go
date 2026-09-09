@@ -22,19 +22,19 @@ func NIMCache() *v1alpha1.Karta {
 					Name: "nimcache",
 					Kind: &v1alpha1.GroupVersionKind{Group: "apps.nvidia.com", Version: "v1alpha1", Kind: "NIMCache"},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{
-						ReplicasPath: ptr.To("1"),
+						Replicas: &v1alpha1.ValueAccessor{Expression: `1`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-							ResourcesPath: ptr.To("{requests: .spec.resources}"),
+							Resources: &v1alpha1.ValueAccessor{Expression: `{"requests": ([dyn(object[?"spec"][?"resources"].orValue(null))].filter(v, type(v) == map) + [{}])[0]}`},
 						},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						PhaseDefinition: &v1alpha1.PhaseDefinition{
-							Path: ".status.state",
+							Expression: `object[?"status"][?"state"].orValue(null)`,
 						},
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							ReasonFieldName:  ptr.To("reason"),

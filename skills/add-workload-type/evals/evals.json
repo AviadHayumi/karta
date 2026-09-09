@@ -4,25 +4,25 @@
     {
       "id": 1,
       "prompt": "We run Argo Workflows on our cluster and want Karta to understand them. Add support for the Argo Workflow type.",
-      "expected_output": "The agent selects the add-workload-type skill from intent, gathers the Argo facts, and produces a valid Karta definition for argoproj.io/v1alpha1 Workflow with a phase-based status mapping and null-safe jq paths.",
+      "expected_output": "The agent selects the add-workload-type skill from intent, gathers the Argo facts, and produces a valid Karta definition for argoproj.io/v1alpha1 Workflow with a phase-based status mapping and null-safe CEL expressions.",
       "expectations": [
         "The add-workload-type skill is selected without the user naming it",
         "The root component declares the full GVK: group argoproj.io, version v1alpha1, kind Workflow",
         "The root component has a statusDefinition",
-        "Status is mapped from the real .status.phase values (for example Pending, Running, Succeeded, Failed, Error) rather than invented condition types",
-        "Every jq path is absolute and null-safe",
+        "Status is mapped from the real status.phase values (for example Pending, Running, Succeeded, Failed, Error) rather than invented condition types",
+        "Every CEL expression starts from the object root and is null-safe",
         "The definition satisfies the skill's validation checklist"
       ]
     },
     {
       "id": 2,
       "prompt": "Write a Karta definition for a batch/v1 CronJob. It should report status and expose the pod template.",
-      "expected_output": "A valid Karta definition for batch/v1 CronJob that uses the nested jobTemplate pod-template path, sets exactly one spec pattern per component, and maps status from real fields with null-safe expressions.",
+      "expected_output": "A valid Karta definition for batch/v1 CronJob that reads the nested jobTemplate pod template, sets exactly one spec pattern per component, and maps status from real fields with null-safe expressions.",
       "expectations": [
         "Exactly one specDefinition pattern is set on each component",
-        "The pod template path is .spec.jobTemplate.spec.template, not .spec.template",
-        "Every jq path is null-safe and evaluated against the workload object, not a pod",
-        "Status mapping references real fields such as .spec.suspend or .status via byExpression",
+        "The pod template is read from spec.jobTemplate.spec.template, not spec.template",
+        "Every CEL expression is null-safe and evaluated against the workload object, not a pod",
+        "Status mapping references real fields such as spec.suspend or status fields via byExpression",
         "The definition passes the KartaValidator and the skill's validation checklist"
       ]
     },

@@ -14,28 +14,21 @@ spec:
         kind: LeaderWorkerSet
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
         statusMappings:
           initializing:
-            - byConditions:
-                - type: Progressing
-                  status: "True"
-                - type: Available
-                  status: "False"
+            - byExpression:
+                expression: ([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Progressing" && c.?status.orValue(null) == "True") && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Available" && c.?status.orValue(null) == "True")
+                expectedResult: "true"
           running:
             - byConditions:
                 - type: Available
                   status: "True"
-                  reason: AllGroupsReady
-                - type: Progressing
-                  status: "False"
-                - type: UpdateInProgress
-                  status: "False"
             - byExpression:
-                expression: (.status.replicas // 0) > 0 and .status.readyReplicas == .status.replicas and .status.updatedReplicas == .status.replicas
+                expression: variables.statusReplicas > 0 && object.?status.?readyReplicas.orValue(-1) == object.?status.?replicas.orValue(-2) && object.?status.?updatedReplicas.orValue(-1) == object.?status.?replicas.orValue(-2)
                 expectedResult: "true"
           failed:
             - byConditions:
@@ -49,10 +42,11 @@ spec:
       - name: group
         ownerRef: leaderworkerset
         scaleDefinition:
-          replicasPath: .spec.leaderWorkerTemplate.size
+          replicas:
+            expression: object[?"spec"][?"leaderWorkerTemplate"][?"size"].orValue(null)
         podSelector:
           replicaSelector:
-            keyPath: .metadata.labels["leaderworkerset.sigs.k8s.io/group-index"]
+            expression: object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null)
       - name: leader
         kind:
           group: apps
@@ -60,12 +54,16 @@ spec:
           kind: StatefulSet
         ownerRef: group
         specDefinition:
-          podTemplateSpecPath: .spec.leaderWorkerTemplate.leaderTemplate
+          podTemplateSpec:
+            expression: object[?"spec"][?"leaderWorkerTemplate"][?"leaderTemplate"].orValue(null)
+            patch: '{"spec": {"leaderWorkerTemplate": {"leaderTemplate": value}}}'
+            replace: true
         scaleDefinition:
-          replicasPath: .spec.replicas // 1
+          replicas:
+            expression: variables.specReplicas
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["leaderworkerset.sigs.k8s.io/worker-index"]
+            expression: object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/worker-index"].orValue(null)
             value: "0"
       - name: worker
         kind:
@@ -74,18 +72,31 @@ spec:
           kind: StatefulSet
         ownerRef: group
         specDefinition:
-          podTemplateSpecPath: .spec.leaderWorkerTemplate.workerTemplate
+          podTemplateSpec:
+            expression: object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)
+            patch: '{"spec": {"leaderWorkerTemplate": {"workerTemplate": value}}}'
+            replace: true
         scaleDefinition:
-          replicasPath: (.spec.replicas // 1) * ((.spec.leaderWorkerTemplate.size // 1) - 1)
+          replicas:
+            expression: variables.specReplicasFloat * (variables.specLeaderWorkerTemplateSize - 1.0)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.annotations["leaderworkerset.sigs.k8s.io/leader-name"]
+            expression: object[?"metadata"][?"annotations"][?"leaderworkerset.sigs.k8s.io/leader-name"].orValue(null)
   optimizationInstructions:
     gangScheduling:
       podGroups:
         - name: group
           members:
             - componentName: group
-              groupByKeyPaths:
-                - .metadata.labels["leaderworkerset.sigs.k8s.io/name"]
-                - .metadata.labels["leaderworkerset.sigs.k8s.io/group-index"] // "0"
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/name"].orValue(null)
+                - ([dyn(object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null))].filter(v, v != null && v != false) + ["0"])[0]
+  variables:
+    - name: statusReplicas
+      expression: ([dyn(object.?status.?replicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: specReplicas
+      expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: specReplicasFloat
+      expression: ([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]
+    - name: specLeaderWorkerTemplateSize
+      expression: ([dyn(object.?spec.?leaderWorkerTemplate.?size.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]

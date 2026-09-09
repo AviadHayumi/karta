@@ -14,11 +14,14 @@ spec:
         kind: DynamoGraphDeployment
       statusDefinition:
         phaseDefinition:
-          path: .status.state
+          expression: object[?"status"][?"state"].orValue(null)
         statusMappings:
           initializing:
             - byPhase: initializing
             - byPhase: pending
+            - byExpression:
+                expression: variables.statusState == ""
+                expectedResult: "true"
           running:
             - byPhase: successful
           failed:
@@ -28,26 +31,60 @@ spec:
         ownerRef: dynamographdeployment
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.services | .[] | .extraPodSpec.schedulerName
-            labelsPath: .spec.services | .[] | .labels
-            annotationsPath: .spec.services | .[] | .annotations
-            resourcesPath: .spec.services | .[] | .resources
-            resourceClaimsPath: .spec.services | .[] | .extraPodSpec.resourceClaims
-            podAffinityPath: .spec.services | .[] | .extraPodSpec.affinity.podAffinity
-            nodeAffinityPath: .spec.services | .[] | .extraPodSpec.affinity.nodeAffinity
-            containerPath: .spec.services | .[] | .extraPodSpec.mainContainer
-            priorityClassNamePath: .spec.services | .[] | .extraPodSpec.priorityClassName
-            imagePath: .spec.services | .[] | .extraPodSpec.mainContainer.image
+            schedulerName:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"schedulerName"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"schedulerName": value}}}}}'
+              replace: true
+            labels:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"labels"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"labels": value}}}}'
+              replace: true
+            annotations:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"annotations"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"annotations": value}}}}'
+              replace: true
+            resources:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"resources"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"resources": value}}}}'
+              replace: true
+            resourceClaims:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"resourceClaims"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"resourceClaims": value}}}}}'
+              replace: true
+            podAffinity:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"affinity"][?"podAffinity"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"podAffinity": value}}}}}}'
+              replace: true
+            nodeAffinity:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"affinity"][?"nodeAffinity"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"nodeAffinity": value}}}}}}'
+              replace: true
+            container:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"mainContainer"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": value}}}}}'
+              replace: true
+            priorityClassName:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"priorityClassName"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"priorityClassName": value}}}}}'
+              replace: true
+            image:
+              expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"mainContainer"][?"image"].orValue(null))
+              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": {"image": value}}}}}}'
+              replace: true
         scaleDefinition:
-          replicasPath: .spec.services[] | (.replicas // 1) * (.multinode.nodeCount // 1)
-          minReplicasPath: .spec.services | .[] | .autoscaling.minReplicas
-          maxReplicasPath: .spec.services | .[] | .autoscaling.maxReplicas
-        instanceIdPath: .spec.services | to_entries[] | .key
+          replicas:
+            expression: variables.services.map(k, string(k)).sort().map(k, ([dyn(variables.services[k].?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0] * ([dyn(variables.services[k].?multinode.?nodeCount.orValue(null))].filter(v, v != null && v != false) + [1.0])[0])
+          minReplicas:
+            expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"autoscaling"][?"minReplicas"].orValue(null))
+          maxReplicas:
+            expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"autoscaling"][?"maxReplicas"].orValue(null))
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort()
         podSelector:
           componentInstanceSelector:
-            idPath: .metadata.labels["nvidia.com/dynamo-component"]
+            expression: object[?"metadata"][?"labels"][?"nvidia.com/dynamo-component"].orValue(null)
           replicaSelector:
-            keyPath: .metadata.labels["grove.io/podcliquescalinggroup-replica-index"] // .metadata.labels["leaderworkerset.sigs.k8s.io/group-index"]
+            expression: object[?"metadata"][?"labels"][?"grove.io/podcliquescalinggroup-replica-index"].orValue(object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null))
     additionalChildKinds:
       - group: nvidia.com
         version: v1alpha1
@@ -73,5 +110,10 @@ spec:
         - name: service
           members:
             - componentName: service
-              groupByKeyPaths:
-                - .metadata.labels["nvidia.com/dynamo-component"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"nvidia.com/dynamo-component"].orValue(null)
+  variables:
+    - name: services
+      expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0]
+    - name: statusState
+      expression: ([dyn(object.?status.?state.orValue(null))].filter(v, v != null && v != false) + [""])[0]

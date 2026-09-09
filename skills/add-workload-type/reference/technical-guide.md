@@ -21,6 +21,80 @@ spec:
     childComponents: []        # optional
     additionalChildKinds: []   # optional
   optimizationInstructions: {} # optional
+  variables: []                # optional named expressions
+```
+
+## Expressions and value accessors
+
+Every expression is CEL, evaluated with the resource bound as `object`.
+Expressions in `specDefinition`, `scaleDefinition`, `statusDefinition`, and
+`instanceIds` run against the workload object. Expressions in `podSelector` and
+`optimizationInstructions` run against pod manifests.
+
+A field is read and written through a value accessor pair:
+
+```yaml
+podTemplateSpec:
+  expression: object[?"spec"][?"template"].orValue(null)   # read
+  patch: '{"spec": {"template": value}}'                   # write
+  replace: true
+```
+
+- `expression` reads the value from `object`.
+- `patch` is a CEL expression that constructs the change. A map is applied as a
+  JSON merge patch: maps merge recursively, any other value replaces, and `null`
+  deletes the field. A list is applied as an RFC 6902 operation list, for
+  example `[{"op": "add", "path": "/spec/template", "value": value}]`.
+- Inside a `patch`, these names are bound: `value` (the new value), `instance`
+  and `index` (the instance id and its position, for instanced components), and
+  `variables.<name>`.
+- `replace: true` makes the write replace the field instead of merging into it:
+  the patch is applied first with `value` bound to `null` (deleting the field)
+  and then with the real value. A pod template update wants this; an annotations
+  update usually does not.
+
+An accessor with only an `expression` is read-only. A write through it fails at
+runtime with `the field has no patch and cannot be written`. The catalog does
+this deliberately where no sane write exists, for example the Dynamo `container`
+and `image` accessors in
+`docs/catalog/nvidia-com-dynamographdeployment-v1beta1.yaml`. Leave a patch out
+only with that intent.
+
+### Null safety
+
+Use optional selection instead of plain field access so a missing field yields
+a value rather than an evaluation error:
+
+- `object[?"spec"][?"template"].orValue(null)` selects optionally at each step
+  (`object.?spec.?template` is equivalent) and unwraps with a default.
+- To coalesce a possibly missing value to a default, use the filter idiom:
+  `([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`.
+  It wraps the value in a single-item list, drops it when it is null, appends
+  the default, and takes the first element.
+
+Evaluation is budgeted: an expression whose cost explodes is stopped with an
+evaluation error instead of running unbounded. A normal definition never
+notices the budget. Optional types plus the standard list and string extensions
+are available; there is no other builtin surface to learn.
+
+### Variables
+
+`spec.variables` are named CEL expressions, available to every expression in
+the definition as `variables.<name>`. They are evaluated in order, and a later
+variable may reference an earlier one. Name a shared sub-expression once
+instead of repeating it.
+
+```yaml
+spec:
+  variables:
+  - name: specReplicas
+    expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+```
+
+```yaml
+scaleDefinition:
+  replicas:
+    expression: variables.specReplicas
 ```
 
 ## Component model
@@ -38,22 +112,21 @@ A component is one node in the workload tree.
 Virtual components. A component may omit `kind` and `specDefinition` entirely and
 exist only to model a level of the tree. Use one when the workload has a grouping
 level that owns other components but is not itself a Kubernetes object, and give
-it a `scaleDefinition` for the level's count and a `replicaSelector` for the label
-that identifies which group a pod belongs to. LeaderWorkerSet is the canonical
-case: a `group` component sits between the root and the `leader` and `worker`
-components, carries `replicasPath: .spec.replicas // 1` and a `replicaSelector` on
-`leaderworkerset.sigs.k8s.io/group-index`, and owns both roles. Without it,
-`leader` and `worker` have no shared grouping level and per-group identity is
-lost.
+it a `scaleDefinition` for the level's count and a `replicaSelector` for the
+label that identifies which group a pod belongs to. LeaderWorkerSet is the
+canonical case: a `group` component sits between the root and the `leader` and
+`worker` components and owns both roles. Without it, `leader` and `worker` have
+no shared grouping level and per-group identity is lost.
 
 ```yaml
 - name: group
   ownerRef: leaderworkerset
   scaleDefinition:
-    replicasPath: .spec.replicas // 1
+    replicas:
+      expression: object[?"spec"][?"leaderWorkerTemplate"][?"size"].orValue(null)
   podSelector:
     replicaSelector:
-      keyPath: .metadata.labels["leaderworkerset.sigs.k8s.io/group-index"]
+      expression: object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null)
 ```
 
 Fields available on a component (`ComponentDefinition`):
@@ -66,8 +139,8 @@ Fields available on a component (`ComponentDefinition`):
 | `specDefinition` | Where the pod template lives. |
 | `scaleDefinition` | Where replica counts live. |
 | `statusDefinition` | Status mapping. Required on root. |
-| `suspendDefinition` | Native suspend/resume field assignments. |
-| `instanceIdPath` | jq path to instance names for multi-instance components. |
+| `suspendDefinition` | Native suspend/resume patches. |
+| `instanceIds` | Accessor returning the list of instance ids for multi-instance components. |
 | `podSelector` | How pods map to this component and its instances. |
 
 ## Spec definitions (mutually exclusive)
@@ -75,58 +148,57 @@ Fields available on a component (`ComponentDefinition`):
 Set exactly one of these three per component. Setting more than one fails
 validation with `has multiple pod spec definitions`.
 
-| Pattern | Use when | Example |
+| Pattern | Use when | Example read |
 |---|---|---|
-| `podTemplateSpecPath` | CRD embeds a full PodTemplateSpec | `.spec.template` |
-| `podSpecPath` (+ `metadataPath`) | CRD embeds a bare PodSpec, metadata separate | `.spec.jobTemplate.spec`, `.spec.jobTemplate.metadata` |
+| `podTemplateSpec` | CRD embeds a full PodTemplateSpec | `object[?"spec"][?"template"].orValue(null)` |
+| `podSpec` (+ `metadata`) | CRD embeds a bare PodSpec, metadata separate | `object[?"spec"][?"transformer"].orValue(null)` |
 | `fragmentedPodSpecDefinition` | Pod fields scattered across the spec | see below |
 
 Choosing `fragmentedPodSpecDefinition` is not only about a missing pod template.
-A CRD can embed a real `podSpec` and still need fragmented paths, because the
+A CRD can embed a real pod spec and still need fragmented accessors, because the
 fields Karta treats as part of the pod live at different levels. Grove
-PodCliqueSet is the example: containers and scheduler name are inside
-`.spec.template.cliques[].spec.podSpec`, but labels and annotations sit one level
-up on the clique itself. `podSpecPath` would read the spec and silently drop the
-labels and annotations. Check where every field lives, not just the containers.
+PodCliqueSet is the example: containers and scheduler name are inside each
+clique's `spec.podSpec`, but labels and annotations sit one level up on the
+clique itself. A single `podSpec` accessor would read the spec and silently drop
+the labels and annotations. Check where every field lives, not just the
+containers.
 
 `fragmentedPodSpecDefinition` fields (all optional; set only those that exist):
-`schedulerNamePath`, `labelsPath`, `annotationsPath`, `resourcesPath`,
-`resourceClaimsPath`, `podAffinityPath`, `nodeAffinityPath`, `containersPath`,
-`containerPath` (single container), `priorityClassNamePath`, `imagePath`.
+`schedulerName`, `labels`, `annotations`, `resources`, `resourceClaims`,
+`podAffinity`, `nodeAffinity`, `containers`, `container` (single container),
+`priorityClassName`, `image`. Each is a value accessor.
 
 ```yaml
 specDefinition:
   fragmentedPodSpecDefinition:
-    labelsPath: .spec.labels
-    resourcesPath: .spec.resources
-    containerPath: .spec.components[] | .podTemplate.spec.containers[] | select(.name == "main")
+    labels:
+      expression: object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)
+      patch: '{"spec": {"components": {"standalone": {"podLabels": value}}}}'
+      replace: true
+    resources:
+      expression: object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)
+      patch: '{"spec": {"components": {"standalone": {"resources": value}}}}'
+      replace: true
 ```
 
-Fragmented paths must be assignable. Every `fragmentedPodSpecDefinition` path is
-used both to read the field and to write it back when a consumer mutates the pod
-spec, so each path must be a jq path expression that jq can assign through.
-Navigation (`.a.b`), array iteration (`.items[]`), and path-preserving filters
-(`select(...)`) are assignable. A `//` fallback is not: `.a // .b` produces
-values, not a path, so it reads fine but fails on mutation. This passes both the
-schema and the jq safety validator, so it is a silent trap. When a field can be
-overridden (for example a workflow-level default plus a per-template override),
-target one layer with an assignable path rather than a fallback expression, and
-model per-item variation with a multi-instance component (`instanceIdPath`) so
-each item's field stays index-aligned and assignable.
+Write shape follows the field's location. A field at a fixed path writes with a
+merge-patch map, as above. A field inside an array of instance specs writes with
+an RFC 6902 patch built from `index`, and a field inside a map of instance specs
+writes with a merge patch keyed by `instance`:
 
-Read-only projections. Some shapes have no assignable path at all. A path that
-needs a variable binding to filter one array by another (`. as $t | $t.items[] |
-select(...)`) or that constructs an object rather than navigating to one reads
-correctly but cannot be assigned through. Prefer an assignable path whenever one
-exists. When none does, the fragmented path is still usable for reading, and the
-consequence is explicit: mutating that component's pod spec fails. Say so in a
-comment next to the path so the limitation is not rediscovered later. The catalog
-does this for the Grove standalone-clique paths and the NIMCache resources path.
+```yaml
+# array of specs: per-index RFC 6902 write (Grove cliques)
+labels:
+  expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"labels"].orValue(null))
+  patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/labels", "value": value}]'
+```
 
-Variable bindings are allowed. `as $name` is not on the rejected-construct list,
-and the corrected Grove definition relies on it to exclude cliques that belong to
-a scaling group. Bindings keep a path readable when a filter has to reference a
-sibling field, at the cost of assignability.
+```yaml
+# map of specs: per-instance merge write
+labels:
+  patch: '{"spec": {"services": {instance: {"labels": value}}}}'
+  replace: true
+```
 
 ## Status definition
 
@@ -135,13 +207,13 @@ Required on the root component. Optional on children. Structure:
 ```yaml
 statusDefinition:
   conditionsDefinition:      # needed only if any rule uses byConditions
-    path: .status.conditions
+    expression: object[?"status"][?"conditions"].orValue(null)
     typeFieldName: type      # defaults: type / status / message / reason
     statusFieldName: status
     reasonFieldName: reason
     messageFieldName: message
   phaseDefinition:           # needed only if any rule uses byPhase
-    path: .status.phase
+    expression: object[?"status"][?"phase"].orValue(null)
   statusMappings:            # required
     running:
     - byConditions:
@@ -157,10 +229,10 @@ Matcher semantics (`StatusMatcher`):
 
 - `byConditions`: a list of expected conditions, all of which must hold (AND).
   Each entry sets `type` plus at least one of `status` or `reason`.
-- `byPhase`: matches a single phase string from `phaseDefinition.path`.
-- `byExpression`: a jq `expression` plus an `expectedResult` string. Use it when
-  the state lives in status fields (for example replica counts) rather than
-  conditions or a phase.
+- `byPhase`: matches a single phase string from `phaseDefinition`.
+- `byExpression`: a CEL `expression` plus an `expectedResult` string. Use it
+  when the state lives in status fields (for example replica counts) rather
+  than conditions or a phase.
 - Rules under one status are OR'd: any matching rule resolves the status.
 - Several statuses can match at once. Map only what the workload reports.
 
@@ -174,15 +246,15 @@ or other status fields (for example Grove PodCliqueSet has no aggregate phase).
 Do not invent a phase or a condition type the controller never sets: that
 produces a definition that validates but never resolves. Match such states with
 `byExpression` over the real status fields, for example
-`(.status.availableReplicas // 0) >= (.spec.replicas // 0)` for running.
+`variables.statusAvailableReplicas >= variables.specReplicas` for running.
 
-Example combining expression and condition rules:
+Example combining expression and condition rules (from `batch-job-v1.yaml`):
 
 ```yaml
 statusMappings:
   running:
   - byExpression:
-      expression: (.status.active // 0) > 0 and (.status.ready // 0) > 0
+      expression: variables.statusActive > 0 && variables.statusReady > 0
       expectedResult: "true"
   completed:
   - byConditions:
@@ -194,77 +266,84 @@ statusMappings:
 
 ```yaml
 scaleDefinition:
-  replicasPath: .spec.parallelism // 1
-  minReplicasPath: .spec.minReplicas
-  maxReplicasPath: .spec.maxReplicas
+  replicas:
+    expression: variables.specParallelism
+  minReplicas:
+    expression: object[?"spec"][?"predictor"][?"minReplicas"].orValue(null)
+  maxReplicas:
+    expression: object[?"spec"][?"predictor"][?"maxReplicas"].orValue(null)
 ```
 
-All three paths are optional. Keep them null-safe.
+All three accessors are optional. Keep them null-safe.
 
 A component's replica count is the number of units at that component's level of
 the tree, counted across the whole workload. It is not the number of API objects
 of the component's `kind`. The distinction matters because a component's `kind`
 often names the controller object that produces the pods rather than the pods
 themselves. In LeaderWorkerSet the `leader` component has kind `StatefulSet` and
-`replicasPath: .spec.replicas // 1`, which for three groups resolves to 3, even
-though the operator creates a single leader StatefulSet. The count describes the
-level, not the object.
+reads `spec.replicas`, which for three groups resolves to 3, even though the
+operator creates a single leader StatefulSet. The count describes the level, not
+the object.
 
 Two numbers, two levels. A grouped or replicated workload usually holds both a
 group count and a members-per-group count, and picking the wrong one is a valid
-jq path that returns the wrong number, so the validator cannot catch it.
-LeaderWorkerSet is the trap: `.spec.replicas` is the number of groups and
-`.spec.leaderWorkerTemplate.size` is pods per group. The `group` component scales
-on `.spec.replicas // 1`, `leader` on `.spec.replicas // 1` (one leader per
-group), and `worker` on the derived
-`(.spec.replicas // 1) * ((.spec.leaderWorkerTemplate.size // 1) - 1)`. A nested
-level multiplies by its parent's count the same way: JobSet's `replicatedjob`
-uses `.spec.replicatedJobs[] | .replicas * .template.spec.parallelism`.
+expression that returns the wrong number, so the validator cannot catch it.
+LeaderWorkerSet is the trap: `spec.replicas` is the number of groups and
+`spec.leaderWorkerTemplate.size` is pods per group. The `leader` component
+scales on `variables.specReplicas` (one leader per group) and `worker` on the
+derived
+`variables.specReplicasFloat * (variables.specLeaderWorkerTemplateSize - 1.0)`.
+A nested level multiplies by its parent's count the same way: JobSet's
+`replicatedjob` uses
+`([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(j, j.replicas * j.template.spec.parallelism)`.
+
+For a multi-instance component, `replicas` returns a list aligned with the
+`instanceIds` order, one count per instance. RayCluster's `worker` maps each
+worker group to its own `replicas`, `minReplicas`, and `maxReplicas`.
 
 Two self-checks. Sibling components that model the same level should resolve to
-the same count (`group` and `leader` above both give 3). And the numbers should
-add up against a real manifest: if the CR declares 3 groups of 4, the components
-should report 3, 3, and 9, not 4.
+the same count, and the numbers should add up against a real manifest: if the CR
+declares 3 groups of 4, the components should report 3, 3, and 9, not 4. The
+`hack/karta-verify` README walks the LeaderWorkerSet quickstart manifest through
+exactly this sibling check.
 
-Look for autoscaling bounds explicitly. `minReplicasPath` and `maxReplicasPath`
-are easy to miss because they usually live somewhere other than the replica field
-itself, for example PyTorchJob's `.spec.elasticPolicy.minReplicas` or Grove's
-`.spec.template.cliques[].spec.autoScalingConfig.minReplicas`. Search the CRD for
-an autoscaling or elastic policy block before deciding the workload has none.
+Look for autoscaling bounds explicitly. `minReplicas` and `maxReplicas` are easy
+to miss because they usually live somewhere other than the replica field itself,
+for example KServe's `spec.predictor.minReplicas` or Grove's per-clique
+`spec.autoScalingConfig.minReplicas`. Search the CRD for an autoscaling or
+elastic policy block before deciding the workload has none.
 
 ## Suspend definition
 
-For workloads with native suspend support (for example `.spec.suspend` on a
-Job). Both action lists require at least one entry.
+For workloads with native suspend support (for example `spec.suspend` on a
+Job). Both action lists require at least one entry. Each action is a `patch`
+expression merged into the workload; actions are applied in order.
 
 ```yaml
 suspendDefinition:
   suspendActions:
-  - path: .spec.suspend
-    value: "true"
+  - patch: '{"spec": {"suspend": true}}'
   resumeActions:
-  - path: .spec.suspend
-    value: "false"
+  - patch: '{"spec": {"suspend": false}}'
 ```
 
-`value` is a JSON-encoded string (`"true"`, `"0"`, `"paused"`, `"null"`).
-
-## Pod selectors (paths run against pod manifests)
+## Pod selectors (expressions run against pod manifests)
 
 ```yaml
 podSelector:
   componentTypeSelector:        # maps a pod to this component type
-    keyPath: .metadata.labels["training.kubeflow.org/replica-type"]
-    value: worker               # optional; if omitted, only key existence is checked
+    expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)
+    value: worker               # optional; if omitted, only a non-null result is checked
   componentInstanceSelector:    # splits one component into named instances
-    idPath: .metadata.labels["ray.io/group"]
+    expression: object[?"metadata"][?"labels"][?"ray.io/group"].orValue(null)
   replicaSelector:              # distinguishes replicas of the same sub-structure
-    keyPath: .metadata.labels["leaderworkerset.sigs.k8s.io/group-index"]
+    expression: object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null)
 ```
 
-`componentInstanceSelector` must pair with a component-level `instanceIdPath`,
-and vice versa. Selectors of the same kind must be mutually exclusive across
-components.
+`componentInstanceSelector` must pair with a component-level `instanceIds`
+accessor, and vice versa. Selectors of the same kind must be mutually exclusive
+across components. Descendant components inherit the replica context from their
+parent, so define `replicaSelector` only where replicas are created.
 
 Role-label keys are framework-specific, and differ even between operators from
 the same project. Do not copy a selector key from the nearest sample without
@@ -273,7 +352,7 @@ training-operator (PyTorchJob, TFJob) labels role with
 `training.kubeflow.org/replica-type` (values `master`, `worker`), while the
 Kubeflow mpi-operator (MPIJob v2beta1) labels role with
 `training.kubeflow.org/job-role` (values `launcher`, `worker`). Read the actual
-pod labels the controller sets before writing `keyPath`.
+pod labels the controller sets before writing the selector.
 
 Disambiguating roles that share a label. When two components would match the
 same pod label, a plain value match is not mutually exclusive. Separate them by
@@ -287,24 +366,28 @@ have.
 ```yaml
 # leader: value match on the shared label
 componentTypeSelector:
-  keyPath: .metadata.labels["leaderworkerset.sigs.k8s.io/worker-index"]
+  expression: object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/worker-index"].orValue(null)
   value: "0"
 # worker: key existence of a role-specific annotation (no value)
 componentTypeSelector:
-  keyPath: .metadata.annotations["leaderworkerset.sigs.k8s.io/leader-name"]
+  expression: object[?"metadata"][?"annotations"][?"leaderworkerset.sigs.k8s.io/leader-name"].orValue(null)
 ```
 
 ## Multi-instance components
 
 When one component holds several specs (an array or a map), give it an
-`instanceIdPath` so each instance is distinguishable, and a matching
-`componentInstanceSelector` on the pod side.
+`instanceIds` accessor returning the list of instance ids, and a matching
+`componentInstanceSelector` on the pod side. Every other accessor of the
+component then returns a list aligned with that order, and its `patch` receives
+`instance` and `index`.
 
 ```yaml
-# array of specs
-instanceIdPath: .spec.workerGroupSpecs[].groupName
-# map of specs
-instanceIdPath: .spec.services | to_entries[] | .key
+# array of specs (each entry carries its own name)
+instanceIds:
+  expression: ([dyn(object[?"spec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"groupName"].orValue(null))
+# map of specs (the map keys are the instance ids, sorted for a stable order)
+instanceIds:
+  expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort()
 ```
 
 ## Additional child kinds
@@ -330,7 +413,7 @@ additionalChildKinds:
   kind: Deployment
 ```
 
-## Optimization instructions (paths run against pod manifests)
+## Optimization instructions (expressions run against pod manifests)
 
 Optional, used by schedulers. Two formats exist. `podGroup` is current;
 `podGroups` is marked deprecated in the API but is what every catalog definition
@@ -347,51 +430,36 @@ optimizationInstructions:
       - componentName: worker
 ```
 
-The deprecated `podGroups` format carries two fields the current one has no
-equivalent for, which is why the catalog still uses it:
-
 ```yaml
+# deprecated format, used throughout the catalog
 optimizationInstructions:
   gangScheduling:
     podGroups:
     - name: job
       members:
       - componentName: worker
-        groupByKeyPaths:
-        - .metadata.labels["training.kubeflow.org/job-name"]
-        filters:
-        - (.spec.containers[0].resources.limits["nvidia.com/gpu"] // 0) > 0
+        groupByExpressions:
+        - object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)
 ```
 
-- `groupByKeyPaths`: jq paths evaluated against individual pod manifests, whose
-  values decide which pods share a gang. Use them when pods of one component must
-  be split into several gangs, typically by owner name plus a replica index. When
-  omitted, grouping falls back to owner reference traversal. Each path must return
-  a single non-empty value for every pod, or grouping fails at runtime, so keep
-  them null-safe (the LeaderWorkerSet definition uses
-  `.metadata.labels["leaderworkerset.sigs.k8s.io/group-index"] // "0"`).
-- `filters`: jq expressions, ANDed, also evaluated against pod manifests, to
-  restrict a member to a subset of its pods.
+`groupByExpressions` are CEL expressions evaluated against individual pod
+manifests, whose values decide which pods share a gang. Use them when pods of
+one component must be split into several gangs, typically by owner name plus a
+replica index. When omitted, grouping falls back to owner reference traversal.
+Each expression must return a single non-empty value for every pod, or grouping
+fails at runtime, so coalesce to a default. The LeaderWorkerSet definition
+groups by name plus group index, defaulting the index to `"0"`:
 
-Both are pod-level paths, not workload paths. When copying a catalog definition
-as a skeleton, copy the format it uses rather than converting it, and check the
-`groupByKeyPaths` label keys against the target controller's real pod labels the
-same way as `podSelector` keys.
+```yaml
+groupByExpressions:
+- object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/name"].orValue(null)
+- ([dyn(object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null))].filter(v, v != null && v != false) + ["0"])[0]
+```
 
-## jq safety rules
-
-Every path is validated statically. These constructs are rejected:
-
-- Assignment and update operators (`=`, `|=`, `+=`, `-=`, and the rest).
-- The `del` function.
-- The recursive descent operator `..`.
-- Unbounded builtins: `range`, `paths`, `recurse`, `walk`, `repeat`.
-
-Rules for correct paths:
-
-- Absolute, starting with `.`.
-- Null-safe with `//` defaults for any field that may be absent.
-- Evaluated against the correct resource (workload object vs pod manifest).
+These are pod-level expressions, not workload expressions. When copying a
+catalog definition as a skeleton, copy the format it uses rather than converting
+it, and check the `groupByExpressions` label keys against the target
+controller's real pod labels the same way as `podSelector` keys.
 
 ## Validation checklist
 
@@ -400,12 +468,14 @@ Rules for correct paths:
 - Every child has an `ownerRef` to an existing component; no ownership cycles.
 - Component names are unique and non-empty.
 - No component sets more than one spec pattern.
-- `instanceIdPath` and `componentInstanceSelector` are both present or both absent.
+- `instanceIds` and `componentInstanceSelector` are both present or both absent.
+- Every expression starts from the `object` root and is null-safe (optional
+  selection chained into `.orValue(...)` defaults).
 - Pod selectors reference pod fields; selectors of the same kind are mutually exclusive across components.
 - Status conditions and phases match the workload's real API.
 - Every declared `conditionsDefinition` or `phaseDefinition` is referenced by at least one matcher, and every matcher has the definition it needs.
 - Replica counts describe the component's level, siblings at the same level agree, and nested levels multiply by the parent count.
 - Autoscaling bounds were looked for, not assumed absent.
-- Every `fragmentedPodSpecDefinition` path is assignable, or is documented as read-only.
+- Every field consumers may mutate has a `patch`; an expression-only accessor is documented as read-only.
 - No redundant duplicate kinds in `additionalChildKinds` (duplicates are allowed only when needed for RBAC or owner traversal).
-- Every gang-scheduling member names a defined component, and `groupByKeyPaths` and `filters` reference pod fields.
+- Every gang-scheduling member names a defined component, and `groupByExpressions` reference pod fields.

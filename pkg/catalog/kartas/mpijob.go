@@ -17,17 +17,21 @@ func Mpijob() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "kubeflow-org-mpijob-v2beta1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "specMpiReplicaSpecsLauncherReplicas", Expression: `([dyn(object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`},
+				{Name: "specMpiReplicaSpecsWorkerReplicas", Expression: `([dyn(object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "mpijob",
 					Kind: &v1alpha1.GroupVersionKind{Group: "kubeflow.org", Version: "v2beta1", Kind: "MPIJob"},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Path: ".spec.runPolicy.suspend", Value: "true"}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Path: ".spec.runPolicy.suspend", Value: "false"}},
+						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"runPolicy": {"suspend": true}}}`}},
+						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"runPolicy": {"suspend": false}}}`}},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							ReasonFieldName:  ptr.To("reason"),
@@ -48,15 +52,15 @@ func Mpijob() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("mpijob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.mpiReplicaSpecs.Launcher.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"template"].orValue(null)`, Patch: `{"spec": {"mpiReplicaSpecs": {"Launcher": {"template": value}}}}`, Replace: true},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.mpiReplicaSpecs.Launcher.replicas // 1"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specMpiReplicaSpecsLauncherReplicas`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["training.kubeflow.org/job-role"]`,
-								Value:   ptr.To("launcher"),
+								Expression: `object[?"metadata"][?"labels"][?"training.kubeflow.org/job-role"].orValue(null)`,
+								Value:      ptr.To("launcher"),
 							},
 						},
 					},
@@ -65,15 +69,15 @@ func Mpijob() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("mpijob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.mpiReplicaSpecs.Worker.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"template"].orValue(null)`, Patch: `{"spec": {"mpiReplicaSpecs": {"Worker": {"template": value}}}}`, Replace: true},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.mpiReplicaSpecs.Worker.replicas // 1"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specMpiReplicaSpecsWorkerReplicas`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["training.kubeflow.org/job-role"]`,
-								Value:   ptr.To("worker"),
+								Expression: `object[?"metadata"][?"labels"][?"training.kubeflow.org/job-role"].orValue(null)`,
+								Value:      ptr.To("worker"),
 							},
 						},
 					},
@@ -85,12 +89,12 @@ func Mpijob() *v1alpha1.Karta {
 						Name: "job",
 						Members: []v1alpha1.PodGroupMemberDefinition{
 							{
-								ComponentName:   "launcher",
-								GroupByKeyPaths: []string{`.metadata.labels["training.kubeflow.org/job-name"]`},
+								ComponentName:      "launcher",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)`},
 							},
 							{
-								ComponentName:   "worker",
-								GroupByKeyPaths: []string{`.metadata.labels["training.kubeflow.org/job-name"]`},
+								ComponentName:      "worker",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)`},
 							},
 						},
 					}},

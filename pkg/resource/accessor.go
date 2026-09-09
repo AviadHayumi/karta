@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
-	"github.com/run-ai/karta/pkg/jq/execution"
+	"github.com/run-ai/karta/pkg/expression"
 )
 
 // DefinitionNotFoundError represents an error when a requested definition is not found
@@ -26,20 +26,18 @@ func (e DefinitionNotFoundError) Error() string {
 	return string(e)
 }
 
-// Accessor implements extraction and updating of resource data using jq.Runner
+// Accessor implements extraction and updating of resource data through the engine contract.
 type Accessor struct {
-	jqRunner execution.Runner
+	runner expression.Runner
 }
 
-func NewAccessor(jqRunner execution.Runner) *Accessor {
-	return &Accessor{
-		jqRunner: jqRunner,
-	}
+func NewAccessor(runner expression.Runner) *Accessor {
+	return &Accessor{runner: runner}
 }
 
 // GetObject returns the object as a map[string]interface{}
 func (a *Accessor) GetObject() (map[string]interface{}, error) {
-	object, err := a.jqRunner.GetObject()
+	object, err := a.runner.GetObject()
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +53,12 @@ func (a *Accessor) ExtractPodTemplateSpec(ctx context.Context, definition v1alph
 		return nil, DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
 
-	if definition.SpecDefinition.PodTemplateSpecPath == nil {
+	if definition.SpecDefinition.PodTemplateSpec == nil {
 		return nil, DefinitionNotFoundError(fmt.Sprintf("component %s does not have pod template spec definition", definition.Name))
 	}
 
 	var podTemplateSpec []corev1.PodTemplateSpec
-	err := extract(ctx, definition.SpecDefinition.PodTemplateSpecPath, a.jqRunner, &podTemplateSpec)
+	err := extractVia(ctx, definition.SpecDefinition.PodTemplateSpec, instancedComponent(definition), a.runner, &podTemplateSpec)
 
 	return podTemplateSpec, err
 }
@@ -70,12 +68,12 @@ func (a *Accessor) ExtractPodSpec(ctx context.Context, definition v1alpha1.Compo
 		return nil, DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
 
-	if definition.SpecDefinition.PodSpecPath == nil {
+	if definition.SpecDefinition.PodSpec == nil {
 		return nil, DefinitionNotFoundError(fmt.Sprintf("component %s does not have pod spec definition", definition.Name))
 	}
 
 	var podSpec []corev1.PodSpec
-	err := extract(ctx, definition.SpecDefinition.PodSpecPath, a.jqRunner, &podSpec)
+	err := extractVia(ctx, definition.SpecDefinition.PodSpec, instancedComponent(definition), a.runner, &podSpec)
 
 	return podSpec, err
 }
@@ -85,12 +83,12 @@ func (a *Accessor) ExtractPodMetadata(ctx context.Context, definition v1alpha1.C
 		return nil, DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
 
-	if definition.SpecDefinition.MetadataPath == nil {
+	if definition.SpecDefinition.Metadata == nil {
 		return nil, DefinitionNotFoundError(fmt.Sprintf("component %s does not have pod metadata definition", definition.Name))
 	}
 
 	var podMetadata []metav1.ObjectMeta
-	err := extract(ctx, definition.SpecDefinition.MetadataPath, a.jqRunner, &podMetadata)
+	err := extractVia(ctx, definition.SpecDefinition.Metadata, instancedComponent(definition), a.runner, &podMetadata)
 
 	return podMetadata, err
 }
@@ -108,17 +106,17 @@ func (a *Accessor) ExtractScale(ctx context.Context, definition v1alpha1.Compone
 
 	scaleCount := 0
 
-	if err := extract(ctx, definition.ScaleDefinition.ReplicasPath, a.jqRunner, &replicas); err != nil {
+	if err := extractVia(ctx, definition.ScaleDefinition.Replicas, instancedComponent(definition), a.runner, &replicas); err != nil {
 		return nil, err
 	}
 	scaleCount = max(scaleCount, len(replicas))
 
-	if err := extract(ctx, definition.ScaleDefinition.MinReplicasPath, a.jqRunner, &minReplicas); err != nil {
+	if err := extractVia(ctx, definition.ScaleDefinition.MinReplicas, instancedComponent(definition), a.runner, &minReplicas); err != nil {
 		return nil, err
 	}
 	scaleCount = max(scaleCount, len(minReplicas))
 
-	if err := extract(ctx, definition.ScaleDefinition.MaxReplicasPath, a.jqRunner, &maxReplicas); err != nil {
+	if err := extractVia(ctx, definition.ScaleDefinition.MaxReplicas, instancedComponent(definition), a.runner, &maxReplicas); err != nil {
 		return nil, err
 	}
 	scaleCount = max(scaleCount, len(maxReplicas))
@@ -162,57 +160,57 @@ func (a *Accessor) ExtractFragmentedPodSpec(ctx context.Context, definition v1al
 
 	specCount := 0
 
-	if err := extract(ctx, fragmentedDefinition.SchedulerNamePath, a.jqRunner, &schedulerNameResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.SchedulerName, instancedComponent(definition), a.runner, &schedulerNameResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(schedulerNameResults))
 
-	if err := extract(ctx, fragmentedDefinition.LabelsPath, a.jqRunner, &labelsResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.Labels, instancedComponent(definition), a.runner, &labelsResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(labelsResults))
 
-	if err := extract(ctx, fragmentedDefinition.AnnotationsPath, a.jqRunner, &annotationsResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.Annotations, instancedComponent(definition), a.runner, &annotationsResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(annotationsResults))
 
-	if err := extract(ctx, fragmentedDefinition.ResourcesPath, a.jqRunner, &resourcesResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.Resources, instancedComponent(definition), a.runner, &resourcesResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(resourcesResults))
 
-	if err := extract(ctx, fragmentedDefinition.ResourceClaimsPath, a.jqRunner, &resourceClaimsResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.ResourceClaims, instancedComponent(definition), a.runner, &resourceClaimsResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(resourceClaimsResults))
 
-	if err := extract(ctx, fragmentedDefinition.PodAffinityPath, a.jqRunner, &podAffinityResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.PodAffinity, instancedComponent(definition), a.runner, &podAffinityResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(podAffinityResults))
 
-	if err := extract(ctx, fragmentedDefinition.NodeAffinityPath, a.jqRunner, &nodeAffinityResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.NodeAffinity, instancedComponent(definition), a.runner, &nodeAffinityResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(nodeAffinityResults))
 
-	if err := extract(ctx, fragmentedDefinition.ContainersPath, a.jqRunner, &containersResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.Containers, instancedComponent(definition), a.runner, &containersResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(containersResults))
 
-	if err := extract(ctx, fragmentedDefinition.ContainerPath, a.jqRunner, &containerResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.Container, instancedComponent(definition), a.runner, &containerResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(containerResults))
 
-	if err := extract(ctx, fragmentedDefinition.PriorityClassNamePath, a.jqRunner, &priorityClassNameResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.PriorityClassName, instancedComponent(definition), a.runner, &priorityClassNameResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(priorityClassNameResults))
 
-	if err := extract(ctx, fragmentedDefinition.ImagePath, a.jqRunner, &imageResults); err != nil {
+	if err := extractVia(ctx, fragmentedDefinition.Image, instancedComponent(definition), a.runner, &imageResults); err != nil {
 		return nil, err
 	}
 	specCount = max(specCount, len(imageResults))
@@ -247,8 +245,9 @@ func (a *Accessor) ExtractStatus(ctx context.Context, definition v1alpha1.Compon
 
 	var phase *string
 	if statusDef.PhaseDefinition != nil {
+		phaseField := &v1alpha1.ValueAccessor{Expression: statusDef.PhaseDefinition.Expression}
 		var phases []string
-		if err := extract(ctx, &statusDef.PhaseDefinition.Path, a.jqRunner, &phases); err != nil {
+		if err := extractVia(ctx, phaseField, false, a.runner, &phases); err != nil {
 			return nil, fmt.Errorf("failed to extract phase: %w", err)
 		}
 		if len(phases) > 0 {
@@ -261,7 +260,7 @@ func (a *Accessor) ExtractStatus(ctx context.Context, definition v1alpha1.Compon
 		return nil, err
 	}
 
-	matchedStatuses, err := matchStatus(ctx, a.jqRunner, phase, conditions, statusDef.StatusMappings)
+	matchedStatuses, err := matchStatus(ctx, a.runner, phase, conditions, statusDef.StatusMappings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to match status: %w", err)
 	}
@@ -280,8 +279,9 @@ func (a *Accessor) extractConditions(ctx context.Context, condDef *v1alpha1.Cond
 		return []Condition{}, nil
 	}
 
+	conditionsField := &v1alpha1.ValueAccessor{Expression: condDef.Expression}
 	var extractedRawConditions [][]map[string]any
-	if err := extract(ctx, &condDef.Path, a.jqRunner, &extractedRawConditions); err != nil {
+	if err := extractVia(ctx, conditionsField, false, a.runner, &extractedRawConditions); err != nil {
 		return nil, fmt.Errorf("failed to extract conditions: %w", err)
 	}
 
@@ -327,57 +327,76 @@ func (a *Accessor) extractConditions(ctx context.Context, condDef *v1alpha1.Cond
 }
 
 // ApplySuspendActions applies the component's SuspendActions in sequence against the manifest.
-// Each action's path is used as the JQ selector and its value is decoded from JSON and
-// assigned via Assign. Returns DefinitionNotFoundError if the component has no SuspendDefinition.
+// Each action's patch is applied to the document.
+// Returns DefinitionNotFoundError if the component has no SuspendDefinition.
 func (a *Accessor) ApplySuspendActions(ctx context.Context, definition v1alpha1.ComponentDefinition) error {
 	if definition.SuspendDefinition == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have suspendDefinition", definition.Name))
 	}
-	for i, action := range definition.SuspendDefinition.SuspendActions {
-		var value any
-		if err := json.Unmarshal([]byte(action.Value), &value); err != nil {
-			return fmt.Errorf("suspendActions[%d]: failed to decode value: %w", i, err)
-		}
-		if err := a.jqRunner.Assign(ctx, action.Path, value); err != nil {
-			return fmt.Errorf("suspendActions[%d]: %w", i, err)
-		}
+	if err := a.applyActions(ctx, definition.SuspendDefinition.SuspendActions); err != nil {
+		return fmt.Errorf("suspendActions: %w", err)
 	}
 	return nil
 }
 
 // ApplyResumeActions applies the component's ResumeActions in sequence against the manifest.
-// Each action's path is used as the JQ selector and its value is decoded from JSON and
-// assigned via Assign. Returns DefinitionNotFoundError if the component has no SuspendDefinition.
+// Each action's patch is applied to the document.
+// Returns DefinitionNotFoundError if the component has no SuspendDefinition.
 func (a *Accessor) ApplyResumeActions(ctx context.Context, definition v1alpha1.ComponentDefinition) error {
 	if definition.SuspendDefinition == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have suspendDefinition", definition.Name))
 	}
-	for i, action := range definition.SuspendDefinition.ResumeActions {
-		var value any
-		if err := json.Unmarshal([]byte(action.Value), &value); err != nil {
-			return fmt.Errorf("resumeActions[%d]: failed to decode value: %w", i, err)
-		}
-		if err := a.jqRunner.Assign(ctx, action.Path, value); err != nil {
-			return fmt.Errorf("resumeActions[%d]: %w", i, err)
-		}
+	if err := a.applyActions(ctx, definition.SuspendDefinition.ResumeActions); err != nil {
+		return fmt.Errorf("resumeActions: %w", err)
 	}
 	return nil
 }
 
-func (a *Accessor) ExtractInstanceIds(ctx context.Context, definition v1alpha1.ComponentDefinition) ([]string, error) {
-	if definition.InstanceIdPath == nil {
-		return nil, DefinitionNotFoundError("no instance id path defined")
+// applyActions runs an ordered action list: each patch evaluates its expression and the
+// constructed object merges into the workload, applyConfiguration style.
+func (a *Accessor) applyActions(ctx context.Context, actions []v1alpha1.SuspendAction) error {
+	for i, action := range actions {
+		results, err := a.runner.Evaluate(ctx, action.Patch)
+		if err != nil {
+			return fmt.Errorf("[%d]: evaluate patch: %w", i, err)
+		}
+		if len(results) != 1 {
+			return fmt.Errorf("[%d]: a patch must construct exactly one object, got %d results", i, len(results))
+		}
+		live, err := a.runner.GetObject()
+		if err != nil {
+			return fmt.Errorf("[%d]: %w", i, err)
+		}
+		if err := a.runner.Assign(ctx, ".", mergePatch(live, results[0])); err != nil {
+			return fmt.Errorf("[%d]: apply patch: %w", i, err)
+		}
 	}
 
+	return nil
+}
+
+func (a *Accessor) ExtractInstanceIds(ctx context.Context, definition v1alpha1.ComponentDefinition) ([]string, error) {
+	if definition.InstanceIds == nil || definition.InstanceIds.Expression == "" {
+		return nil, DefinitionNotFoundError("no instance ids defined")
+	}
+
+	// The expression returns the whole id list as one value.
 	var instanceIds []string
-	err := extract(ctx, definition.InstanceIdPath, a.jqRunner, &instanceIds)
+	results, err := a.runner.EvaluateWithVariables(ctx, definition.InstanceIds.Expression, nil)
 	if err != nil {
 		return nil, err
+	}
+	if len(results) == 1 {
+		if list, ok := results[0].([]any); ok {
+			for _, id := range list {
+				instanceIds = append(instanceIds, fmt.Sprintf("%v", id))
+			}
+		}
 	}
 
 	// Validate all instance ids are not empty
 	if lo.Contains(instanceIds, "") {
-		return nil, fmt.Errorf("instance id path contained empty string values [%s]", strings.Join(instanceIds, ","))
+		return nil, fmt.Errorf("instance ids contained empty string values [%s]", strings.Join(instanceIds, ","))
 	}
 
 	return instanceIds, nil
@@ -388,11 +407,11 @@ func (a *Accessor) UpdatePodTemplateSpec(ctx context.Context, definition v1alpha
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
 
-	if definition.SpecDefinition.PodTemplateSpecPath == nil {
+	if definition.SpecDefinition.PodTemplateSpec == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have pod template spec definition", definition.Name))
 	}
 
-	return a.assign(ctx, definition, *definition.SpecDefinition.PodTemplateSpecPath, lo.Map(podTemplateSpecs, func(podTemplateSpec corev1.PodTemplateSpec, _ int) any { return podTemplateSpec }))
+	return a.assignVia(ctx, definition, definition.SpecDefinition.PodTemplateSpec, lo.Map(podTemplateSpecs, func(podTemplateSpec corev1.PodTemplateSpec, _ int) any { return podTemplateSpec }))
 }
 
 func (a *Accessor) UpdatePodSpec(ctx context.Context, definition v1alpha1.ComponentDefinition, podSpecs []corev1.PodSpec) error {
@@ -400,11 +419,11 @@ func (a *Accessor) UpdatePodSpec(ctx context.Context, definition v1alpha1.Compon
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
 
-	if definition.SpecDefinition.PodSpecPath == nil {
+	if definition.SpecDefinition.PodSpec == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have pod spec definition", definition.Name))
 	}
 
-	return a.assign(ctx, definition, *definition.SpecDefinition.PodSpecPath, lo.Map(podSpecs, func(podSpec corev1.PodSpec, _ int) any { return podSpec }))
+	return a.assignVia(ctx, definition, definition.SpecDefinition.PodSpec, lo.Map(podSpecs, func(podSpec corev1.PodSpec, _ int) any { return podSpec }))
 }
 
 func (a *Accessor) UpdatePodMetadata(ctx context.Context, definition v1alpha1.ComponentDefinition, podMetadata []metav1.ObjectMeta) error {
@@ -412,13 +431,13 @@ func (a *Accessor) UpdatePodMetadata(ctx context.Context, definition v1alpha1.Co
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
 
-	if definition.SpecDefinition.MetadataPath == nil {
+	if definition.SpecDefinition.Metadata == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have pod metadata definition", definition.Name))
 	}
-	return a.assign(ctx, definition, *definition.SpecDefinition.MetadataPath, lo.Map(podMetadata, func(podMetadata metav1.ObjectMeta, _ int) any { return podMetadata }))
+	return a.assignVia(ctx, definition, definition.SpecDefinition.Metadata, lo.Map(podMetadata, func(podMetadata metav1.ObjectMeta, _ int) any { return podMetadata }))
 }
 
-func (a *Accessor) UpdateFragmentedPodSpec(ctx context.Context, definition v1alpha1.ComponentDefinition, fragmentedPodSpecs []FragmentedPodSpec) error {
+func (a *Accessor) UpdateFragmentedPodSpec(ctx context.Context, definition v1alpha1.ComponentDefinition, fragmentedPodSpecs []FragmentedPodSpec) (retErr error) {
 	if definition.SpecDefinition == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
@@ -429,52 +448,194 @@ func (a *Accessor) UpdateFragmentedPodSpec(ctx context.Context, definition v1alp
 
 	fragmentedDef := definition.SpecDefinition.FragmentedPodSpecDefinition
 
+	// The fields are written in sequence into the live document, so an error midway would leave
+	// the earlier writes applied - and the two engines fail at different points on the same bad
+	// input. The update restores the pre-write document on any error, making it all-or-nothing.
+	live, err := a.runner.GetObject()
+	if err != nil {
+		return err
+	}
+	encoded, err := json.Marshal(live)
+	if err != nil {
+		return err
+	}
+	var snapshot any
+	if err := json.Unmarshal(encoded, &snapshot); err != nil {
+		return err
+	}
+	defer func() {
+		if retErr != nil {
+			if restoreErr := a.runner.Assign(context.WithoutCancel(ctx), ".", snapshot); restoreErr != nil {
+				retErr = fmt.Errorf("%w (restoring the pre-write document also failed: %v)", retErr, restoreErr)
+			}
+		}
+	}()
+
 	// String fields
-	if err := a.updateStringField(ctx, definition, fragmentedDef.SchedulerNamePath, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.SchedulerName }); err != nil {
+	if err := a.updateStringField(ctx, definition, fragmentedDef.SchedulerName, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.SchedulerName }); err != nil {
 		return fmt.Errorf("failed to update scheduler name: %w", err)
 	}
-	if err := a.updateStringField(ctx, definition, fragmentedDef.PriorityClassNamePath, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.PriorityClassName }); err != nil {
+	if err := a.updateStringField(ctx, definition, fragmentedDef.PriorityClassName, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.PriorityClassName }); err != nil {
 		return fmt.Errorf("failed to update priority class name: %w", err)
 	}
-	if err := a.updateStringField(ctx, definition, fragmentedDef.ImagePath, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.Image }); err != nil {
+	if err := a.updateStringField(ctx, definition, fragmentedDef.Image, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.Image }); err != nil {
 		return fmt.Errorf("failed to update image: %w", err)
 	}
 
 	// Map fields
-	if err := updateMapField(a, ctx, definition, fragmentedDef.LabelsPath, fragmentedPodSpecs, func(s FragmentedPodSpec) map[string]string { return s.Labels }); err != nil {
+	if err := updateMapField(a, ctx, definition, fragmentedDef.Labels, fragmentedPodSpecs, func(s FragmentedPodSpec) map[string]string { return s.Labels }); err != nil {
 		return fmt.Errorf("failed to update labels: %w", err)
 	}
-	if err := updateMapField(a, ctx, definition, fragmentedDef.AnnotationsPath, fragmentedPodSpecs, func(s FragmentedPodSpec) map[string]string { return s.Annotations }); err != nil {
+	if err := updateMapField(a, ctx, definition, fragmentedDef.Annotations, fragmentedPodSpecs, func(s FragmentedPodSpec) map[string]string { return s.Annotations }); err != nil {
 		return fmt.Errorf("failed to update annotations: %w", err)
 	}
 
 	// Pointer fields
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.ResourcesPath, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.ResourceRequirements { return s.Resources }); err != nil {
+	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.Resources, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.ResourceRequirements { return s.Resources }); err != nil {
 		return fmt.Errorf("failed to update resources: %w", err)
 	}
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.PodAffinityPath, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.PodAffinity { return s.PodAffinity }); err != nil {
+	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.PodAffinity, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.PodAffinity { return s.PodAffinity }); err != nil {
 		return fmt.Errorf("failed to update pod affinity: %w", err)
 	}
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.NodeAffinityPath, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.NodeAffinity { return s.NodeAffinity }); err != nil {
+	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.NodeAffinity, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.NodeAffinity { return s.NodeAffinity }); err != nil {
 		return fmt.Errorf("failed to update node affinity: %w", err)
 	}
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.ContainerPath, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.Container { return s.Container }); err != nil {
+	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.Container, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.Container { return s.Container }); err != nil {
 		return fmt.Errorf("failed to update container: %w", err)
 	}
 
 	// Slice fields
-	if err := updateSliceField(a, ctx, definition, fragmentedDef.ResourceClaimsPath, fragmentedPodSpecs, func(s FragmentedPodSpec) []corev1.PodResourceClaim { return s.ResourceClaims }); err != nil {
+	if err := updateSliceField(a, ctx, definition, fragmentedDef.ResourceClaims, fragmentedPodSpecs, func(s FragmentedPodSpec) []corev1.PodResourceClaim { return s.ResourceClaims }); err != nil {
 		return fmt.Errorf("failed to update resource claims: %w", err)
 	}
-	if err := updateSliceField(a, ctx, definition, fragmentedDef.ContainersPath, fragmentedPodSpecs, func(s FragmentedPodSpec) []corev1.Container { return s.Containers }); err != nil {
+	if err := updateSliceField(a, ctx, definition, fragmentedDef.Containers, fragmentedPodSpecs, func(s FragmentedPodSpec) []corev1.Container { return s.Containers }); err != nil {
 		return fmt.Errorf("failed to update containers: %w", err)
 	}
 
 	return nil
 }
 
-func (a *Accessor) updateField(ctx context.Context, def v1alpha1.ComponentDefinition, path *string, values []any, isEmpty func(any) bool) error {
-	if path != nil {
+// extractVia reads one field through the pair's expression. An instanced component's expression
+// returns one value per instance in a list, which is spread into the stream shape the converters
+// expect; a single-instance field keeps its one result, so a list-valued field such as containers
+// survives intact.
+func extractVia[T any](ctx context.Context, via *v1alpha1.ValueAccessor, instanced bool, runner expression.Runner, out *[]T) error {
+	if via == nil || via.Expression == "" {
+		return nil
+	}
+	results, err := runner.EvaluateWithVariables(ctx, via.Expression, nil)
+	if err != nil {
+		return err
+	}
+	if instanced && len(results) == 1 {
+		if list, ok := results[0].([]any); ok {
+			results = list
+		}
+	}
+	converted, err := safeConvertSlice[T](results)
+	if err != nil {
+		return err
+	}
+	*out = converted
+
+	return nil
+}
+
+// instancedComponent reports whether the component holds one pod definition per instance, in
+// which case a pair expression returns a per-instance list.
+func instancedComponent(definition v1alpha1.ComponentDefinition) bool {
+	return definition.InstanceIds != nil && definition.InstanceIds.Expression != ""
+}
+
+// applyPatches writes values through the pair's patch: one evaluation per value with `value` and
+// `instance` bound, each result merged into the workload and applied at the root.
+func (a *Accessor) applyPatches(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any) error {
+	ids, err := a.ExtractInstanceIds(ctx, def)
+	if err != nil {
+		ids = nil
+	}
+	// Every patch is constructed against the pre-write document before any of them is applied -
+	// a stable order, every path resolved before the first write. A Replace deletes before it
+	// sets, and an addressing expression (a variable or the patch itself) must keep naming the
+	// location the delete just emptied; a later instance must not address through an earlier
+	// instance's write either.
+	var frozen map[string]any
+	if resolved, err := a.runner.ResolveVariables(ctx, via.Patch); err == nil {
+		frozen = resolved
+	}
+	var patches []any
+	for i, value := range values {
+		var instance any
+		if i < len(ids) {
+			instance = ids[i]
+		}
+		// Replace = delete first : the same patch with value bound to null removes the field ,
+		// so the second application sets the value clean instead of merging into what was there.
+		binds := []any{value}
+		if via.Replace {
+			binds = []any{nil, value}
+		}
+		for _, bound := range binds {
+			vars := map[string]any{"value": bound, "instance": instance, "index": i}
+			if frozen != nil {
+				vars["variables"] = frozen
+			}
+			results, err := a.runner.EvaluateWithVariables(ctx, via.Patch, vars)
+			if err != nil {
+				return fmt.Errorf("evaluate patch: %w", err)
+			}
+			if len(results) != 1 {
+				return fmt.Errorf("a patch must construct exactly one object, got %d results", len(results))
+			}
+			patches = append(patches, results[0])
+		}
+	}
+	// The patches land all-or-nothing: every path is resolved before the
+	// first assignment: a failure applying a later instance restores the pre-write document.
+	prewrite, err := a.runner.GetObject()
+	if err != nil {
+		return err
+	}
+	encoded, err := json.Marshal(prewrite)
+	if err != nil {
+		return err
+	}
+	var snapshot any
+	if err := json.Unmarshal(encoded, &snapshot); err != nil {
+		return err
+	}
+	for _, patch := range patches {
+		live, err := a.runner.GetObject()
+		if err != nil {
+			return err
+		}
+		merged, err := applyConstructedPatch(live, patch)
+		if err == nil {
+			err = a.runner.Assign(ctx, ".", merged)
+		}
+		if err != nil {
+			if restoreErr := a.runner.Assign(context.WithoutCancel(ctx), ".", snapshot); restoreErr != nil {
+				return fmt.Errorf("apply patch: %w (restoring the pre-write document also failed: %v)", err, restoreErr)
+			}
+
+			return fmt.Errorf("apply patch: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// assignVia writes one field through the pair's patch.
+func (a *Accessor) assignVia(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any) error {
+	if via == nil || via.Patch == "" {
+		return fmt.Errorf("the field has no patch and cannot be written")
+	}
+
+	return a.applyPatches(ctx, def, via, values)
+}
+
+func (a *Accessor) updateField(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any, isEmpty func(any) bool) error {
+	if via != nil && via.Patch != "" {
 		// Skip assignment if all values are empty/nil to avoid writing null
 		// into the JSON.
 		allEmpty := true
@@ -487,81 +648,45 @@ func (a *Accessor) updateField(ctx context.Context, def v1alpha1.ComponentDefini
 		if allEmpty {
 			return nil
 		}
-		return a.assign(ctx, def, *path, values)
+		return a.assignVia(ctx, def, via, values)
 	}
 	for _, v := range values {
 		if !isEmpty(v) {
-			return fmt.Errorf("path is not defined and values are not empty")
+			return fmt.Errorf("the field has no patch and values are not empty")
 		}
 	}
 	return nil
 }
 
-func (a *Accessor) updateStringField(ctx context.Context, def v1alpha1.ComponentDefinition, path *string, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) string) error {
+func (a *Accessor) updateStringField(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) string) error {
 	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, path, values, func(v any) bool { return v.(string) == "" })
+	return a.updateField(ctx, def, via, values, func(v any) bool { return v.(string) == "" })
 }
 
-func updateMapField[K comparable, V any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, path *string, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) map[K]V) error {
+func updateMapField[K comparable, V any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) map[K]V) error {
 	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, path, values, func(v any) bool { return len(v.(map[K]V)) == 0 })
+	return a.updateField(ctx, def, via, values, func(v any) bool { return len(v.(map[K]V)) == 0 })
 }
 
-func updateStructPointerField[T any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, path *string, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) *T) error {
+func updateStructPointerField[T any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) *T) error {
 	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, path, values, func(v any) bool { return v.(*T) == nil })
+	return a.updateField(ctx, def, via, values, func(v any) bool { return v.(*T) == nil })
 }
 
-func updateSliceField[T any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, path *string, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) []T) error {
+func updateSliceField[T any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) []T) error {
 	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, path, values, func(v any) bool { return len(v.([]T)) == 0 })
+	return a.updateField(ctx, def, via, values, func(v any) bool { return len(v.([]T)) == 0 })
 }
 
-func (a *Accessor) assign(ctx context.Context, definition v1alpha1.ComponentDefinition, path string, values []any) error {
-	// If instance id path is defined, use assign zip as the expression is an array expression (each coordinate per instance)
-	if definition.InstanceIdPath != nil {
-		return a.jqRunner.AssignZip(ctx, path, values)
-	} else {
-		return a.jqRunner.Assign(ctx, path, values[0])
-	}
-}
-
-func extract[T any](ctx context.Context, path *string, accessor execution.Runner, out *[]T) error {
-	if path == nil {
-		return nil
-	}
-
-	results, err := accessor.Evaluate(ctx, *path)
-	if err != nil {
-		return err
-	}
-
-	converted, err := safeConvertSlice[T](results)
-	if err != nil {
-		return err
-	}
-
-	*out = converted
-	return nil
-}
-
-// safeGetByIndex Generic function for safely retrieving a slice element.
-// Returns zero value if slice is nil or index is out of range
-func safeGetByIndex[T any](slice []T, index int) T {
+func safeGetByIndex[T any](s []T, i int) T {
 	var zero T
-
-	if slice == nil {
+	if i < 0 || i >= len(s) {
 		return zero
 	}
 
-	if index < 0 || index >= len(slice) {
-		return zero
-	}
-
-	return slice[index]
+	return s[i]
 }
 
-// safeConvertSlice Generic type conversion for slice objects
 func safeConvertSlice[T any](slice []any) ([]T, error) {
 	if slice == nil {
 		return nil, nil
@@ -600,7 +725,7 @@ func convertViaJSON(src any, dst any) error {
 	return nil
 }
 
-func matchStatus(ctx context.Context, jqRunner execution.Runner, phase *string, conditions []Condition, mappings v1alpha1.StatusMappings) ([]v1alpha1.ResourceStatus, error) {
+func matchStatus(ctx context.Context, runner expression.Runner, phase *string, conditions []Condition, mappings v1alpha1.StatusMappings) ([]v1alpha1.ResourceStatus, error) {
 	conditionsMap := make(map[string]Condition, len(conditions))
 	for _, cond := range conditions {
 		conditionsMap[cond.Type] = cond
@@ -608,7 +733,7 @@ func matchStatus(ctx context.Context, jqRunner execution.Runner, phase *string, 
 
 	matchedStatuses := make([]v1alpha1.ResourceStatus, 0)
 	for _, entry := range mappings.Entries() {
-		matched, err := evaluateMatchers(ctx, jqRunner, phase, conditionsMap, entry.Matchers)
+		matched, err := evaluateMatchers(ctx, runner, phase, conditionsMap, entry.Matchers)
 		if err != nil {
 			return nil, err
 		}
@@ -624,9 +749,9 @@ func matchStatus(ctx context.Context, jqRunner execution.Runner, phase *string, 
 	return matchedStatuses, nil
 }
 
-func evaluateMatchers(ctx context.Context, jqRunner execution.Runner, phase *string, conditionsMap map[string]Condition, matchers []v1alpha1.StatusMatcher) (bool, error) {
+func evaluateMatchers(ctx context.Context, runner expression.Runner, phase *string, conditionsMap map[string]Condition, matchers []v1alpha1.StatusMatcher) (bool, error) {
 	for _, matcher := range matchers {
-		matched, err := match(ctx, jqRunner, phase, conditionsMap, matcher)
+		matched, err := match(ctx, runner, phase, conditionsMap, matcher)
 		if err != nil {
 			return false, fmt.Errorf("failed to evaluate matcher: %w", err)
 		}
@@ -637,7 +762,7 @@ func evaluateMatchers(ctx context.Context, jqRunner execution.Runner, phase *str
 	return false, nil
 }
 
-func match(ctx context.Context, jqRunner execution.Runner, phase *string, conditionsMap map[string]Condition, matcher v1alpha1.StatusMatcher) (bool, error) {
+func match(ctx context.Context, runner expression.Runner, phase *string, conditionsMap map[string]Condition, matcher v1alpha1.StatusMatcher) (bool, error) {
 	if matcher.ByPhase != "" {
 		if phase == nil || *phase != matcher.ByPhase {
 			return false, nil
@@ -662,7 +787,7 @@ func match(ctx context.Context, jqRunner execution.Runner, phase *string, condit
 	}
 
 	if matcher.ByExpression != nil {
-		matched, err := matchByExpression(ctx, jqRunner, matcher)
+		matched, err := matchByExpression(ctx, runner, matcher)
 		if err != nil {
 			return false, err
 		}
@@ -673,31 +798,19 @@ func match(ctx context.Context, jqRunner execution.Runner, phase *string, condit
 	return true, nil
 }
 
-func matchByExpression(ctx context.Context, jqRunner execution.Runner, matcher v1alpha1.StatusMatcher) (bool, error) {
-	// Construct a jq expression that compares the result with the expected value
-	comparisonExpr := fmt.Sprintf("(%s) | tostring == \"%s\"", matcher.ByExpression.Expression, matcher.ByExpression.ExpectedResult)
-
-	results, err := jqRunner.Evaluate(ctx, comparisonExpr)
+// matchByExpression evaluates a status matcher through the definition's own runner, so the
+// variables stay bound. The result is compared to ExpectedResult in string form. The empty
+// variable set binds value, instance and index to null; a matcher does not use them.
+func matchByExpression(ctx context.Context, runner expression.Runner, matcher v1alpha1.StatusMatcher) (bool, error) {
+	results, err := runner.EvaluateWithVariables(ctx, matcher.ByExpression.Expression, map[string]any{})
 	if err != nil {
 		return false, fmt.Errorf("failed to evaluate ByExpression: %w", err)
 	}
-
 	if len(results) == 0 {
 		return false, nil
 	}
 
-	result := results[0]
-	if result == nil {
-		return false, nil
-	}
-
-	// The result must be a boolean from the jq comparison expression
-	matched, ok := result.(bool)
-	if !ok {
-		return false, fmt.Errorf("expression comparison did not return a boolean, got %T", result)
-	}
-
-	return matched, nil
+	return fmt.Sprintf("%v", results[0]) == matcher.ByExpression.ExpectedResult, nil
 }
 
 func checkCondition(conditionsMap map[string]Condition, expectedCond v1alpha1.ExpectedCondition) (Condition, bool) {

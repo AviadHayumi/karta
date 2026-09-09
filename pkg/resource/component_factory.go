@@ -12,7 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
-	"github.com/run-ai/karta/pkg/jq/execution"
+	celpkg "github.com/run-ai/karta/pkg/cel"
+	"github.com/run-ai/karta/pkg/expression"
 )
 
 type ComponentReader interface {
@@ -74,11 +75,44 @@ func NewComponentFactory(karta *v1alpha1.Karta, accessor ComponentAccessor) *Com
 	}
 }
 
-// NewComponentFactoryFromObject creates a new Karta-based component factory from a Kubernetes object
+// NewComponentFactoryFromObject creates a new Karta-based component factory from a Kubernetes
+// object. Expressions are CEL, evaluated against the object bound as `object`.
 func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObject) *ComponentFactory {
-	jqRunner := execution.NewDefaultRunner(object)
-	accessor := NewAccessor(jqRunner)
-	return NewComponentFactory(karta, accessor)
+	celRunner, err := celpkg.NewRunnerWithVariables(object, namedExpressions(karta))
+	if err != nil {
+		// Nothing may silently evaluate against the wrong document, so every call reports
+		// the construction error instead.
+		return NewComponentFactory(karta, NewAccessor(errRunner{err}))
+	}
+
+	return NewComponentFactory(karta, NewAccessor(celRunner))
+}
+
+// namedExpressions converts the definition's variables into the engine's shape.
+func namedExpressions(karta *v1alpha1.Karta) []expression.NamedExpression {
+	if karta == nil {
+		return nil
+	}
+	out := make([]expression.NamedExpression, 0, len(karta.Spec.Variables))
+	for _, variable := range karta.Spec.Variables {
+		out = append(out, expression.NamedExpression{Name: variable.Name, Expression: variable.Expression})
+	}
+
+	return out
+}
+
+// errRunner is the runner a definition gets when the engine cannot be built: every operation
+// returns the construction error instead of evaluating against the wrong document.
+type errRunner struct{ err error }
+
+func (r errRunner) Evaluate(context.Context, string) ([]any, error) { return nil, r.err }
+func (r errRunner) Assign(context.Context, string, any) error       { return r.err }
+func (r errRunner) GetObject() (any, error)                         { return nil, r.err }
+func (r errRunner) EvaluateWithVariables(context.Context, string, map[string]any) ([]any, error) {
+	return nil, r.err
+}
+func (r errRunner) ResolveVariables(context.Context, ...string) (map[string]any, error) {
+	return nil, r.err
 }
 
 // GetComponent retrieves a component by name
@@ -177,8 +211,8 @@ func isComponentHasSpecDefinition(componentDefinition v1alpha1.ComponentDefiniti
 		return false
 	}
 
-	return componentDefinition.SpecDefinition.PodTemplateSpecPath != nil ||
-		componentDefinition.SpecDefinition.PodSpecPath != nil ||
+	return componentDefinition.SpecDefinition.PodTemplateSpec != nil ||
+		componentDefinition.SpecDefinition.PodSpec != nil ||
 		componentDefinition.SpecDefinition.FragmentedPodSpecDefinition != nil
 }
 

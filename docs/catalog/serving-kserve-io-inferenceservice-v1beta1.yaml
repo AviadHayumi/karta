@@ -14,11 +14,15 @@ spec:
         kind: InferenceService
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
         statusMappings:
+          initializing:
+            - byExpression:
+                expression: '!([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Ready" && (c.?status.orValue(null) == "True" || c.?status.orValue(null) == "False"))'
+                expectedResult: "true"
           running:
             - byConditions:
                 - type: PredictorReady
@@ -44,20 +48,46 @@ spec:
         ownerRef: inferenceservice
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.predictor.schedulerName
-            labelsPath: .spec.predictor.labels
-            annotationsPath: .spec.predictor.annotations
-            podAffinityPath: .spec.predictor.affinity.podAffinity
-            nodeAffinityPath: .spec.predictor.affinity.nodeAffinity
-            containersPath: .spec.predictor.containers
-            containerPath: .spec.predictor | ( (.[]?  | select(type =="object" and .storageUri )))
-            priorityClassNamePath: .spec.predictor.priorityClassName
+            schedulerName:
+              expression: object[?"spec"][?"predictor"][?"schedulerName"].orValue(null)
+              patch: '{"spec": {"predictor": {"schedulerName": value}}}'
+              replace: true
+            labels:
+              expression: object[?"spec"][?"predictor"][?"labels"].orValue(null)
+              patch: '{"spec": {"predictor": {"labels": value}}}'
+              replace: true
+            annotations:
+              expression: object[?"spec"][?"predictor"][?"annotations"].orValue(null)
+              patch: '{"spec": {"predictor": {"annotations": value}}}'
+              replace: true
+            podAffinity:
+              expression: object[?"spec"][?"predictor"][?"affinity"][?"podAffinity"].orValue(null)
+              patch: '{"spec": {"predictor": {"affinity": {"podAffinity": value}}}}'
+              replace: true
+            nodeAffinity:
+              expression: object[?"spec"][?"predictor"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patch: '{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}'
+              replace: true
+            containers:
+              expression: object[?"spec"][?"predictor"][?"containers"].orValue(null)
+              patch: '{"spec": {"predictor": {"containers": value}}}'
+              replace: true
+            container:
+              expression: 'variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null'
+              patch: 'variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}'
+              replace: true
+            priorityClassName:
+              expression: object[?"spec"][?"predictor"][?"priorityClassName"].orValue(null)
+              patch: '{"spec": {"predictor": {"priorityClassName": value}}}'
+              replace: true
         scaleDefinition:
-          minReplicasPath: .spec.predictor.minReplicas
-          maxReplicasPath: .spec.predictor.maxReplicas
+          minReplicas:
+            expression: object[?"spec"][?"predictor"][?"minReplicas"].orValue(null)
+          maxReplicas:
+            expression: object[?"spec"][?"predictor"][?"maxReplicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["component"]
+            expression: object[?"metadata"][?"labels"][?"component"].orValue(null)
             value: predictor
       - name: transformer
         kind:
@@ -66,14 +96,22 @@ spec:
           kind: Deployment
         ownerRef: inferenceservice
         specDefinition:
-          podSpecPath: .spec.transformer
-          metadataPath: .spec.transformer
+          podSpec:
+            expression: object[?"spec"][?"transformer"].orValue(null)
+            patch: '{"spec": {"transformer": value}}'
+            replace: true
+          metadata:
+            expression: object[?"spec"][?"transformer"].orValue(null)
+            patch: '{"spec": {"transformer": value}}'
+            replace: true
         scaleDefinition:
-          minReplicasPath: .spec.transformer.minReplicas
-          maxReplicasPath: .spec.transformer.maxReplicas
+          minReplicas:
+            expression: object[?"spec"][?"transformer"][?"minReplicas"].orValue(null)
+          maxReplicas:
+            expression: object[?"spec"][?"transformer"][?"maxReplicas"].orValue(null)
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["component"]
+            expression: object[?"metadata"][?"labels"][?"component"].orValue(null)
             value: transformer
   optimizationInstructions:
     gangScheduling:
@@ -81,8 +119,11 @@ spec:
         - name: service
           members:
             - componentName: predictor
-              groupByKeyPaths:
-                - .metadata.labels["serving.kserve.io/inferenceservice"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"serving.kserve.io/inferenceservice"].orValue(null)
             - componentName: transformer
-              groupByKeyPaths:
-                - .metadata.labels["serving.kserve.io/inferenceservice"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"serving.kserve.io/inferenceservice"].orValue(null)
+  variables:
+    - name: containerKey
+      expression: (([dyn(object[?"spec"][?"predictor"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, string(k)).sort().filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k] && object.spec.predictor[k]["storageUri"] != null && object.spec.predictor[k]["storageUri"] != false) + [""])[0]

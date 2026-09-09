@@ -343,8 +343,7 @@ func (c *Component) HasPodDefinition() bool {
 		return false
 	}
 
-	return spec.PodTemplateSpecPath != nil ||
-		spec.PodSpecPath != nil ||
+	return spec.PodTemplateSpec != nil || spec.PodSpec != nil ||
 		spec.FragmentedPodSpecDefinition != nil
 }
 
@@ -355,7 +354,7 @@ func (c *Component) GetPodSelector() *v1alpha1.PodSelector {
 
 // HasInstanceIdDefinition returns true if this component possibily has multiple instances
 func (c *Component) HasInstanceIdDefinition() bool {
-	return c.definition.InstanceIdPath != nil
+	return c.definition.InstanceIds != nil && c.definition.InstanceIds.Expression != ""
 }
 
 // GetInstanceIds extracts instance identifiers for this component

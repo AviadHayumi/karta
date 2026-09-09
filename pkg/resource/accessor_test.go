@@ -18,7 +18,8 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
-	"github.com/run-ai/karta/pkg/jq/execution"
+	"github.com/run-ai/karta/pkg/cel"
+	"github.com/run-ai/karta/pkg/expression"
 	"github.com/run-ai/karta/test/types"
 )
 
@@ -68,7 +69,7 @@ func accessorForObject(
 	object KubernetesObject,
 	componentName string,
 ) (*Accessor, *Component) {
-	accessor := NewAccessor(execution.NewDefaultRunner(object))
+	accessor := NewAccessor(mustCelRunner(object))
 	factory := NewComponentFactoryFromObject(karta, object)
 	comp, err := factory.GetComponent(componentName)
 	Expect(err).NotTo(HaveOccurred())
@@ -110,9 +111,9 @@ var _ = Describe("Accessor", func() {
 		reactorFactory = NewComponentFactoryFromObject(reactorKarta, reactorObject)
 
 		// Initialize evaluators
-		pyflowAccessor = NewAccessor(execution.NewDefaultRunner(pyflowObject))
-		jobgroupAccessor = NewAccessor(execution.NewDefaultRunner(jobgroupObject))
-		reactorAccessor = NewAccessor(execution.NewDefaultRunner(reactorObject))
+		pyflowAccessor = NewAccessor(mustCelRunner(pyflowObject))
+		jobgroupAccessor = NewAccessor(mustCelRunner(jobgroupObject))
+		reactorAccessor = NewAccessor(mustCelRunner(reactorObject))
 	})
 
 	Describe("ExtractPodTemplateSpec", func() {
@@ -146,7 +147,7 @@ var _ = Describe("Accessor", func() {
 		})
 
 		Context("unsupported workloads", func() {
-			It("should return error for workloads without PodTemplateSpecPath", func() {
+			It("should return error for workloads without PodTemplateSpec", func() {
 				jobComp, err := jobgroupFactory.GetComponent(jobComponentName)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -456,12 +457,12 @@ var _ = Describe("Accessor", func() {
 		Context("safeConvertSlice", func() {
 			It("should handle conversion errors gracefully", func() {
 				// Create a mock execution that returns data that can't be converted
-				mockRunner := execution.NewMockRunner(gomock.NewController(GinkgoT()))
+				mockRunner := expression.NewMockRunner(gomock.NewController(GinkgoT()))
 				accessor := NewAccessor(mockRunner)
 
 				// Test with incompatible data types that should fail conversion
 				mockRunner.EXPECT().
-					Evaluate(gomock.Any(), "spec.podTemplate").
+					EvaluateWithVariables(gomock.Any(), `object[?"spec"][?"podTemplate"].orValue(null)`, gomock.Any()).
 					Return([]any{
 						map[string]any{
 							"metadata": "this is a string, not ObjectMeta",
@@ -472,7 +473,7 @@ var _ = Describe("Accessor", func() {
 				definition := v1alpha1.ComponentDefinition{
 					Name: "test-component",
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpecPath: ptr.To("spec.podTemplate"),
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"podTemplate"].orValue(null)`},
 					},
 				}
 
@@ -483,7 +484,7 @@ var _ = Describe("Accessor", func() {
 
 			It("should handle circular reference errors in JSON conversion", func() {
 				// Create a mock execution that returns circular reference data
-				mockRunner := execution.NewMockRunner(gomock.NewController(GinkgoT()))
+				mockRunner := expression.NewMockRunner(gomock.NewController(GinkgoT()))
 				accessor := NewAccessor(mockRunner)
 
 				// Create a circular reference that would break JSON marshaling
@@ -491,14 +492,14 @@ var _ = Describe("Accessor", func() {
 				circularData["self"] = circularData
 
 				mockRunner.EXPECT().
-					Evaluate(gomock.Any(), "spec.resources").
+					EvaluateWithVariables(gomock.Any(), `object[?"spec"][?"resources"].orValue(null)`, gomock.Any()).
 					Return([]any{circularData}, nil)
 
 				definition := v1alpha1.ComponentDefinition{
 					Name: "test-component",
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-							ResourcesPath: ptr.To("spec.resources"),
+							Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"resources"].orValue(null)`},
 						},
 					},
 				}
@@ -546,7 +547,7 @@ var _ = Describe("Accessor", func() {
 
 				var defNotFoundErr DefinitionNotFoundError
 				Expect(errors.As(err, &defNotFoundErr)).To(BeTrue())
-				Expect(string(defNotFoundErr)).To(ContainSubstring("no instance id path defined"))
+				Expect(string(defNotFoundErr)).To(ContainSubstring("no instance ids defined"))
 			})
 		})
 
@@ -557,7 +558,7 @@ var _ = Describe("Accessor", func() {
 
 				factory := NewComponentFactoryFromObject(jobgroupKarta, jobgroupObject)
 
-				accessor := NewAccessor(execution.NewDefaultRunner(jobgroupObject))
+				accessor := NewAccessor(mustCelRunner(jobgroupObject))
 
 				comp, err := factory.GetComponent("job")
 				Expect(err).NotTo(HaveOccurred())
@@ -565,7 +566,7 @@ var _ = Describe("Accessor", func() {
 				result, err := accessor.ExtractInstanceIds(ctx, comp.definition)
 				Expect(err).To(HaveOccurred())
 				Expect(result).To(BeNil())
-				Expect(err.Error()).To(ContainSubstring("instance id path contained empty string values"))
+				Expect(err.Error()).To(ContainSubstring("instance ids contained empty string values"))
 				Expect(err.Error()).To(ContainSubstring("[,processor]"))
 			})
 		})
@@ -1165,7 +1166,7 @@ var _ = Describe("Accessor", func() {
 					Running: []v1alpha1.StatusMatcher{
 						{
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.phase`,
+								Expression:     `object.status.phase`,
 								ExpectedResult: "running",
 							},
 						},
@@ -1188,7 +1189,7 @@ var _ = Describe("Accessor", func() {
 					Failed: []v1alpha1.StatusMatcher{
 						{
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.phase == "failed"`,
+								Expression:     `object.status.phase == "failed"`,
 								ExpectedResult: "true",
 							},
 						},
@@ -1214,7 +1215,7 @@ var _ = Describe("Accessor", func() {
 					Running: []v1alpha1.StatusMatcher{
 						{
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.phase == "running" and (.status.conditions[] | select(.type == "Ready") | .status == "True")`,
+								Expression:     `object.status.phase == "running" && object.status.conditions.exists(c, c.type == "Ready" && c.status == "True")`,
 								ExpectedResult: "true",
 							},
 						},
@@ -1241,7 +1242,7 @@ var _ = Describe("Accessor", func() {
 						{
 							ByPhase: "running",
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.conditions | length > 0`,
+								Expression:     `object[?"status"][?"conditions"].orValue([]).size() > 0`,
 								ExpectedResult: "true",
 							},
 						},
@@ -1266,7 +1267,7 @@ var _ = Describe("Accessor", func() {
 						{
 							ByPhase: "running",
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.conditions | length > 0`,
+								Expression:     `object[?"status"][?"conditions"].orValue([]).size() > 0`,
 								ExpectedResult: "true",
 							},
 						},
@@ -1296,7 +1297,7 @@ var _ = Describe("Accessor", func() {
 								{Type: "Ready", Status: ptr.To("True")},
 							},
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.conditions | length > 0`,
+								Expression:     `object[?"status"][?"conditions"].orValue([]).size() > 0`,
 								ExpectedResult: "true",
 							},
 						},
@@ -1319,7 +1320,7 @@ var _ = Describe("Accessor", func() {
 					Running: []v1alpha1.StatusMatcher{
 						{
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.nonExistentField`,
+								Expression:     `object[?"status"][?"nonExistentField"].orValue(null)`,
 								ExpectedResult: "true",
 							},
 						},
@@ -1342,7 +1343,7 @@ var _ = Describe("Accessor", func() {
 					Running: []v1alpha1.StatusMatcher{
 						{
 							ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     `.status.phase ==`,
+								Expression:     `object.status.phase ==`,
 								ExpectedResult: "true",
 							},
 						},
@@ -1356,6 +1357,39 @@ var _ = Describe("Accessor", func() {
 				Expect(err.Error()).To(ContainSubstring("failed to match status"))
 				Expect(result).To(BeNil())
 			})
+
+			It("compares ExpectedResult as data, not as code", func() {
+				cases := []struct {
+					name     string
+					expr     string
+					expected string
+				}{
+					{"boolean clause", `object.status.phase`, `failed" || 1 == 1 //`},
+					{"always-true clause", `1`, `2" || true //`},
+				}
+				for _, c := range cases {
+					reactorObject := types.NewReactorObject()
+					reactorObject.Status.Phase = "running"
+					reactorKarta := types.ReactorKarta()
+					reactorKarta.Spec.StructureDefinition.RootComponent.StatusDefinition.StatusMappings = v1alpha1.StatusMappings{
+						Failed: []v1alpha1.StatusMatcher{
+							{
+								ByExpression: &v1alpha1.ExpressionMatcher{
+									Expression:     c.expr,
+									ExpectedResult: c.expected,
+								},
+							},
+						},
+					}
+					accessor, reactorComp := accessorForObject(reactorKarta, reactorObject, "reactor")
+
+					result, err := accessor.ExtractStatus(ctx, reactorComp.definition)
+
+					Expect(err).NotTo(HaveOccurred(), c.name)
+					Expect(result).NotTo(BeNil(), c.name)
+					Expect(result.MatchedStatuses).To(ConsistOf(v1alpha1.UndefinedStatus), c.name)
+				}
+			})
 		})
 
 		Context("Completed status", func() {
@@ -1368,7 +1402,7 @@ var _ = Describe("Accessor", func() {
 				customKarta := reactorKarta
 				customKarta.Spec.StructureDefinition.RootComponent.StatusDefinition = &v1alpha1.StatusDefinition{
 					ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-						Path:            ".status.conditions",
+						Expression:      `object[?"status"][?"conditions"].orValue(null)`,
 						TypeFieldName:   "type",
 						StatusFieldName: "status",
 					},
@@ -1409,18 +1443,18 @@ var _ = Describe("Accessor", func() {
 			})
 
 			It("should handle invalid phase path", func() {
-				mockRunner := execution.NewMockRunner(gomock.NewController(GinkgoT()))
+				mockRunner := expression.NewMockRunner(gomock.NewController(GinkgoT()))
 				accessor := NewAccessor(mockRunner)
 
 				mockRunner.EXPECT().
-					Evaluate(gomock.Any(), ".status.invalidPath").
+					EvaluateWithVariables(gomock.Any(), "object.status.invalidPath", gomock.Any()).
 					Return(nil, errors.New("query evaluation failed"))
 
 				definition := v1alpha1.ComponentDefinition{
 					Name: "test-component",
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						PhaseDefinition: &v1alpha1.PhaseDefinition{
-							Path: ".status.invalidPath",
+							Expression: "object.status.invalidPath",
 						},
 						StatusMappings: v1alpha1.StatusMappings{},
 					},
@@ -1436,7 +1470,7 @@ var _ = Describe("Accessor", func() {
 					Name: "test-component",
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:            ".status.\\.badConditions",
+							Expression:      ".status.\\.badConditions",
 							TypeFieldName:   "type",
 							StatusFieldName: "status",
 						},
@@ -1632,9 +1666,9 @@ var _ = Describe("Accessor", func() {
 		// Reproduces the Dynamo bug: services without labels/annotations/resources get null after mutation.
 		// K8s rejects: "spec.services.VllmDecodeWorker.labels: Invalid value: "null": must be of type object"
 		//
-		// The Reactor Karta defines jq paths for labels, annotations, and resources
+		// The Reactor Karta defines accessors for labels, annotations, and resources
 		// (via FragmentedPodSpecDefinition). When the source object doesn't have these
-		// fields, jq evaluates them to null. After extract → update round-trip,
+		// fields, they evaluate to null. After extract -> update round-trip,
 		// these nulls get written back into the object JSON, which K8s rejects.
 		It("should not produce null values for nil fields after extract-update round-trip", func() {
 			// Both services intentionally omit labels, annotations, and resources.
@@ -1693,7 +1727,7 @@ var _ = Describe("Accessor", func() {
 	})
 
 	Describe("UpdatePodTemplateSpec", func() {
-		// PyFlow Karta has PodTemplateSpecPath
+		// PyFlow Karta has PodTemplateSpec
 		It("should update master pod template spec with resource claims", func() {
 			pyflowObject := types.NewPyFlowObject()
 			pyflowKarta := types.PyFlowKarta()
@@ -1753,9 +1787,9 @@ var _ = Describe("Accessor", func() {
 			Expect(updatedPyflowObject.Spec.Worker.Template.Spec.ResourceClaims[0].Name).To(Equal("worker-claim"))
 		})
 
-		It("should return error for workloads without PodTemplateSpecPath", func() {
+		It("should return error for workloads without PodTemplateSpec", func() {
 			jobgroupObject := types.NewJobGroupObject()
-			// JobGroup does not have PodTemplateSpecPath
+			// JobGroup does not have PodTemplateSpec
 			jobgroupKarta := types.JobGroupKarta()
 			accessor, jobComp := accessorForObject(jobgroupKarta, jobgroupObject, "job")
 
@@ -1836,11 +1870,11 @@ var _ = Describe("Accessor", func() {
 			reactorKarta := types.ReactorKarta()
 			reactorKarta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
 				SuspendActions: []v1alpha1.SuspendAction{
-					{Path: ".spec.suspend", Value: "true"},
-					{Path: ".metadata.labels.state", Value: `"suspended"`},
+					{Patch: `{"spec": {"suspend": true}}`},
+					{Patch: `{"metadata": {"labels": {"state": "suspended"}}}`},
 				},
 				ResumeActions: []v1alpha1.SuspendAction{
-					{Path: ".spec.suspend", Value: "false"},
+					{Patch: `{"spec": {"suspend": false}}`},
 				},
 			}
 			accessor, reactorComp := accessorForObject(reactorKarta, reactorObject, "reactor")
@@ -1873,11 +1907,11 @@ var _ = Describe("Accessor", func() {
 			reactorKarta := types.ReactorKarta()
 			reactorKarta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
 				SuspendActions: []v1alpha1.SuspendAction{
-					{Path: ".spec.suspend", Value: "true"},
+					{Patch: `{"spec": {"suspend": true}}`},
 				},
 				ResumeActions: []v1alpha1.SuspendAction{
-					{Path: ".spec.suspend", Value: "false"},
-					{Path: ".metadata.labels.state", Value: `"running"`},
+					{Patch: `{"spec": {"suspend": false}}`},
+					{Patch: `{"metadata": {"labels": {"state": "running"}}}`},
 				},
 			}
 			accessor, reactorComp := accessorForObject(reactorKarta, reactorObject, "reactor")
@@ -1902,5 +1936,191 @@ var _ = Describe("Accessor", func() {
 			var defErr DefinitionNotFoundError
 			Expect(errors.As(err, &defErr)).To(BeTrue())
 		})
+	})
+})
+
+var _ = Describe("Patch writes addressed by a variable", func() {
+	// The kserve shape: the container lives under a key only a variable can name, and the
+	// write replaces it. The delete pass empties the location the variable points at, so the
+	// set pass must keep the addressing resolved against the pre-write document.
+	newKarta := func() *v1alpha1.Karta {
+		return &v1alpha1.Karta{
+			Spec: v1alpha1.KartaSpec{
+				Variables: []v1alpha1.Variable{{
+					Name:       "containerKey",
+					Expression: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]) + [""])[0]`,
+				}},
+				StructureDefinition: v1alpha1.StructureDefinition{
+					RootComponent: v1alpha1.ComponentDefinition{
+						Name: "root",
+						SpecDefinition: &v1alpha1.SpecDefinition{
+							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
+								Container: &v1alpha1.ValueAccessor{
+									Expression: `variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null`,
+									Patch:      `variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}`,
+									Replace:    true,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	It("should land a replace write on the key the variable named before the delete pass", func() {
+		karta := newKarta()
+		object := map[string]any{
+			"spec": map[string]any{"predictor": map[string]any{
+				"minReplicas": 1,
+				"sklearn":     map[string]any{"storageUri": "s3://old", "image": "old:1"},
+			}},
+		}
+		runner, err := cel.NewRunnerWithVariables(object,
+			[]cel.NamedExpression{{Name: karta.Spec.Variables[0].Name, Expression: karta.Spec.Variables[0].Expression}})
+		Expect(err).NotTo(HaveOccurred())
+		accessor := NewAccessor(runner)
+		component, err := NewComponentFactory(karta, accessor).GetComponent("root")
+		Expect(err).NotTo(HaveOccurred())
+
+		fragments, err := component.GetFragmentedPodSpec(context.Background())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(fragments).To(HaveLen(1))
+		fragment := fragments[""]
+		Expect(fragment.Container.Image).To(Equal("old:1"))
+
+		fragment.Container.Image = "new:latest"
+		fragments[""] = fragment
+		Expect(component.UpdateFragmentedPodSpec(context.Background(), fragments)).To(Succeed())
+
+		updated, err := accessor.GetObject()
+		Expect(err).NotTo(HaveOccurred())
+		predictor := updated["spec"].(map[string]any)["predictor"].(map[string]any)
+		Expect(predictor).To(HaveKey("sklearn"))
+		Expect(predictor["sklearn"].(map[string]any)["image"]).To(Equal("new:latest"))
+		Expect(predictor["minReplicas"]).To(BeEquivalentTo(1))
+	})
+})
+
+var _ = Describe("Patch writes addressed by an inline object expression", func() {
+	// The same kserve shape, with the key computed inside the patch instead of a variable.
+	// The patch expression must be constructed against the pre-write document: the delete pass
+	// of a replace empties the location the expression scans for.
+	It("should land a replace write on the key the patch names before the delete pass", func() {
+		karta := &v1alpha1.Karta{
+			Spec: v1alpha1.KartaSpec{
+				StructureDefinition: v1alpha1.StructureDefinition{
+					RootComponent: v1alpha1.ComponentDefinition{
+						Name: "root",
+						SpecDefinition: &v1alpha1.SpecDefinition{
+							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
+								Container: &v1alpha1.ValueAccessor{
+									Expression: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]).map(k, object.spec.predictor[k]) + [null])[0]`,
+									Patch: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]) + [""])[0] != "" ?
+										{"spec": {"predictor": {(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]))[0]: value}}} : {}`,
+									Replace: true,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		object := map[string]any{
+			"spec": map[string]any{"predictor": map[string]any{
+				"minReplicas": 1,
+				"sklearn":     map[string]any{"storageUri": "s3://old", "image": "old:1"},
+			}},
+		}
+		runner, err := cel.NewRunner(object)
+		Expect(err).NotTo(HaveOccurred())
+		accessor := NewAccessor(runner)
+		component, err := NewComponentFactory(karta, accessor).GetComponent("root")
+		Expect(err).NotTo(HaveOccurred())
+
+		fragments, err := component.GetFragmentedPodSpec(context.Background())
+		Expect(err).NotTo(HaveOccurred())
+		fragment := fragments[""]
+		Expect(fragment.Container.Image).To(Equal("old:1"))
+
+		fragment.Container.Image = "new:latest"
+		fragments[""] = fragment
+		Expect(component.UpdateFragmentedPodSpec(context.Background(), fragments)).To(Succeed())
+
+		updated, err := accessor.GetObject()
+		Expect(err).NotTo(HaveOccurred())
+		predictor := updated["spec"].(map[string]any)["predictor"].(map[string]any)
+		Expect(predictor).To(HaveKey("sklearn"))
+		Expect(predictor["sklearn"].(map[string]any)["image"]).To(Equal("new:latest"))
+	})
+})
+
+var _ = Describe("UpdateFragmentedPodSpec atomicity", func() {
+	It("should restore the pre-write document when a later field write fails", func() {
+		karta := &v1alpha1.Karta{Spec: v1alpha1.KartaSpec{
+			StructureDefinition: v1alpha1.StructureDefinition{
+				RootComponent: v1alpha1.ComponentDefinition{
+					Name: "root",
+					SpecDefinition: &v1alpha1.SpecDefinition{
+						FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
+							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"schedulerName": value}}`},
+						},
+					},
+				},
+			},
+		}}
+		object := map[string]any{"spec": map[string]any{"schedulerName": "before"}}
+		accessor := NewAccessor(mustCelRunner(object))
+		component, err := NewComponentFactory(karta, accessor).GetComponent("root")
+		Expect(err).NotTo(HaveOccurred())
+
+		// the scheduler write lands first and succeeds; the image has no definition, so its
+		// non-empty value aborts the update midway
+		fragments := map[string]FragmentedPodSpec{"": {SchedulerName: "after", Image: "boom"}}
+		err = component.UpdateFragmentedPodSpec(context.Background(), fragments)
+		Expect(err).To(HaveOccurred())
+
+		updated, err := accessor.GetObject()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(updated["spec"].(map[string]any)["schedulerName"]).To(Equal("before"))
+	})
+})
+
+var _ = Describe("multi-instance patch writes", func() {
+	It("should roll back every instance when a later instance's patch fails to apply", func() {
+		karta := &v1alpha1.Karta{Spec: v1alpha1.KartaSpec{
+			StructureDefinition: v1alpha1.StructureDefinition{
+				RootComponent: v1alpha1.ComponentDefinition{
+					Name:        "root",
+					InstanceIds: &v1alpha1.ValueAccessor{Expression: `["a", "b"]`},
+					SpecDefinition: &v1alpha1.SpecDefinition{
+						PodSpec: &v1alpha1.ValueAccessor{
+							Expression: `[{"containers": []}, {"containers": []}]`,
+							Patch:      `[{"op": "add", "path": "/spec/items/" + string(index) + "/x", "value": "written"}]`,
+						},
+					},
+				},
+			},
+		}}
+		object := map[string]any{"spec": map[string]any{"items": []any{map[string]any{}}}}
+		runner, err := cel.NewRunner(object)
+		Expect(err).NotTo(HaveOccurred())
+		accessor := NewAccessor(runner)
+		component, err := NewComponentFactory(karta, accessor).GetComponent("root")
+		Expect(err).NotTo(HaveOccurred())
+
+		specs, err := component.GetPodSpec(context.Background())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(specs).To(HaveLen(2))
+
+		// instance 0 addresses items/0 and applies; instance 1 addresses items/1, which does
+		// not exist, so the whole write must roll back
+		err = component.UpdatePodSpec(context.Background(), specs)
+		Expect(err).To(HaveOccurred())
+
+		updated, err := accessor.GetObject()
+		Expect(err).NotTo(HaveOccurred())
+		item := updated["spec"].(map[string]any)["items"].([]any)[0].(map[string]any)
+		Expect(item).NotTo(HaveKey("x"))
 	})
 })

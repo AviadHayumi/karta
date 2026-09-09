@@ -21,17 +21,17 @@ func Pod() *v1alpha1.Karta {
 					Name: "pod",
 					Kind: &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{
-						ReplicasPath: ptr.To("1"),
+						Replicas: &v1alpha1.ValueAccessor{Expression: `1`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpecPath: ptr.To("."),
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object`, Patch: `value`, Replace: true},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						PhaseDefinition: &v1alpha1.PhaseDefinition{
-							Path: ".status.phase",
+							Expression: `object[?"status"][?"phase"].orValue(null)`,
 						},
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							MessageFieldName: ptr.To("message"),

@@ -22,12 +22,12 @@ func Jobset() *v1alpha1.Karta {
 					Name: "jobset",
 					Kind: &v1alpha1.GroupVersionKind{Group: "jobset.x-k8s.io", Version: "v1alpha2", Kind: "JobSet"},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "true"}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "false"}},
+						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
+						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							MessageFieldName: ptr.To("message"),
@@ -35,15 +35,18 @@ func Jobset() *v1alpha1.Karta {
 						},
 						StatusMappings: v1alpha1.StatusMappings{
 							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								// Some replicatedJobs are active but none are ready yet.
-								// Guard against a null replicatedJobsStatus before the JobSet
-								// controller initializes status.
-								Expression:     "(.status.replicatedJobsStatus // []) | any(.active > 0 and (.ready // 0) == 0) and all(.failed == 0)",
+								// In progress with no working pods: status exists, no replicatedJob has
+								// active or ready pods, and no terminal or suspended condition is set.
+								// Covers a just-created JobSet (all counts zero) and the window after a
+								// job succeeds but before the JobSet-level Completed condition is set.
+								Expression:     `size(([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0]) > 0 && ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].all(r, r.?active.orValue(0) == 0 && r.?ready.orValue(0) == 0) && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, (c.?type.orValue(null) == "Completed" || c.?type.orValue(null) == "Failed" || c.?type.orValue(null) == "Suspended") && c.?status.orValue(null) == "True")`,
 								ExpectedResult: "true",
 							}}},
 							Running: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								// Total ready across all replicatedJobs equals total expected replicas.
-								Expression:     "(.status.replicatedJobsStatus // []) | any(.ready > 0 and .active > 0) and all(.failed == 0)",
+								// Working: at least one replicatedJob has active or ready pods and none
+								// have failed. Reading either count (not both) keeps the state stable
+								// while the controller briefly flaps ready to 0 mid-run.
+								Expression:     `([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(r, r.?active.orValue(0) > 0 || r.?ready.orValue(0) > 0) && ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].all(r, r.?failed.orValue(0) == 0)`,
 								ExpectedResult: "true",
 							}}},
 							Completed: []v1alpha1.StatusMatcher{{ByConditions: []v1alpha1.ExpectedCondition{{Type: "Completed", Status: ptr.To("True")}}}},
@@ -59,16 +62,16 @@ func Jobset() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "batch", Version: "v1", Kind: "Job"},
 						OwnerRef: ptr.To("jobset"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.replicatedJobs[].template.spec.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]`},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							// Total pods per replicatedJob = replicas (Job instances) * parallelism (pods per Job).
-							ReplicasPath: ptr.To(".spec.replicatedJobs[] | .replicas * .template.spec.parallelism"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(j, j.replicas * j.template.spec.parallelism)`},
 						},
-						InstanceIdPath: ptr.To(".spec.replicatedJobs[].name"),
+						InstanceIds: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))`},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentInstanceSelector: &v1alpha1.ComponentInstanceSelector{
-								IdPath: `.metadata.labels["jobset.sigs.k8s.io/replicatedjob-name"]`,
+								Expression: `object[?"metadata"][?"labels"][?"jobset.sigs.k8s.io/replicatedjob-name"].orValue(null)`,
 							},
 						},
 					},
@@ -79,8 +82,8 @@ func Jobset() *v1alpha1.Karta {
 					PodGroups: []v1alpha1.PodGroupDefinition{{
 						Name: "job",
 						Members: []v1alpha1.PodGroupMemberDefinition{{
-							ComponentName:   "replicatedjob",
-							GroupByKeyPaths: []string{`.metadata.labels["jobset.sigs.k8s.io/replicatedjob-name"]`},
+							ComponentName:      "replicatedjob",
+							GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"jobset.sigs.k8s.io/replicatedjob-name"].orValue(null)`},
 						}},
 					}},
 				},

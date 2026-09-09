@@ -17,17 +17,21 @@ func Pytorch() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "kubeflow-org-pytorchjob-v1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "specPytorchReplicaSpecsMasterReplicas", Expression: `([dyn(object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`},
+				{Name: "specPytorchReplicaSpecsWorkerReplicas", Expression: `([dyn(object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "pytorchjob",
 					Kind: &v1alpha1.GroupVersionKind{Group: "kubeflow.org", Version: "v1", Kind: "PyTorchJob"},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Path: ".spec.runPolicy.suspend", Value: "true"}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Path: ".spec.runPolicy.suspend", Value: "false"}},
+						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"runPolicy": {"suspend": true}}}`}},
+						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"runPolicy": {"suspend": false}}}`}},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:             ".status.conditions",
+							Expression:       `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:    "type",
 							StatusFieldName:  "status",
 							MessageFieldName: ptr.To("message"),
@@ -47,15 +51,15 @@ func Pytorch() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("pytorchjob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.pytorchReplicaSpecs.Master.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"template"].orValue(null)`, Patch: `{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}`, Replace: true},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.pytorchReplicaSpecs.Master.replicas // 1"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specPytorchReplicaSpecsMasterReplicas`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["training.kubeflow.org/replica-type"]`,
-								Value:   ptr.To("master"),
+								Expression: `object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)`,
+								Value:      ptr.To("master"),
 							},
 						},
 					},
@@ -64,17 +68,17 @@ func Pytorch() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("pytorchjob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.pytorchReplicaSpecs.Worker.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)`, Patch: `{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}`, Replace: true},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath:    ptr.To(".spec.pytorchReplicaSpecs.Worker.replicas // 1"),
-							MinReplicasPath: ptr.To(".spec.elasticPolicy.minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.elasticPolicy.maxReplicas"),
+							Replicas:    &v1alpha1.ValueAccessor{Expression: `variables.specPytorchReplicaSpecsWorkerReplicas`},
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"elasticPolicy"][?"minReplicas"].orValue(null)`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"elasticPolicy"][?"maxReplicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["training.kubeflow.org/replica-type"]`,
-								Value:   ptr.To("worker"),
+								Expression: `object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)`,
+								Value:      ptr.To("worker"),
 							},
 						},
 					},
@@ -86,12 +90,12 @@ func Pytorch() *v1alpha1.Karta {
 						Name: "job",
 						Members: []v1alpha1.PodGroupMemberDefinition{
 							{
-								ComponentName:   "master",
-								GroupByKeyPaths: []string{`.metadata.labels["training.kubeflow.org/job-name"]`},
+								ComponentName:      "master",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)`},
 							},
 							{
-								ComponentName:   "worker",
-								GroupByKeyPaths: []string{`.metadata.labels["training.kubeflow.org/job-name"]`},
+								ComponentName:      "worker",
+								GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)`},
 							},
 						},
 					}},

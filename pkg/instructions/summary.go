@@ -198,7 +198,7 @@ func hasPodDefinition(component v1alpha1.ComponentDefinition) bool {
 		return false
 	}
 
-	return component.SpecDefinition.PodTemplateSpecPath != nil ||
-		component.SpecDefinition.PodSpecPath != nil ||
+	return component.SpecDefinition.PodTemplateSpec != nil ||
+		component.SpecDefinition.PodSpec != nil ||
 		component.SpecDefinition.FragmentedPodSpecDefinition != nil
 }

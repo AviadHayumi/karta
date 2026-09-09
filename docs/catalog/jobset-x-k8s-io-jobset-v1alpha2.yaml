@@ -14,7 +14,7 @@ spec:
         kind: JobSet
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
@@ -22,11 +22,11 @@ spec:
         statusMappings:
           initializing:
             - byExpression:
-                expression: (.status.replicatedJobsStatus // []) | any(.active > 0 and (.ready // 0) == 0) and all(.failed == 0)
+                expression: size(([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0]) > 0 && ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].all(r, r.?active.orValue(0) == 0 && r.?ready.orValue(0) == 0) && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, (c.?type.orValue(null) == "Completed" || c.?type.orValue(null) == "Failed" || c.?type.orValue(null) == "Suspended") && c.?status.orValue(null) == "True")
                 expectedResult: "true"
           running:
             - byExpression:
-                expression: (.status.replicatedJobsStatus // []) | any(.ready > 0 and .active > 0) and all(.failed == 0)
+                expression: ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(r, r.?active.orValue(0) > 0 || r.?ready.orValue(0) > 0) && ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].all(r, r.?failed.orValue(0) == 0)
                 expectedResult: "true"
           completed:
             - byConditions:
@@ -42,11 +42,9 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - path: .spec.suspend
-            value: "true"
+          - patch: '{"spec": {"suspend": true}}'
         resumeActions:
-          - path: .spec.suspend
-            value: "false"
+          - patch: '{"spec": {"suspend": false}}'
     childComponents:
       - name: replicatedjob
         kind:
@@ -55,18 +53,22 @@ spec:
           kind: Job
         ownerRef: jobset
         specDefinition:
-          podTemplateSpecPath: .spec.replicatedJobs[].template.spec.template
+          podTemplateSpec:
+            expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))
+            patch: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
         scaleDefinition:
-          replicasPath: .spec.replicatedJobs[] | .replicas * .template.spec.parallelism
-        instanceIdPath: .spec.replicatedJobs[].name
+          replicas:
+            expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(j, j.replicas * j.template.spec.parallelism)
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))
         podSelector:
           componentInstanceSelector:
-            idPath: .metadata.labels["jobset.sigs.k8s.io/replicatedjob-name"]
+            expression: object[?"metadata"][?"labels"][?"jobset.sigs.k8s.io/replicatedjob-name"].orValue(null)
   optimizationInstructions:
     gangScheduling:
       podGroups:
         - name: job
           members:
             - componentName: replicatedjob
-              groupByKeyPaths:
-                - .metadata.labels["jobset.sigs.k8s.io/replicatedjob-name"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"jobset.sigs.k8s.io/replicatedjob-name"].orValue(null)

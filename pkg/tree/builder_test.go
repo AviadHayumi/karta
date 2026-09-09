@@ -76,7 +76,7 @@ var _ = Describe("Build", func() {
 	Describe("multi-instance component", func() {
 		It("creates one InstanceNode per spec-defined instance", func() {
 			// Reactor (Dynamo-like) enumerates its services from the spec via
-			// InstanceIdPath: api, worker, cache.
+			// InstanceIds: api, worker, cache.
 			karta := types.ReactorKarta()
 			factory := resource.NewComponentFactoryFromObject(karta, types.NewReactorObject())
 			tree, err := Build(ctx, factory)
@@ -251,10 +251,16 @@ func bareJobKarta() *v1alpha1.Karta {
 						StatusMappings: v1alpha1.StatusMappings{},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpecPath: ptr.To(".spec.template"),
+						PodTemplateSpec: &v1alpha1.ValueAccessor{
+							Expression: `object[?"spec"][?"template"].orValue(null)`,
+							Patch:      `{"spec": {"template": value}}`,
+						},
 					},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{
-						ReplicasPath: ptr.To(".spec.parallelism // 1"),
+						Replicas: &v1alpha1.ValueAccessor{
+							Expression: `([dyn(object[?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`,
+							Patch:      `{"spec": {"parallelism": value}}`,
+						},
 					},
 				},
 			},
@@ -286,7 +292,7 @@ func replicaGroupKarta() *v1alpha1.Karta {
 						OwnerRef: ptr.To("lws"),
 						PodSelector: &v1alpha1.PodSelector{
 							ReplicaSelector: &v1alpha1.ReplicaSelector{
-								KeyPath: ".metadata.labels.group",
+								Expression: `object[?"metadata"][?"labels"][?"group"].orValue(null)`,
 							},
 						},
 					},

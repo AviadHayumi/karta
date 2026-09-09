@@ -13,30 +13,32 @@ spec:
         version: v1
         kind: CronJob
       specDefinition:
-        podTemplateSpecPath: .spec.jobTemplate.spec.template
+        podTemplateSpec:
+          expression: object[?"spec"][?"jobTemplate"][?"spec"][?"template"].orValue(null)
+          patch: '{"spec": {"jobTemplate": {"spec": {"template": value}}}}'
+          replace: true
       scaleDefinition:
-        replicasPath: .spec.jobTemplate.spec.parallelism // 1
+        replicas:
+          expression: variables.specJobTemplateSpecParallelism
       statusDefinition:
         statusMappings:
           initializing:
             - byExpression:
-                expression: (.spec.suspend // false) != true and (.status.lastScheduleTime == null)
+                expression: object.?spec.?suspend.orValue(false) != true && object.?status.?lastScheduleTime.orValue(null) == null
                 expectedResult: "true"
           running:
             - byExpression:
-                expression: (.spec.suspend // false) != true and (.status.lastScheduleTime != null)
+                expression: object.?spec.?suspend.orValue(false) != true && object.?status.?lastScheduleTime.orValue(null) != null
                 expectedResult: "true"
           suspended:
             - byExpression:
-                expression: (.spec.suspend // false) == true
+                expression: object.?spec.?suspend.orValue(false) == true
                 expectedResult: "true"
       suspendDefinition:
         suspendActions:
-          - path: .spec.suspend
-            value: "true"
+          - patch: '{"spec": {"suspend": true}}'
         resumeActions:
-          - path: .spec.suspend
-            value: "false"
+          - patch: '{"spec": {"suspend": false}}'
     childComponents:
       - name: job
         kind:
@@ -45,3 +47,6 @@ spec:
           kind: Job
         ownerRef: cronjob
   optimizationInstructions: {}
+  variables:
+    - name: specJobTemplateSpecParallelism
+      expression: ([dyn(object[?"spec"][?"jobTemplate"][?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

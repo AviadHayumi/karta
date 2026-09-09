@@ -62,7 +62,7 @@ func MilvusKarta() *v1alpha1.Karta {
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:            ".status.conditions",
+							Expression:      `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:   "type",
 							StatusFieldName: "status",
 						},
@@ -90,15 +90,19 @@ func MilvusKarta() *v1alpha1.Karta {
 							Kind:    "StatefulSet",
 						},
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.components.queryNode.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{
+								Expression: `object[?"spec"][?"components"][?"queryNode"][?"template"].orValue(null)`,
+								Patch:      `{"spec": {"components": {"queryNode": {"template": value}}}}`,
+								Replace:    true,
+							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.queryNode.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("querynode"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("querynode"),
 							},
 						},
 					},
@@ -111,15 +115,19 @@ func MilvusKarta() *v1alpha1.Karta {
 							Kind:    "StatefulSet",
 						},
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.components.dataNode.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{
+								Expression: `object[?"spec"][?"components"][?"dataNode"][?"template"].orValue(null)`,
+								Patch:      `{"spec": {"components": {"dataNode": {"template": value}}}}`,
+								Replace:    true,
+							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.components.dataNode.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("datanode"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("datanode"),
 							},
 						},
 					},
@@ -133,12 +141,16 @@ func MilvusKarta() *v1alpha1.Karta {
 							Kind:    "StatefulSet",
 						},
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.components.proxy.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{
+								Expression: `object[?"spec"][?"components"][?"proxy"][?"template"].orValue(null)`,
+								Patch:      `{"spec": {"components": {"proxy": {"template": value}}}}`,
+								Replace:    true,
+							},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: `.metadata.labels["app.kubernetes.io/component"]`,
-								Value:   ptr.To("proxy"),
+								Expression: `object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)`,
+								Value:      ptr.To("proxy"),
 							},
 						},
 					},

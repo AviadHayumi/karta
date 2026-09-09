@@ -45,34 +45,14 @@ func getEffectiveComponentForPod(ctx context.Context, podQuerier *resource.PodQu
 		return nil, nil
 	}
 
-	// Try each candidate (already sorted by priority), return first match
-	for _, candidate := range candidates {
-		// If no filters, always matches
-		if len(candidate.member.Filters) == 0 {
-			return &PodGroupingEffectiveComponent{
-				EffectiveComponent: candidate.effectiveComponent,
-				PodGroupName:       candidate.podGroupName,
-				MemberDefinition:   candidate.member,
-			}, nil
-		}
+	// Candidates are already sorted by priority; the first one wins.
+	candidate := candidates[0]
 
-		// Check if pod passed all filters (ANDed)
-		passed, err := podQuerier.PassesFilters(ctx, candidate.member.Filters)
-		if err != nil {
-			return nil, fmt.Errorf("failed to evaluate filters for component %s in group %s: %w", candidate.effectiveComponent, candidate.podGroupName, err)
-		}
-
-		if passed {
-			return &PodGroupingEffectiveComponent{
-				EffectiveComponent: candidate.effectiveComponent,
-				PodGroupName:       candidate.podGroupName,
-				MemberDefinition:   candidate.member,
-			}, nil
-		}
-	}
-
-	// No matches found
-	return nil, nil
+	return &PodGroupingEffectiveComponent{
+		EffectiveComponent: candidate.effectiveComponent,
+		PodGroupName:       candidate.podGroupName,
+		MemberDefinition:   candidate.member,
+	}, nil
 }
 
 type SubtreeRoot struct {

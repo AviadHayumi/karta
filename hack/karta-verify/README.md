@@ -19,7 +19,7 @@ with the validator's message otherwise.
 
 ## Prove it against a real CR
 
-Validation says nothing about whether a jq path resolves against a real object,
+Validation says nothing about whether an expression resolves against a real object,
 so a definition can pass it and still extract nothing. Adding `--workload` runs
 the definition against a real custom resource and reports what came out.
 
@@ -81,7 +81,7 @@ validator cannot see:
 - A component declares a `specDefinition` but extracted no pod spec, so the spec
   path missed.
 - A component extracted a pod spec with no containers.
-- A component produced no instances, so `instanceIdPath` matched nothing.
+- A component produced no instances, so `instanceIds` matched nothing.
 
 ## Example
 

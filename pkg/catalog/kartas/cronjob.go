@@ -16,32 +16,35 @@ func CronJob() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "batch-cronjob-v1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "specJobTemplateSpecParallelism", Expression: `([dyn(object[?"spec"][?"jobTemplate"][?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "cronjob",
 					Kind: &v1alpha1.GroupVersionKind{Group: "batch", Version: "v1", Kind: "CronJob"},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{
-						ReplicasPath: ptr.To(".spec.jobTemplate.spec.parallelism // 1"),
+						Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specJobTemplateSpecParallelism`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpecPath: ptr.To(".spec.jobTemplate.spec.template"),
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"jobTemplate"][?"spec"][?"template"].orValue(null)`, Patch: `{"spec": {"jobTemplate": {"spec": {"template": value}}}}`, Replace: true},
 					},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "true"}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "false"}},
+						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
+						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						StatusMappings: v1alpha1.StatusMappings{
 							Initializing: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     "(.spec.suspend // false) != true and (.status.lastScheduleTime == null)",
+								Expression:     `object.?spec.?suspend.orValue(false) != true && object.?status.?lastScheduleTime.orValue(null) == null`,
 								ExpectedResult: "true",
 							}}},
 							Running: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     "(.spec.suspend // false) != true and (.status.lastScheduleTime != null)",
+								Expression:     `object.?spec.?suspend.orValue(false) != true && object.?status.?lastScheduleTime.orValue(null) != null`,
 								ExpectedResult: "true",
 							}}},
 							Suspended: []v1alpha1.StatusMatcher{{ByExpression: &v1alpha1.ExpressionMatcher{
-								Expression:     "(.spec.suspend // false) == true",
+								Expression:     `object.?spec.?suspend.orValue(false) == true`,
 								ExpectedResult: "true",
 							}}},
 						},

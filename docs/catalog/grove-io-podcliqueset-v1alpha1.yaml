@@ -14,7 +14,7 @@ spec:
         kind: PodCliqueSet
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
@@ -22,11 +22,11 @@ spec:
         statusMappings:
           initializing:
             - byExpression:
-                expression: (.spec.replicas // 0) > 0 and (.status.availableReplicas // 0) < (.spec.replicas // 0)
+                expression: variables.specReplicas > 0 && variables.statusAvailableReplicas < variables.specReplicas
                 expectedResult: "true"
           running:
             - byExpression:
-                expression: (.status.availableReplicas // 0) >= (.spec.replicas // 0)
+                expression: variables.statusAvailableReplicas >= variables.specReplicas
                 expectedResult: "true"
           failed:
             - byConditions:
@@ -41,24 +41,44 @@ spec:
         ownerRef: podcliqueset
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.template.cliques[].spec.podSpec.schedulerName
-            labelsPath: .spec.template.cliques[].labels
-            annotationsPath: .spec.template.cliques[].annotations
-            resourceClaimsPath: .spec.template.cliques[].spec.podSpec.resourceClaims
-            podAffinityPath: .spec.template.cliques[].spec.podSpec.affinity.podAffinity
-            nodeAffinityPath: .spec.template.cliques[].spec.podSpec.affinity.nodeAffinity
-            containersPath: .spec.template.cliques[].spec.podSpec.containers
-            priorityClassNamePath: .spec.template.cliques[].spec.podSpec.priorityClassName
+            schedulerName:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"schedulerName"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/schedulerName", "value": value}]'
+            labels:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"labels"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/labels", "value": value}]'
+            annotations:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"annotations"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/annotations", "value": value}]'
+            resourceClaims:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"resourceClaims"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/resourceClaims", "value": value}]'
+            podAffinity:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"affinity"][?"podAffinity"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/podAffinity", "value": value}]'
+            nodeAffinity:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"affinity"][?"nodeAffinity"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/nodeAffinity", "value": value}]'
+            containers:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"containers"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/containers", "value": value}]'
+            priorityClassName:
+              expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"priorityClassName"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/priorityClassName", "value": value}]'
         scaleDefinition:
-          replicasPath: (.spec.replicas // 1) * (.spec.template.cliques[].spec.replicas // 1)
-          minReplicasPath: .spec.template.cliques[].spec.autoScalingConfig.minReplicas
-          maxReplicasPath: .spec.template.cliques[].spec.autoScalingConfig.maxReplicas
-        instanceIdPath: .spec.template.cliques[].name
+          replicas:
+            expression: '(variables.cliqueReplicas.size() > 0 ? variables.cliqueReplicas : [dyn(1.0)]).map(v, variables.specReplicasFloat * v)'
+          minReplicas:
+            expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"autoScalingConfig"][?"minReplicas"].orValue(null))
+          maxReplicas:
+            expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"autoScalingConfig"][?"maxReplicas"].orValue(null))
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))
         podSelector:
           componentInstanceSelector:
-            idPath: .metadata.labels["grove.io/podclique"]
+            expression: object[?"metadata"][?"labels"][?"grove.io/podclique"].orValue(null)
           replicaSelector:
-            keyPath: .metadata.labels["grove.io/podcliqueset-replica-index"]
+            expression: object[?"metadata"][?"labels"][?"grove.io/podcliqueset-replica-index"].orValue(null)
       - name: scalinggroup
         kind:
           group: grove.io
@@ -66,15 +86,19 @@ spec:
           kind: PodCliqueScalingGroup
         ownerRef: podcliqueset
         scaleDefinition:
-          replicasPath: (.spec.replicas // 1) * (.spec.template.podCliqueScalingGroups[].replicas // 1)
-          minReplicasPath: .spec.template.podCliqueScalingGroups[].scaleConfig.minReplicas
-          maxReplicasPath: .spec.template.podCliqueScalingGroups[].scaleConfig.maxReplicas
-        instanceIdPath: .spec.template.podCliqueScalingGroups[].name
+          replicas:
+            expression: '(variables.scalingGroupReplicas.size() > 0 ? variables.scalingGroupReplicas : [dyn(1.0)]).map(v, variables.specReplicasFloat * v)'
+          minReplicas:
+            expression: ([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"scaleConfig"][?"minReplicas"].orValue(null))
+          maxReplicas:
+            expression: ([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"scaleConfig"][?"maxReplicas"].orValue(null))
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))
         podSelector:
           componentInstanceSelector:
-            idPath: .metadata.labels["grove.io/podcliquescalinggroup"]
+            expression: object[?"metadata"][?"labels"][?"grove.io/podcliquescalinggroup"].orValue(null)
           replicaSelector:
-            keyPath: .metadata.labels["grove.io/podcliquescalinggroup-replica-index"]
+            expression: object[?"metadata"][?"labels"][?"grove.io/podcliquescalinggroup-replica-index"].orValue(null)
     additionalChildKinds:
       - group: grove.io
         version: v1alpha1
@@ -91,10 +115,25 @@ spec:
         - name: podcliqueset-replica
           members:
             - componentName: clique
-              groupByKeyPaths:
-                - .metadata.labels["app.kubernetes.io/part-of"]
-                - .metadata.labels["grove.io/podcliqueset-replica-index"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/part-of"].orValue(null)
+                - object[?"metadata"][?"labels"][?"grove.io/podcliqueset-replica-index"].orValue(null)
             - componentName: scalinggroup
-              groupByKeyPaths:
-                - .metadata.labels["app.kubernetes.io/part-of"]
-                - .metadata.labels["grove.io/podcliqueset-replica-index"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/part-of"].orValue(null)
+                - object[?"metadata"][?"labels"][?"grove.io/podcliqueset-replica-index"].orValue(null)
+  variables:
+    - name: cliques
+      expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0]
+    - name: scalingGroups
+      expression: ([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0]
+    - name: cliqueReplicas
+      expression: variables.cliques.map(c, dyn(c.?spec.?replicas.orValue(null))).filter(v, v != null && v != false)
+    - name: scalingGroupReplicas
+      expression: variables.scalingGroups.map(g, dyn(g.?replicas.orValue(null))).filter(v, v != null && v != false)
+    - name: statusAvailableReplicas
+      expression: ([dyn(object.?status.?availableReplicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: specReplicas
+      expression: ([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: specReplicasFloat
+      expression: ([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]

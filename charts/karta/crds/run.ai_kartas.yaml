@@ -151,21 +151,10 @@ spec:
                                     description: ComponentName references a component
                                       defined in the Karta structure.
                                     type: string
-                                  filters:
+                                  groupByExpressions:
                                     description: |-
-                                      Filters are JQ filter expressions to select specific components (expressions are ANDed)
-                                      Example: '(.spec.containers[0].resources.limits["nvidia.com/gpu"] // 0) > 0'
-                                      JQ filters are evaluated against individual pod objects, not the root resource spec
-                                    items:
-                                      type: string
-                                    type: array
-                                    x-kubernetes-list-type: set
-                                  groupByKeyPaths:
-                                    description: |-
-                                      GroupByKeyPaths are JQ paths to values used for grouping (e.g., owner name, replica key)
-                                      If empty, grouping is done via owner reference traversal
-                                      Every path must return a single, non-empty value - otherwise grouping will fail
-                                      JQ paths are evaluated against individual pod objects, not the root resource spec
+                                      GroupByExpressions are CEL expressions evaluated against individual pod objects, each
+                                      returning a single grouping value. If empty, grouping is done via owner reference traversal.
                                     items:
                                       type: string
                                     type: array
@@ -230,11 +219,24 @@ spec:
                         ComponentDefinition defines a single component in the workload hierarchy.
                         Components represent logical units of computation that can be optimized independently.
                       properties:
-                        instanceIdPath:
-                          description: InstanceIdPath is the JQ path to the instance
-                            id, for components that hold multiple pod definitions
-                            (in array or map)
-                          type: string
+                        instanceIds:
+                          description: InstanceIds is an expression returning the
+                            list of instance ids.
+                          properties:
+                            expression:
+                              description: Expression returns the field's value.
+                              type: string
+                            patch:
+                              description: Patch constructs the partial object a write
+                                merges into the workload.
+                              type: string
+                            replace:
+                              description: |-
+                                Replace makes the write replace the field instead of merging into it: the patch is first
+                                applied with value bound to null (removing the field, since null deletes) and then with the
+                                real value. A pod template update wants this; an annotations update usually does not.
+                              type: boolean
+                          type: object
                         kind:
                           description: Kind specifies the Kubernetes GroupVersionKind
                             for this component
@@ -276,34 +278,26 @@ spec:
                                 instances with potentially different specs/behavior, while ReplicaSelector
                                 creates replicas of an identical sub-structure.
                               properties:
-                                idPath:
-                                  description: |-
-                                    IdPath is the JQ path to the component instance identifier on the pod
-                                    JQ path is evaluated against individual pod objects, not the root resource spec
+                                expression:
+                                  description: Expression reads and writes this field.
                                   type: string
-                              required:
-                              - idPath
                               type: object
                             componentTypeSelector:
                               description: |-
                                 ComponentTypeSelector determines whether a pod belongs to this component type
-                                by matching a pod label or annotation value via a JQ path.
+                                by matching a pod label or annotation value via an expression.
                                 This is the primary mechanism for pod-to-component membership.
                                 For example, LWS "leader" uses worker-index="0" to identify leader pods,
                                 and LWS "worker" checks for the existence of the leader-name annotation.
                               properties:
-                                keyPath:
-                                  description: |-
-                                    KeyPath is the JQ path to the identifying key/label on the pod
-                                    JQ path is evaluated against individual pod objects, not the root resource spec
+                                expression:
+                                  description: Expression reads and writes this field.
                                   type: string
                                 value:
                                   description: Value is the expected value for the
                                     key (optional - if nil, only key existence is
                                     checked)
                                   type: string
-                              required:
-                              - keyPath
                               type: object
                             replicaSelector:
                               description: |-
@@ -314,31 +308,66 @@ spec:
                                 context from their ancestor (parent), so ReplicaSelector should only be defined at
                                 the level where replicas are created, not repeated in descendants.
                               properties:
-                                keyPath:
-                                  description: |-
-                                    KeyPath is the JQ path to the replica identifier on the pod.
-                                    The evaluated result should be the replica index or group identifier (e.g., "0", "1").
+                                expression:
+                                  description: Expression reads and writes this field.
                                   type: string
-                              required:
-                              - keyPath
                               type: object
                           type: object
                         scaleDefinition:
                           description: ScaleDefinition defines how to extract scaling
                             information from this component
                           properties:
-                            maxReplicasPath:
-                              description: MaxReplicasPath is the JQ path to the maximum
-                                replica count
-                              type: string
-                            minReplicasPath:
-                              description: MinReplicasPath is the JQ path to the minimum
-                                replica count
-                              type: string
-                            replicasPath:
-                              description: ReplicasPath is the JQ path to the current
-                                replica count
-                              type: string
+                            maxReplicas:
+                              description: MaxReplicas reads and writes this field.
+                              properties:
+                                expression:
+                                  description: Expression returns the field's value.
+                                  type: string
+                                patch:
+                                  description: Patch constructs the partial object
+                                    a write merges into the workload.
+                                  type: string
+                                replace:
+                                  description: |-
+                                    Replace makes the write replace the field instead of merging into it: the patch is first
+                                    applied with value bound to null (removing the field, since null deletes) and then with the
+                                    real value. A pod template update wants this; an annotations update usually does not.
+                                  type: boolean
+                              type: object
+                            minReplicas:
+                              description: MinReplicas reads and writes this field.
+                              properties:
+                                expression:
+                                  description: Expression returns the field's value.
+                                  type: string
+                                patch:
+                                  description: Patch constructs the partial object
+                                    a write merges into the workload.
+                                  type: string
+                                replace:
+                                  description: |-
+                                    Replace makes the write replace the field instead of merging into it: the patch is first
+                                    applied with value bound to null (removing the field, since null deletes) and then with the
+                                    real value. A pod template update wants this; an annotations update usually does not.
+                                  type: boolean
+                              type: object
+                            replicas:
+                              description: Replicas reads and writes this field.
+                              properties:
+                                expression:
+                                  description: Expression returns the field's value.
+                                  type: string
+                                patch:
+                                  description: Patch constructs the partial object
+                                    a write merges into the workload.
+                                  type: string
+                                replace:
+                                  description: |-
+                                    Replace makes the write replace the field instead of merging into it: the patch is first
+                                    applied with value bound to null (removing the field, since null deletes) and then with the
+                                    real value. A pod template update wants this; an annotations update usually does not.
+                                  type: boolean
+                              type: object
                           type: object
                         specDefinition:
                           description: SpecDefinition defines how to extract pod specifications
@@ -349,64 +378,262 @@ spec:
                                 FragmentedPodSpecDefinition defines how to extract individual pod spec fields
                                 when they are scattered across different paths in the component
                               properties:
-                                annotationsPath:
-                                  description: AnnotationsPath is the JQ path to pod
-                                    annotations
-                                  type: string
-                                containerPath:
-                                  description: |-
-                                    ContainesPath is the JQ path to a single container specifications
-                                    Used when the component has only one container
-                                  type: string
-                                containersPath:
-                                  description: ContainersPath is the JQ path to containers
-                                    specifications
-                                  type: string
-                                imagePath:
-                                  description: ImagePath is the JQ path to the container
-                                    image
-                                  type: string
-                                labelsPath:
-                                  description: LabelsPath is the JQ path to pod labels
-                                  type: string
-                                nodeAffinityPath:
-                                  description: NodeAffinityPath is the JQ path to
-                                    node affinity rules
-                                  type: string
-                                podAffinityPath:
-                                  description: PodAffinityPath is the JQ path to pod
-                                    affinity rules
-                                  type: string
-                                priorityClassNamePath:
-                                  description: PriorityClassNamePath is the JQ path
-                                    to the priority class name
-                                  type: string
-                                resourceClaimsPath:
-                                  description: ResourceClaimsPath is the JQ path to
-                                    DRA resource claims
-                                  type: string
-                                resourcesPath:
-                                  description: ResourcesPath is the JQ path to resource
-                                    requirements
-                                  type: string
-                                schedulerNamePath:
-                                  description: SchedulerNamePath is the JQ path to
-                                    the scheduler name
-                                  type: string
+                                annotations:
+                                  description: Annotations reads and writes this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                container:
+                                  description: Container reads and writes this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                containers:
+                                  description: Containers reads and writes this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                image:
+                                  description: Image reads and writes this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                labels:
+                                  description: Labels reads and writes this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                nodeAffinity:
+                                  description: NodeAffinity reads and writes this
+                                    field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                podAffinity:
+                                  description: PodAffinity reads and writes this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                priorityClassName:
+                                  description: PriorityClassName reads and writes
+                                    this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                resourceClaims:
+                                  description: ResourceClaims reads and writes this
+                                    field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                resources:
+                                  description: Resources reads and writes this field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
+                                schedulerName:
+                                  description: SchedulerName reads and writes this
+                                    field.
+                                  properties:
+                                    expression:
+                                      description: Expression returns the field's
+                                        value.
+                                      type: string
+                                    patch:
+                                      description: Patch constructs the partial object
+                                        a write merges into the workload.
+                                      type: string
+                                    replace:
+                                      description: |-
+                                        Replace makes the write replace the field instead of merging into it: the patch is first
+                                        applied with value bound to null (removing the field, since null deletes) and then with the
+                                        real value. A pod template update wants this; an annotations update usually does not.
+                                      type: boolean
+                                  type: object
                               type: object
-                            metadataPath:
-                              description: |-
-                                MetadataPath is the JQ path to the component metadata
-                                May be used only with PodSpecPath, in cases where pod spec and metadata are separated
-                              type: string
-                            podSpecPath:
-                              description: PodSpecPath is the JQ path to a complete
-                                PodSpec object
-                              type: string
-                            podTemplateSpecPath:
-                              description: PodTemplateSpecPath is the JQ path to a
-                                complete PodTemplateSpec object
-                              type: string
+                            metadata:
+                              description: Metadata reads and writes this field.
+                              properties:
+                                expression:
+                                  description: Expression returns the field's value.
+                                  type: string
+                                patch:
+                                  description: Patch constructs the partial object
+                                    a write merges into the workload.
+                                  type: string
+                                replace:
+                                  description: |-
+                                    Replace makes the write replace the field instead of merging into it: the patch is first
+                                    applied with value bound to null (removing the field, since null deletes) and then with the
+                                    real value. A pod template update wants this; an annotations update usually does not.
+                                  type: boolean
+                              type: object
+                            podSpec:
+                              description: PodSpec reads and writes the complete PodSpec
+                                object.
+                              properties:
+                                expression:
+                                  description: Expression returns the field's value.
+                                  type: string
+                                patch:
+                                  description: Patch constructs the partial object
+                                    a write merges into the workload.
+                                  type: string
+                                replace:
+                                  description: |-
+                                    Replace makes the write replace the field instead of merging into it: the patch is first
+                                    applied with value bound to null (removing the field, since null deletes) and then with the
+                                    real value. A pod template update wants this; an annotations update usually does not.
+                                  type: boolean
+                              type: object
+                            podTemplateSpec:
+                              description: PodTemplateSpec reads and writes the complete
+                                PodTemplateSpec object.
+                              properties:
+                                expression:
+                                  description: Expression returns the field's value.
+                                  type: string
+                                patch:
+                                  description: Patch constructs the partial object
+                                    a write merges into the workload.
+                                  type: string
+                                replace:
+                                  description: |-
+                                    Replace makes the write replace the field instead of merging into it: the patch is first
+                                    applied with value bound to null (removing the field, since null deletes) and then with the
+                                    real value. A pod template update wants this; an annotations update usually does not.
+                                  type: boolean
+                              type: object
                           type: object
                         statusDefinition:
                           description: |-
@@ -417,14 +644,13 @@ spec:
                               description: ConditionsDefinition defines how to extract
                                 Kubernetes-style conditions
                               properties:
+                                expression:
+                                  description: Expression reads and writes this field.
+                                  type: string
                                 messageFieldName:
                                   default: message
                                   description: MessageFieldName is the field name
                                     for the condition text message
-                                  type: string
-                                path:
-                                  description: Path is the JQ path to the conditions
-                                    array
                                   type: string
                                 reasonFieldName:
                                   default: reason
@@ -441,19 +667,14 @@ spec:
                                   description: TypeFieldName is the field name for
                                     the condition type
                                   type: string
-                              required:
-                              - path
                               type: object
                             phaseDefinition:
                               description: PhaseDefinition defines how to extract
                                 a simple phase/state string
                               properties:
-                                path:
-                                  description: Path is the JQ path to the phase/state
-                                    field
+                                expression:
+                                  description: Expression reads and writes this field.
                                   type: string
-                              required:
-                              - path
                               type: object
                             statusMappings:
                               description: StatusMappings define how to map extracted
@@ -496,7 +717,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -506,8 +727,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -557,7 +778,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -567,8 +788,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -618,7 +839,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -628,8 +849,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -679,7 +900,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -689,8 +910,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -740,7 +961,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -750,8 +971,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -801,7 +1022,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -811,8 +1032,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -862,7 +1083,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -872,8 +1093,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -923,7 +1144,7 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       byExpression:
-                                        description: ByExpression is a JQ expression
+                                        description: ByExpression is an expression
                                           that matches against the object for status
                                           matching
                                         properties:
@@ -933,8 +1154,8 @@ spec:
                                               expression evaluation
                                             type: string
                                           expression:
-                                            description: Expression is the JQ expression
-                                              to evaluate
+                                            description: Expression is the CEL expression
+                                              to evaluate.
                                             type: string
                                         required:
                                         - expectedResult
@@ -962,47 +1183,39 @@ spec:
                                 ResumeActions is an ordered list of path/value assignments applied on resume.
                                 Actions are applied in sequence; later actions may overwrite earlier ones.
                               items:
-                                description: SuspendAction is a single field assignment
-                                  applied during a suspend or resume operation.
+                                description: |-
+                                  SuspendAction is a single mutation applied during a suspend or resume operation: a patch whose
+                                  expression constructs a partial object.
                                 properties:
-                                  path:
+                                  patch:
                                     description: |-
-                                      Path is a JQ expression that selects the target field (e.g. ".spec.suspend").
-                                      Only read/navigation expressions are permitted; assignment operators are not.
-                                    type: string
-                                  value:
-                                    description: Value is the JSON-encoded value to
-                                      assign at the path (e.g. "true", "0", `"paused"`,
-                                      "null").
+                                      Patch is an expression that constructs a partial object, which is merged into the
+                                      workload the way a MutatingAdmissionPolicy applyConfiguration mutation is: maps merge
+                                      recursively, any other value replaces, and null removes the field.
                                     type: string
                                 required:
-                                - path
-                                - value
+                                - patch
                                 type: object
                               minItems: 1
                               type: array
                               x-kubernetes-list-type: atomic
                             suspendActions:
                               description: |-
-                                SuspendActions is an ordered list of path/value assignments applied on suspend.
+                                SuspendActions is an ordered list of patches applied on suspend.
                                 Actions are applied in sequence; later actions may overwrite earlier ones.
                               items:
-                                description: SuspendAction is a single field assignment
-                                  applied during a suspend or resume operation.
+                                description: |-
+                                  SuspendAction is a single mutation applied during a suspend or resume operation: a patch whose
+                                  expression constructs a partial object.
                                 properties:
-                                  path:
+                                  patch:
                                     description: |-
-                                      Path is a JQ expression that selects the target field (e.g. ".spec.suspend").
-                                      Only read/navigation expressions are permitted; assignment operators are not.
-                                    type: string
-                                  value:
-                                    description: Value is the JSON-encoded value to
-                                      assign at the path (e.g. "true", "0", `"paused"`,
-                                      "null").
+                                      Patch is an expression that constructs a partial object, which is merged into the
+                                      workload the way a MutatingAdmissionPolicy applyConfiguration mutation is: maps merge
+                                      recursively, any other value replaces, and null removes the field.
                                     type: string
                                 required:
-                                - path
-                                - value
+                                - patch
                                 type: object
                               minItems: 1
                               type: array
@@ -1022,11 +1235,24 @@ spec:
                     description: RootComponent defines the top-level component of
                       the workload hierarchy
                     properties:
-                      instanceIdPath:
-                        description: InstanceIdPath is the JQ path to the instance
-                          id, for components that hold multiple pod definitions (in
-                          array or map)
-                        type: string
+                      instanceIds:
+                        description: InstanceIds is an expression returning the list
+                          of instance ids.
+                        properties:
+                          expression:
+                            description: Expression returns the field's value.
+                            type: string
+                          patch:
+                            description: Patch constructs the partial object a write
+                              merges into the workload.
+                            type: string
+                          replace:
+                            description: |-
+                              Replace makes the write replace the field instead of merging into it: the patch is first
+                              applied with value bound to null (removing the field, since null deletes) and then with the
+                              real value. A pod template update wants this; an annotations update usually does not.
+                            type: boolean
+                        type: object
                       kind:
                         description: Kind specifies the Kubernetes GroupVersionKind
                           for this component
@@ -1068,33 +1294,25 @@ spec:
                               instances with potentially different specs/behavior, while ReplicaSelector
                               creates replicas of an identical sub-structure.
                             properties:
-                              idPath:
-                                description: |-
-                                  IdPath is the JQ path to the component instance identifier on the pod
-                                  JQ path is evaluated against individual pod objects, not the root resource spec
+                              expression:
+                                description: Expression reads and writes this field.
                                 type: string
-                            required:
-                            - idPath
                             type: object
                           componentTypeSelector:
                             description: |-
                               ComponentTypeSelector determines whether a pod belongs to this component type
-                              by matching a pod label or annotation value via a JQ path.
+                              by matching a pod label or annotation value via an expression.
                               This is the primary mechanism for pod-to-component membership.
                               For example, LWS "leader" uses worker-index="0" to identify leader pods,
                               and LWS "worker" checks for the existence of the leader-name annotation.
                             properties:
-                              keyPath:
-                                description: |-
-                                  KeyPath is the JQ path to the identifying key/label on the pod
-                                  JQ path is evaluated against individual pod objects, not the root resource spec
+                              expression:
+                                description: Expression reads and writes this field.
                                 type: string
                               value:
                                 description: Value is the expected value for the key
                                   (optional - if nil, only key existence is checked)
                                 type: string
-                            required:
-                            - keyPath
                             type: object
                           replicaSelector:
                             description: |-
@@ -1105,31 +1323,66 @@ spec:
                               context from their ancestor (parent), so ReplicaSelector should only be defined at
                               the level where replicas are created, not repeated in descendants.
                             properties:
-                              keyPath:
-                                description: |-
-                                  KeyPath is the JQ path to the replica identifier on the pod.
-                                  The evaluated result should be the replica index or group identifier (e.g., "0", "1").
+                              expression:
+                                description: Expression reads and writes this field.
                                 type: string
-                            required:
-                            - keyPath
                             type: object
                         type: object
                       scaleDefinition:
                         description: ScaleDefinition defines how to extract scaling
                           information from this component
                         properties:
-                          maxReplicasPath:
-                            description: MaxReplicasPath is the JQ path to the maximum
-                              replica count
-                            type: string
-                          minReplicasPath:
-                            description: MinReplicasPath is the JQ path to the minimum
-                              replica count
-                            type: string
-                          replicasPath:
-                            description: ReplicasPath is the JQ path to the current
-                              replica count
-                            type: string
+                          maxReplicas:
+                            description: MaxReplicas reads and writes this field.
+                            properties:
+                              expression:
+                                description: Expression returns the field's value.
+                                type: string
+                              patch:
+                                description: Patch constructs the partial object a
+                                  write merges into the workload.
+                                type: string
+                              replace:
+                                description: |-
+                                  Replace makes the write replace the field instead of merging into it: the patch is first
+                                  applied with value bound to null (removing the field, since null deletes) and then with the
+                                  real value. A pod template update wants this; an annotations update usually does not.
+                                type: boolean
+                            type: object
+                          minReplicas:
+                            description: MinReplicas reads and writes this field.
+                            properties:
+                              expression:
+                                description: Expression returns the field's value.
+                                type: string
+                              patch:
+                                description: Patch constructs the partial object a
+                                  write merges into the workload.
+                                type: string
+                              replace:
+                                description: |-
+                                  Replace makes the write replace the field instead of merging into it: the patch is first
+                                  applied with value bound to null (removing the field, since null deletes) and then with the
+                                  real value. A pod template update wants this; an annotations update usually does not.
+                                type: boolean
+                            type: object
+                          replicas:
+                            description: Replicas reads and writes this field.
+                            properties:
+                              expression:
+                                description: Expression returns the field's value.
+                                type: string
+                              patch:
+                                description: Patch constructs the partial object a
+                                  write merges into the workload.
+                                type: string
+                              replace:
+                                description: |-
+                                  Replace makes the write replace the field instead of merging into it: the patch is first
+                                  applied with value bound to null (removing the field, since null deletes) and then with the
+                                  real value. A pod template update wants this; an annotations update usually does not.
+                                type: boolean
+                            type: object
                         type: object
                       specDefinition:
                         description: SpecDefinition defines how to extract pod specifications
@@ -1140,64 +1393,249 @@ spec:
                               FragmentedPodSpecDefinition defines how to extract individual pod spec fields
                               when they are scattered across different paths in the component
                             properties:
-                              annotationsPath:
-                                description: AnnotationsPath is the JQ path to pod
-                                  annotations
-                                type: string
-                              containerPath:
-                                description: |-
-                                  ContainesPath is the JQ path to a single container specifications
-                                  Used when the component has only one container
-                                type: string
-                              containersPath:
-                                description: ContainersPath is the JQ path to containers
-                                  specifications
-                                type: string
-                              imagePath:
-                                description: ImagePath is the JQ path to the container
-                                  image
-                                type: string
-                              labelsPath:
-                                description: LabelsPath is the JQ path to pod labels
-                                type: string
-                              nodeAffinityPath:
-                                description: NodeAffinityPath is the JQ path to node
-                                  affinity rules
-                                type: string
-                              podAffinityPath:
-                                description: PodAffinityPath is the JQ path to pod
-                                  affinity rules
-                                type: string
-                              priorityClassNamePath:
-                                description: PriorityClassNamePath is the JQ path
-                                  to the priority class name
-                                type: string
-                              resourceClaimsPath:
-                                description: ResourceClaimsPath is the JQ path to
-                                  DRA resource claims
-                                type: string
-                              resourcesPath:
-                                description: ResourcesPath is the JQ path to resource
-                                  requirements
-                                type: string
-                              schedulerNamePath:
-                                description: SchedulerNamePath is the JQ path to the
-                                  scheduler name
-                                type: string
+                              annotations:
+                                description: Annotations reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              container:
+                                description: Container reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              containers:
+                                description: Containers reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              image:
+                                description: Image reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              labels:
+                                description: Labels reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              nodeAffinity:
+                                description: NodeAffinity reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              podAffinity:
+                                description: PodAffinity reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              priorityClassName:
+                                description: PriorityClassName reads and writes this
+                                  field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              resourceClaims:
+                                description: ResourceClaims reads and writes this
+                                  field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              resources:
+                                description: Resources reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
+                              schedulerName:
+                                description: SchedulerName reads and writes this field.
+                                properties:
+                                  expression:
+                                    description: Expression returns the field's value.
+                                    type: string
+                                  patch:
+                                    description: Patch constructs the partial object
+                                      a write merges into the workload.
+                                    type: string
+                                  replace:
+                                    description: |-
+                                      Replace makes the write replace the field instead of merging into it: the patch is first
+                                      applied with value bound to null (removing the field, since null deletes) and then with the
+                                      real value. A pod template update wants this; an annotations update usually does not.
+                                    type: boolean
+                                type: object
                             type: object
-                          metadataPath:
-                            description: |-
-                              MetadataPath is the JQ path to the component metadata
-                              May be used only with PodSpecPath, in cases where pod spec and metadata are separated
-                            type: string
-                          podSpecPath:
-                            description: PodSpecPath is the JQ path to a complete
-                              PodSpec object
-                            type: string
-                          podTemplateSpecPath:
-                            description: PodTemplateSpecPath is the JQ path to a complete
-                              PodTemplateSpec object
-                            type: string
+                          metadata:
+                            description: Metadata reads and writes this field.
+                            properties:
+                              expression:
+                                description: Expression returns the field's value.
+                                type: string
+                              patch:
+                                description: Patch constructs the partial object a
+                                  write merges into the workload.
+                                type: string
+                              replace:
+                                description: |-
+                                  Replace makes the write replace the field instead of merging into it: the patch is first
+                                  applied with value bound to null (removing the field, since null deletes) and then with the
+                                  real value. A pod template update wants this; an annotations update usually does not.
+                                type: boolean
+                            type: object
+                          podSpec:
+                            description: PodSpec reads and writes the complete PodSpec
+                              object.
+                            properties:
+                              expression:
+                                description: Expression returns the field's value.
+                                type: string
+                              patch:
+                                description: Patch constructs the partial object a
+                                  write merges into the workload.
+                                type: string
+                              replace:
+                                description: |-
+                                  Replace makes the write replace the field instead of merging into it: the patch is first
+                                  applied with value bound to null (removing the field, since null deletes) and then with the
+                                  real value. A pod template update wants this; an annotations update usually does not.
+                                type: boolean
+                            type: object
+                          podTemplateSpec:
+                            description: PodTemplateSpec reads and writes the complete
+                              PodTemplateSpec object.
+                            properties:
+                              expression:
+                                description: Expression returns the field's value.
+                                type: string
+                              patch:
+                                description: Patch constructs the partial object a
+                                  write merges into the workload.
+                                type: string
+                              replace:
+                                description: |-
+                                  Replace makes the write replace the field instead of merging into it: the patch is first
+                                  applied with value bound to null (removing the field, since null deletes) and then with the
+                                  real value. A pod template update wants this; an annotations update usually does not.
+                                type: boolean
+                            type: object
                         type: object
                       statusDefinition:
                         description: |-
@@ -1208,14 +1646,13 @@ spec:
                             description: ConditionsDefinition defines how to extract
                               Kubernetes-style conditions
                             properties:
+                              expression:
+                                description: Expression reads and writes this field.
+                                type: string
                               messageFieldName:
                                 default: message
                                 description: MessageFieldName is the field name for
                                   the condition text message
-                                type: string
-                              path:
-                                description: Path is the JQ path to the conditions
-                                  array
                                 type: string
                               reasonFieldName:
                                 default: reason
@@ -1232,19 +1669,14 @@ spec:
                                 description: TypeFieldName is the field name for the
                                   condition type
                                 type: string
-                            required:
-                            - path
                             type: object
                           phaseDefinition:
                             description: PhaseDefinition defines how to extract a
                               simple phase/state string
                             properties:
-                              path:
-                                description: Path is the JQ path to the phase/state
-                                  field
+                              expression:
+                                description: Expression reads and writes this field.
                                 type: string
-                            required:
-                            - path
                             type: object
                           statusMappings:
                             description: StatusMappings define how to map extracted
@@ -1285,9 +1717,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1295,8 +1726,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1344,9 +1775,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1354,8 +1784,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1403,9 +1833,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1413,8 +1842,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1462,9 +1891,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1472,8 +1900,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1521,9 +1949,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1531,8 +1958,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1580,9 +2007,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1590,8 +2016,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1639,9 +2065,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1649,8 +2074,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1698,9 +2123,8 @@ spec:
                                       type: array
                                       x-kubernetes-list-type: atomic
                                     byExpression:
-                                      description: ByExpression is a JQ expression
-                                        that matches against the object for status
-                                        matching
+                                      description: ByExpression is an expression that
+                                        matches against the object for status matching
                                       properties:
                                         expectedResult:
                                           description: ExpectedResult is the expected
@@ -1708,8 +2132,8 @@ spec:
                                             expression evaluation
                                           type: string
                                         expression:
-                                          description: Expression is the JQ expression
-                                            to evaluate
+                                          description: Expression is the CEL expression
+                                            to evaluate.
                                           type: string
                                       required:
                                       - expectedResult
@@ -1737,47 +2161,39 @@ spec:
                               ResumeActions is an ordered list of path/value assignments applied on resume.
                               Actions are applied in sequence; later actions may overwrite earlier ones.
                             items:
-                              description: SuspendAction is a single field assignment
-                                applied during a suspend or resume operation.
+                              description: |-
+                                SuspendAction is a single mutation applied during a suspend or resume operation: a patch whose
+                                expression constructs a partial object.
                               properties:
-                                path:
+                                patch:
                                   description: |-
-                                    Path is a JQ expression that selects the target field (e.g. ".spec.suspend").
-                                    Only read/navigation expressions are permitted; assignment operators are not.
-                                  type: string
-                                value:
-                                  description: Value is the JSON-encoded value to
-                                    assign at the path (e.g. "true", "0", `"paused"`,
-                                    "null").
+                                    Patch is an expression that constructs a partial object, which is merged into the
+                                    workload the way a MutatingAdmissionPolicy applyConfiguration mutation is: maps merge
+                                    recursively, any other value replaces, and null removes the field.
                                   type: string
                               required:
-                              - path
-                              - value
+                              - patch
                               type: object
                             minItems: 1
                             type: array
                             x-kubernetes-list-type: atomic
                           suspendActions:
                             description: |-
-                              SuspendActions is an ordered list of path/value assignments applied on suspend.
+                              SuspendActions is an ordered list of patches applied on suspend.
                               Actions are applied in sequence; later actions may overwrite earlier ones.
                             items:
-                              description: SuspendAction is a single field assignment
-                                applied during a suspend or resume operation.
+                              description: |-
+                                SuspendAction is a single mutation applied during a suspend or resume operation: a patch whose
+                                expression constructs a partial object.
                               properties:
-                                path:
+                                patch:
                                   description: |-
-                                    Path is a JQ expression that selects the target field (e.g. ".spec.suspend").
-                                    Only read/navigation expressions are permitted; assignment operators are not.
-                                  type: string
-                                value:
-                                  description: Value is the JSON-encoded value to
-                                    assign at the path (e.g. "true", "0", `"paused"`,
-                                    "null").
+                                    Patch is an expression that constructs a partial object, which is merged into the
+                                    workload the way a MutatingAdmissionPolicy applyConfiguration mutation is: maps merge
+                                    recursively, any other value replaces, and null removes the field.
                                   type: string
                               required:
-                              - path
-                              - value
+                              - patch
                               type: object
                             minItems: 1
                             type: array
@@ -1792,6 +2208,29 @@ spec:
                 required:
                 - rootComponent
                 type: object
+              variables:
+                description: |-
+                  Variables are named expressions available to every expression in the definition as
+                  variables.<name> - the composition mechanism a ValidatingAdmissionPolicy has, for breaking
+                  a complex expression into named parts and evaluating a shared part once per read or write.
+                  Variables are evaluated in order, and a later variable may reference an earlier one.
+                items:
+                  description: Variable is a named expression, the same shape a ValidatingAdmissionPolicy
+                    variable has.
+                  properties:
+                    expression:
+                      description: Expression computes the variable's value from the
+                        workload.
+                      type: string
+                    name:
+                      description: Name is how expressions reference this variable.
+                      type: string
+                  required:
+                  - expression
+                  - name
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
             required:
             - structureDefinition
             type: object

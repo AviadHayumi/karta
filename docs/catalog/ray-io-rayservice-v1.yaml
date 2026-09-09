@@ -14,7 +14,7 @@ spec:
         kind: RayService
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
@@ -51,12 +51,16 @@ spec:
           kind: Pod
         ownerRef: rayservice
         specDefinition:
-          podTemplateSpecPath: .spec.rayClusterConfig.headGroupSpec.template
+          podTemplateSpec:
+            expression: object[?"spec"][?"rayClusterConfig"][?"headGroupSpec"][?"template"].orValue(null)
+            patch: '{"spec": {"rayClusterConfig": {"headGroupSpec": {"template": value}}}}'
+            replace: true
         scaleDefinition:
-          replicasPath: "1"
+          replicas:
+            expression: "1"
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["ray.io/node-type"]
+            expression: object[?"metadata"][?"labels"][?"ray.io/node-type"].orValue(null)
             value: head
       - name: worker
         kind:
@@ -65,24 +69,33 @@ spec:
           kind: Pod
         ownerRef: rayservice
         specDefinition:
-          podTemplateSpecPath: .spec.rayClusterConfig.workerGroupSpecs[].template
+          podTemplateSpec:
+            expression: ([dyn(object[?"spec"][?"rayClusterConfig"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))
+            patch: '[{"op": "add", "path": "/spec/rayClusterConfig/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
         scaleDefinition:
-          replicasPath: .spec.rayClusterConfig.workerGroupSpecs[].replicas // 1
-        instanceIdPath: .spec.rayClusterConfig.workerGroupSpecs[].groupName
+          replicas:
+            expression: '(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])'
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"rayClusterConfig"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"groupName"].orValue(null))
         podSelector:
           componentTypeSelector:
-            keyPath: .metadata.labels["ray.io/node-type"]
+            expression: object[?"metadata"][?"labels"][?"ray.io/node-type"].orValue(null)
             value: worker
           componentInstanceSelector:
-            idPath: .metadata.labels["ray.io/group"]
+            expression: object[?"metadata"][?"labels"][?"ray.io/group"].orValue(null)
   optimizationInstructions:
     gangScheduling:
       podGroups:
         - name: service
           members:
             - componentName: head
-              groupByKeyPaths:
-                - .metadata.labels["ray.io/cluster"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"ray.io/cluster"].orValue(null)
             - componentName: worker
-              groupByKeyPaths:
-                - .metadata.labels["ray.io/cluster"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"ray.io/cluster"].orValue(null)
+  variables:
+    - name: workerGroups
+      expression: ([dyn(object[?"spec"][?"rayClusterConfig"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0]
+    - name: workerReplicas
+      expression: variables.workerGroups.map(x, dyn(x[?"replicas"].orValue(null))).filter(v, v != null && v != false)

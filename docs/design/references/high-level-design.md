@@ -1,6 +1,6 @@
 # Karta Resource References - High-Level Design
 ## Background
-A Karta definition describes a workload by reading its manifest. Every value Karta extracts - pod spec, scale, status, pod selectors - is a JQ expression evaluated against a single root object: the workload CR itself. This works as long as everything Karta needs lives inside that one object.
+A Karta definition describes a workload by reading its manifest. Every value Karta extracts - pod spec, scale, status, pod selectors - is a CEL expression evaluated against a single root object: the workload CR itself. This works as long as everything Karta needs lives inside that one object.
 
 It often does not.
 
@@ -43,49 +43,49 @@ The `TrainJob` can override parts of it (nodes, resources, image, and so on), an
 
 There is a second, related gap. Sometimes a value cannot be read from any single object and has to be computed from a set of them. Phase is the clearest case: some workloads do not report a usable status of their own, and the only way to tell whether one is running, degraded, or failed is to look across its pods and aggregate their states. To compute that, a definition needs the workload's pods as an input, not just the workload object.
 
-We want to enrich a Karta definition by letting it draw on other cluster resources - a specific object or a set of them - in the same JQ expressions, in a generic way.
+We want to enrich a Karta definition by letting it draw on other cluster resources - a specific object or a set of them - in the same CEL expressions, in a generic way.
 ## Concept
 A reference is a definition's way of reaching another resource in the cluster. A reference lets it name another resource - or a set of them - and use that resource's values too.
 
-Concretely, a reference is a named pointer to another cluster resource, or set of resources, that Karta exposes to a definition's JQ expressions as the variable `$<Name>`. In this proposal, a Karta definition declares its references at the structure level. Each reference could be resolved against the workload object itself (the root custom resource the definition describes, for example the `TrainJob`) - the expressions that pick the name and labels run with that object as their input - and then fetched once from the cluster. Its value can then be used anywhere in the Karta definition - in the JQ expressions of any component. To the author it is just another input: where `.spec...` reads the workload object, `$trainingRuntime.spec...` reads a referenced one.
+Concretely, a reference is a named pointer to another cluster resource, or set of resources, that Karta exposes to a definition's CEL expressions as the variable `references.<name>`. In this proposal, a Karta definition declares its references at the structure level. Each reference could be resolved against the workload object itself (the root custom resource the definition describes, for example the `TrainJob`) - the expressions that pick the name and labels run with that object as their input - and then fetched once from the cluster. Its value can then be used anywhere in the Karta definition - in the CEL expressions of any component. To the author it is just another input: where `object.spec...` reads the workload object, `references.trainingRuntime.spec...` reads a referenced one.
 
 Karta stays declarative: it still fetches nothing itself. Resolving references is the consumer's job, and it adds one more input - the fetched values - to what the consumer passes when it evaluates a Karta definition.
 
 A reference takes one of two shapes, declared in the API - `lookup` or `list` - and the shape decides what the variable holds:
 
-- `lookup` - fetch a single object (a `Get`). `$<Name>` is that one object, read like any object (`$<name>.field`).
+- `lookup` - fetch a single object (a `Get`). `references.<name>` is that one object, read like any object (`references.<name>.field`).
   
-- `list` - fetch a set of objects (a `List`). `$<Name>` is an array, read and iterated as `$<name>[]`, possibly empty.
+- `list` - fetch a set of objects (a `List`). `references.<name>` is a list, read and iterated with the CEL comprehension macros, possibly empty.
   
 
 Naming the two cases after what they return - one object versus many - keeps the variable's shape obvious to whoever writes the downstream expression.
 ## API
 References are declared on the structure definition, as a list, alongside the root component, child components, and additional child kinds. Each entry names the variable, the GVK to fetch, and one of `lookup` or `list`. The list is keyed by the unique `name`.
 
-A `lookup` names the single object to fetch: its `nameExpression` is a JQ expression against the root object that resolves the resource's name, and the consumer `Get`s that object.
+A `lookup` names the single object to fetch: its `nameExpression` is a CEL expression against the root object that resolves the resource's name, and the consumer `Get`s that object.
 
-A reference is required by use. A `lookup` that finds no object is not an error by itself: the failure surfaces when an expression that uses `$<Name>` is evaluated, and expressions that do not mention it are unaffected. A `list` has no existence question - matching nothing yields an empty array. If optional references turn out to be needed, an explicit `optional` boolean can be introduced later without breaking the API.
+A reference is required by use. A `lookup` that finds no object is not an error by itself: the failure surfaces when an expression that uses `references.<name>` is evaluated, and expressions that do not mention it are unaffected. A `list` has no existence question - matching nothing yields an empty array. If optional references turn out to be needed, an explicit `optional` boolean can be introduced later without breaking the API.
 
 There is no namespace field, deliberately. A namespaced reference always resolves in the workload's own namespace; a cluster-scoped GVK (such as `ClusterTrainingRuntime`) has none. A definition can never reach into another namespace, which keeps references inside the workload's isolation boundary by construction.
 
-A `list` selects its set with a structured selector in the shape of a Kubernetes `LabelSelector` (`matchLabels` plus `matchExpressions`), so it converts directly into a real selector for the `List` call. The one addition over a plain Kubernetes selector is that a value can be sourced from the root object (using JQ) rather than being a constant: most values are literals, but the workload's own name (for "pods of this workload") only exists at runtime. A value is therefore either a literal or a JQ expression evaluated against the root.
+A `list` selects its set with a structured selector in the shape of a Kubernetes `LabelSelector` (`matchLabels` plus `matchExpressions`), so it converts directly into a real selector for the `List` call. The one addition over a plain Kubernetes selector is that a value can be sourced from the root object (using CEL) rather than being a constant: most values are literals, but the workload's own name (for "pods of this workload") only exists at runtime. A value is therefore either a literal or a CEL expression evaluated against the root.
 
 ```go
 type StructureDefinition struct {
     // ... RootComponent, ChildComponents, AdditionalChildKinds ...
 
     // References declares cluster resources whose values are exposed to the
-    // workload's JQ expressions as the variable $<Name>.
+    // workload's CEL expressions as references.<name>.
     References []ResourceReference // +listType=map, +listMapKey=name
 }
 
 // ResourceReference declares another resource (or set of resources) whose values are
-// exposed to every component's JQ expressions as the variable $<Name>.
+// exposed to every component's CEL expressions as references.<name>.
 // Exactly one of Lookup or List is set:
-//   Lookup -> $<Name> is a single object (or null)
-//   List   -> $<Name> is an array (possibly empty)
+//   Lookup -> references.<name> is a single object (or null)
+//   List   -> references.<name> is a list (possibly empty)
 type ResourceReference struct {
-    Name string           // variable name exposed to JQ as $<Name>
+    Name string           // variable name exposed to CEL as references.<name>
     GVK  GroupVersionKind // group/version/kind of the referenced resource(s)
 
     Lookup *LookupReference
@@ -94,7 +94,7 @@ type ResourceReference struct {
 
 // LookupReference fetches a single resource by name (consumer: client.Get).
 type LookupReference struct {
-    // NameExpression is a JQ expression against the root object resolving the
+    // NameExpression is a CEL expression against the root object resolving the
     // referenced resource's name.
     NameExpression string
 }
@@ -115,7 +115,7 @@ type LabelSelectorRequirement struct {
     Values   []LabelValue          // required for In/NotIn, empty for Exists/DoesNotExist
 }
 
-// LabelValue is a single label value: either a literal (Value) or a JQ expression
+// LabelValue is a single label value: either a literal (Value) or a CEL expression
 // evaluated against the root object (Expression). Value and Expression are a one-of;
 // exactly one is set.
 type LabelValue struct {
@@ -132,50 +132,52 @@ spec:
     rootComponent: { ... }
     childComponents: [ ... ]
     references:
-      # single object: $trainingRuntime
+      # single object: references.trainingRuntime
       - name: trainingRuntime
         gvk: { group: trainer.kubeflow.org, version: v1alpha1, kind: ClusterTrainingRuntime }
         lookup:
-          nameExpression: .spec.runtimeRef.name
+          nameExpression: object.spec.runtimeRef.name
 
-      # set of objects: $pods (listed in the workload's namespace)
+      # set of objects: references.pods (listed in the workload's namespace)
       - name: pods
         gvk: { group: "", version: v1, kind: Pod }
         list:
           matchLabels:
-            training.kubeflow.org/job-name: { expression: .metadata.name }  # value from the root
+            training.kubeflow.org/job-name: { expression: object.metadata.name }  # value from the root
             app.kubernetes.io/managed-by:   { value: karta }                # literal value
           matchExpressions:
             - key: training.kubeflow.org/replica-type
               operator: In
               values:
                 - value: worker                          # literal
-                - expression: .spec.primaryReplicaType   # value from the root
+                - expression: object.spec.primaryReplicaType   # value from the root
             - key: app.kubernetes.io/component
               operator: Exists
 ```
 
-Any component's paths then read each variable by its shape - the variable is in scope for every component, so the examples below can live on different components. A `lookup` is read like any object; a `list` is iterated.
+Any component's expressions then read each variable by its shape - the variable is in scope for every component, so the examples below can live on different components. A `lookup` is read like any object; a `list` is iterated.
 
 ```yaml
 # The base pod spec lives in the runtime; the TrainJob's overrides sit on the root
-# object. Rather than one merged path, the effective value is built per-field with a
-# JQ fallback (override // base) via the fragmented pod spec - prefer the TrainJob's
+# object. Rather than one merged read, the effective value is built per-field with a
+# CEL fallback (orValue) via the fragmented pod spec - prefer the TrainJob's
 # value, fall back to the runtime's:
 fragmentedPodSpecDefinition:
-  imagePath: '.spec.trainer.image // $trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0].image'
-  resourcesPath: '.spec.trainer.resourcesPerNode // $trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0].resources'
+  image:
+    expression: 'object.?spec.?trainer.?image.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0].image)'
+  resources:
+    expression: 'object.?spec.?trainer.?resourcesPerNode.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0].resources)'
 # an aggregate over the matched pods, feeding the status mapping - the workload is
 # Running when at least one of its pods is:
 statusDefinition:
   statusMappings:
     running:
       - byExpression:
-          expression: '[ $pods[] | select(.status.phase == "Running") ] | length > 0'
+          expression: 'references.pods.exists(p, p.status.phase == "Running")'
           expectedResult: "true"
 ```
 
-The one-of rules - one of `lookup`/`list`, one of `value`/`expression`, and unique reference names - are enforced by Karta's existing validation function, alongside the JQ validation that already checks every expression field.
+The one-of rules - one of `lookup`/`list`, one of `value`/`expression`, and unique reference names - are enforced by Karta's existing validation function, alongside the expression validation that already checks every expression field.
 ### Library API
 References add a new surface to the Karta library. It is backward compatible - existing code keeps compiling, and a definition with no `references` behaves exactly as today - but it is opt-in only for a consumer that controls its own definitions. A consumer that accepts arbitrary Karta definitions must treat references as part of the definition contract: implement resolution, or explicitly reject definitions that declare them. Three pieces cover the feature.
 
@@ -184,7 +186,7 @@ References add a new surface to the Karta library. It is backward compatible - e
 ```go
 // ReferenceValue is the fetched value of one reference.
 type ReferenceValue struct {
-    Object *unstructured.Unstructured  // set for a lookup; nil when the object was not found (never bound to JQ)
+    Object *unstructured.Unstructured  // set for a lookup; nil when the object was not found (never bound)
     List   []unstructured.Unstructured // set for a list; possibly empty
 }
 
@@ -198,14 +200,14 @@ type ResolvedReferences map[string]ReferenceValue
 func Resolve(ctx context.Context, reader client.Reader, karta *Karta, workload client.Object) (ResolvedReferences, error)
 ```
 
-`WithReferences` binds them. When the component factory is built, the resolved references are passed as an option; each becomes the JQ variable `$<Name>`, in scope for every component's expressions.
+`WithReferences` binds them. When the component factory is built, the resolved references are passed as an option; each becomes `references.<name>`, in scope for every component's expressions.
 
 ```go
 refs, err := references.Resolve(ctx, reader, karta, workload)
 factory := resource.NewComponentFactoryFromObject(karta, workload, resource.WithReferences(refs))
 ```
 
-If a definition declares a reference that is not provided to the factory, evaluating an expression that reads `$<Name>` errors instead of silently resolving to null.
+If a definition declares a reference that is not provided to the factory, evaluating an expression that reads `references.<name>` errors instead of silently resolving to null.
 ### Integration options
 Three shapes are possible for the Go-level integration, from most convenient to most control. They stack rather than compete: option 1 builds on option 2's reader and option 3's binding, and all can be offered together.
 ### Option 1: a Kubernetes reader as a factory option
@@ -250,7 +252,7 @@ factory := resource.NewComponentFactoryFromObject(karta, workload, resource.With
 
 The consumer skips resolution entirely, builds the `ResolvedReferences` map from wherever its data lives - its own client, caching, batching, or no Kubernetes at all - and passes it to the existing factory constructor. Backward compatible because the option is variadic: existing call sites compile unchanged. Karta only sees the finished values.
 
-Anything built on top of the factory inherits references for free. The planned `WorkloadTree` builder, for example, should accept a constructed factory rather than building its own - the `$<Name>` variables are already bound, so tree extraction over referenced values just works and the tree stays reference-agnostic.
+Anything built on top of the factory inherits references for free. The planned `WorkloadTree` builder, for example, should accept a constructed factory rather than building its own - the reference variables are already bound, so tree extraction over referenced values just works and the tree stays reference-agnostic.
 ## Hardening
 References make a definition ask the consumer to fetch cluster resources with the consumer's permissions. A malicious or careless definition could point at data it should not surface.
 
@@ -275,4 +277,4 @@ A few points are worth calling out because they change the contract or carry rea
   
 - The reference uses `gvk` for its group/version/kind, while the existing `ComponentDefinition` names the same type `kind`. This inconsistency is deliberate for now - `kind.kind` reads poorly and `gvk` is accurate - but it should be resolved before the API stabilizes, either by renaming the existing field or accepting the divergence.
   
-- Merging a referenced base with the workload's overrides has no vocabulary yet. The Kubeflow case is the sharpest instance: the effective container env is the runtime's env merged with `.spec.trainer.env` by `name`, and no path expression can express that read, let alone write through it. This is a general Karta gap, not a references one - the read path and the write path need to be separated - and is tracked in #183.
+- Merging a referenced base with the workload's overrides has no vocabulary yet. The Kubeflow case is the sharpest instance: the effective container env is the runtime's env merged with `.spec.trainer.env` by `name`, and no single read expression can express that merge, let alone write through it. This is a general Karta gap, not a references one, and is tracked in #183.

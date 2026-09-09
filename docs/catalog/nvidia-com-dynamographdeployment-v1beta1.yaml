@@ -14,7 +14,7 @@ spec:
         kind: DynamoGraphDeployment
       statusDefinition:
         phaseDefinition:
-          path: .status.state
+          expression: object[?"status"][?"state"].orValue(null)
         statusMappings:
           initializing:
             - byPhase: initializing
@@ -28,23 +28,41 @@ spec:
         ownerRef: dynamographdeployment
         specDefinition:
           fragmentedPodSpecDefinition:
-            schedulerNamePath: .spec.components[] | .podTemplate.spec.schedulerName
-            labelsPath: .spec.components[] | .podTemplate.metadata.labels
-            annotationsPath: .spec.components[] | .podTemplate.metadata.annotations
-            resourceClaimsPath: .spec.components[] | .podTemplate.spec.resourceClaims
-            podAffinityPath: .spec.components[] | .podTemplate.spec.affinity.podAffinity
-            nodeAffinityPath: .spec.components[] | .podTemplate.spec.affinity.nodeAffinity
-            containerPath: .spec.components[] | .podTemplate.spec.containers[] | select(.name == "main")
-            priorityClassNamePath: .spec.components[] | .podTemplate.spec.priorityClassName
-            imagePath: .spec.components[] | .podTemplate.spec.containers[] | select(.name == "main") | .image
+            schedulerName:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"schedulerName"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/schedulerName", "value": value}]'
+            labels:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"labels"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/metadata/labels", "value": value}]'
+            annotations:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"annotations"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/metadata/annotations", "value": value}]'
+            resourceClaims:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"resourceClaims"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/resourceClaims", "value": value}]'
+            podAffinity:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"podAffinity"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/affinity/podAffinity", "value": value}]'
+            nodeAffinity:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"nodeAffinity"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/affinity/nodeAffinity", "value": value}]'
+            container:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, (([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [null])[0])
+            priorityClassName:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"priorityClassName"].orValue(null))
+              patch: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/priorityClassName", "value": value}]'
+            image:
+              expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, ((([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [{}])[0])[?"image"].orValue(null))
         scaleDefinition:
-          replicasPath: .spec.components[] | (.replicas // 1) * (.multinode.nodeCount // 1)
-        instanceIdPath: .spec.components[] | .name
+          replicas:
+            expression: variables.components.map(x, ([dyn(x.?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0] * ([dyn(x.?multinode.?nodeCount.orValue(null))].filter(v, v != null && v != false) + [1.0])[0])
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))
         podSelector:
           componentInstanceSelector:
-            idPath: .metadata.labels["nvidia.com/dynamo-component"]
+            expression: object[?"metadata"][?"labels"][?"nvidia.com/dynamo-component"].orValue(null)
           replicaSelector:
-            keyPath: .metadata.labels["grove.io/podcliquescalinggroup-replica-index"] // .metadata.labels["leaderworkerset.sigs.k8s.io/group-index"]
+            expression: object[?"metadata"][?"labels"][?"grove.io/podcliquescalinggroup-replica-index"].orValue(object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null))
     additionalChildKinds:
       - group: nvidia.com
         version: v1beta1
@@ -70,5 +88,8 @@ spec:
         - name: component
           members:
             - componentName: component
-              groupByKeyPaths:
-                - .metadata.labels["nvidia.com/dynamo-component"] | ascii_downcase
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"nvidia.com/dynamo-component"].orValue(null).lowerAscii()
+  variables:
+    - name: components
+      expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0]

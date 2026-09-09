@@ -13,23 +13,25 @@ spec:
         version: v1
         kind: Deployment
       specDefinition:
-        podTemplateSpecPath: .spec.template
+        podTemplateSpec:
+          expression: object[?"spec"][?"template"].orValue(null)
+          patch: '{"spec": {"template": value}}'
+          replace: true
       scaleDefinition:
-        replicasPath: .spec.replicas // 1
+        replicas:
+          expression: variables.specReplicas
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
           reasonFieldName: reason
         statusMappings:
           initializing:
-            - byConditions:
-                - type: Progressing
-                  status: "True"
-                - type: Available
-                  status: "False"
+            - byExpression:
+                expression: ([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Progressing" && c.?status.orValue(null) == "True") && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Available" && c.?status.orValue(null) == "True")
+                expectedResult: "true"
           running:
             - byConditions:
                 - type: Progressing
@@ -48,3 +50,6 @@ spec:
           kind: ReplicaSet
         ownerRef: deployment
   optimizationInstructions: {}
+  variables:
+    - name: specReplicas
+      expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

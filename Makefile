@@ -157,7 +157,12 @@ cli-lint: golangci-lint ## Lint the CLI module.
 	cd cli && $(GOLANGCI_LINT) run -c $(PROJECT_DIR)/.golangci.yml
 
 .PHONY: check
-check: download-dependencies validate test cli-test cli-lint cli-verify-version
+check: download-dependencies validate test test-replay cli-test cli-lint cli-verify-version
+
+.PHONY: test-replay
+test-replay: ## Replay the recorded fixtures through the engine (offline, no cluster)
+	go -C test/e2e build ./...
+	go -C test/e2e test ./replay_tests/...
 
 ##@ Helm
 

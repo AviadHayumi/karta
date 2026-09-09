@@ -99,7 +99,7 @@ func run(ctx context.Context, kartaPath, workloadPath, predictPath, dumpPath str
 
 	if workloadPath == "" {
 		fmt.Printf("No --workload given, so the definition was not run against a real object.\n" +
-			"It is structurally valid; whether its jq paths resolve is still unproven.\n")
+			"It is structurally valid; whether its expressions resolve is still unproven.\n")
 		return 0, nil
 	}
 
@@ -206,7 +206,7 @@ func run(ctx context.Context, kartaPath, workloadPath, predictPath, dumpPath str
 		}
 	}
 	for _, name := range noInstances {
-		warnings = append(warnings, fmt.Sprintf("%s produced no instances: instanceIdPath matched nothing", name))
+		warnings = append(warnings, fmt.Sprintf("%s produced no instances: instanceIds matched nothing", name))
 	}
 	if len(warnings) > 0 {
 		fmt.Println("=== Warnings ===")

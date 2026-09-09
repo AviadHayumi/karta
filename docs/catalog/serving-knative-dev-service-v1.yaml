@@ -14,15 +14,23 @@ spec:
         kind: Service
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message
         statusMappings:
+          initializing:
+            - byConditions:
+                - type: Ready
+                  status: Unknown
           running:
             - byConditions:
                 - type: Ready
                   status: "True"
+          failed:
+            - byConditions:
+                - type: Ready
+                  status: "False"
     childComponents:
       - name: revision
         kind:
@@ -31,10 +39,15 @@ spec:
           kind: Revision
         ownerRef: knativeservice
         specDefinition:
-          podTemplateSpecPath: .spec.template
+          podTemplateSpec:
+            expression: object[?"spec"][?"template"].orValue(null)
+            patch: '{"spec": {"template": value}}'
+            replace: true
         scaleDefinition:
-          minReplicasPath: .spec.template.metadata.annotations["autoscaling.knative.dev/min-scale"] // 1
-          maxReplicasPath: .spec.template.metadata.annotations["autoscaling.knative.dev/max-scale"]
+          minReplicas:
+            expression: variables.minScale
+          maxReplicas:
+            expression: object[?"spec"][?"template"][?"metadata"][?"annotations"][?"autoscaling.knative.dev/max-scale"].orValue(null)
     additionalChildKinds:
       - group: apps
         version: v1
@@ -45,5 +58,8 @@ spec:
         - name: revision
           members:
             - componentName: revision
-              groupByKeyPaths:
-                - .metadata.labels["serving.knative.dev/revision"]
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"serving.knative.dev/revision"].orValue(null)
+  variables:
+    - name: minScale
+      expression: ([dyn(object[?"spec"][?"template"][?"metadata"][?"annotations"][?"autoscaling.knative.dev/min-scale"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

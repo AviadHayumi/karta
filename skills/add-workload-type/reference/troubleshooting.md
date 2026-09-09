@@ -4,9 +4,9 @@
 # Troubleshooting catalog
 
 Match the error text to a row and apply the fix. Messages come from the
-validator (`pkg/api/runai/v1alpha1/validation.go`), the jq validator
-(`pkg/jq/validation.go`), or the Go accessor API at runtime. The prose version
-is `docs/Troubleshooting.md`.
+validator (`pkg/api/runai/v1alpha1/validation.go`), the CEL evaluator
+(`pkg/cel/evaluator.go`), or the Go accessor API at runtime
+(`pkg/resource/`). The prose version is `docs/Troubleshooting.md`.
 
 ## Structure validation errors
 
@@ -21,30 +21,31 @@ The validator joins several errors at once, so fix every named component.
 | `child component '<name>' has owner ref to non-existing component '<owner>'` | `ownerRef` names a component that does not exist. | Correct it to an existing `name`. Watch for typos and renames. |
 | `component name <name> is not unique` | Two components share a `name`. | Make every `name` unique. |
 | `component name is empty` | A component has no `name`. | Add a non-empty `name`. |
-| `component '<name>' has multiple pod spec definitions` | More than one of `podTemplateSpecPath`, `podSpecPath`, `fragmentedPodSpecDefinition` is set. | Keep exactly one. They are mutually exclusive. |
-| `component '<name>' has instance id path but no pod component instance selector` | `instanceIdPath` is set without a `componentInstanceSelector`. | Add a `componentInstanceSelector`, or remove `instanceIdPath`. |
-| `component '<name>' has pod component instance selector but no instance id path` | A `componentInstanceSelector` is set without `instanceIdPath`. | Add `instanceIdPath`, or remove the instance selector. |
+| `component '<name>' has multiple pod spec definitions` | More than one of `podTemplateSpec`, `podSpec`, `fragmentedPodSpecDefinition` is set. | Keep exactly one. They are mutually exclusive. |
+| `component '<name>' has instance ids but no pod component instance selector` | `instanceIds` is set without a `componentInstanceSelector`. | Add a `componentInstanceSelector`, or remove `instanceIds`. |
+| `component '<name>' has pod component instance selector but no instance ids` | A `componentInstanceSelector` is set without `instanceIds`. | Add an `instanceIds` accessor, or remove the instance selector. |
 | `ownership cycle detected involving component <name>` | Owner refs form a loop instead of reaching the root. | Break the cycle. Every owner chain must terminate at the root. |
 | `pod-group member component '<name>' is not defined (should be a root or child component)` | A gang-scheduling member names a missing component. | Make each `componentName` match a defined component. |
 | `karta is nil` | The validator got no definition. | Ensure the file parsed and loaded before validation. |
 
-## jq path errors
+## Expression errors
 
 Each message names the exact expression, so search the definition for it.
 
 | Message | Cause | Fix |
 |---|---|---|
-| `failed to parse JQ expression '<expr>' at '<path>': ...` | The expression is not valid jq. | Fix syntax: unbalanced brackets or quotes, a missing leading `.`, or wrong quote style in `["key"]`. |
-| `failed to compile JQ expression '<expr>': ...` | Parses but will not compile, for example an unknown function. | Use only standard jq builtins; check names and arity. |
-| `JQ execution error for expression '<expr>': ...` | Compiled but failed at runtime, often a null traversal. | Make it null-safe with `//`, for example `(.status.active // 0)`. |
-| `JQ expression '<expr>' at '<path>' failed validation: modifying operator '<op>' is not allowed` | Uses an assignment or update operator. | Paths read state only. Rewrite to read, not write. |
-| `... failed validation: del function is not allowed` | Uses `del`. | Read, do not modify. |
-| `... failed validation: recursive descent operator '..' is not allowed` | Uses `..`. | Spell out the absolute path instead. |
-| `... failed validation: function '<name>' may produce excessive output and is not allowed` | Uses `range`, `paths`, `recurse`, `walk`, or `repeat`. | Address the fields directly with a bounded expression. |
+| `compile CEL expression '<expr>': ...` | The expression is not valid CEL, or references an unknown function. | Fix the syntax: unbalanced brackets or quotes, comparing values of different types, or a missing leading `object.`. |
+| `evaluate CEL expression '<expr>': ...` | Compiled but failed against real data, often a missing field. | Make the read null-safe with optional types: `object[?"status"][?"phase"].orValue(null)` instead of `object.status.phase`. |
+| `the field has no patch and cannot be written` | A write was attempted through an accessor that defines `expression` but no `patch`. | Add a `patch` expression to the accessor. Reads use `expression`; writes use `patch`. |
 
-Tip: reproduce what Karta evaluates with
-`kubectl get <resource> -o json | jq '<expr>'`, or use the jq playground at
-play.jqlang.org.
+Evaluation is budgeted: an expression whose cost explodes (for example deeply
+nested comprehensions over a large workload) is stopped with an evaluation
+error instead of running unbounded. A normal definition never notices the
+budget.
+
+Tip: reproduce what Karta evaluates in the CEL playground at
+playcel.undistro.io. Paste the manifest as the variable `object` and iterate on
+the expression there.
 
 ## Accessor errors at runtime
 
@@ -53,7 +54,7 @@ Raised by the Go Component API when reading a definition.
 | Error type | Example | Cause | Fix |
 |---|---|---|---|
 | `DefinitionNotFoundError` | `component <name> does not have suspendDefinition` | Code asked for a part the component does not define. | Add the missing definition, or guard the call with `errors.As` against `DefinitionNotFoundError`. |
-| `InstanceNotFoundError` | `could not match instance id "<id>". existing instance ids [...]` | A pod's extracted instance id matches no instance from `instanceIdPath`. | Confirm the `componentInstanceSelector` reads the same id the `instanceIdPath` produces. |
+| `InstanceNotFoundError` | `could not match instance id "<id>". existing instance ids [...]` | A pod's extracted instance id matches no id from the `instanceIds` accessor. | Confirm the `componentInstanceSelector` reads the same id the `instanceIds` accessor produces. |
 
 ## Silent mistakes (valid but wrong)
 
@@ -68,9 +69,19 @@ These pass validation but behave incorrectly. Check them first when a definition
 - Status conditions that do not match the workload's real API. The definition
   validates but status never resolves because the controller never sets those
   types. Verify against the CRD source or docs.
-- A path evaluated against the wrong resource. Spec, scale, and status paths run
-  against the workload object; selector and optimization paths run against pod
-  manifests. A selector pointing at a workload field matches nothing.
+- An expression evaluated against the wrong resource. Spec, scale, and status
+  expressions run against the workload object; selector and optimization
+  expressions run against pod manifests. A selector pointing at a workload field
+  matches nothing.
+- A read that works and a write that does not. Reads and writes are separate:
+  `expression` reads the field, `patch` writes it. An accessor with only an
+  `expression` is read-only, and a write through it fails with
+  `the field has no patch and cannot be written`. Leave the patch out only on
+  purpose, and say so in a comment next to the accessor.
+- Merging where a replace is needed. Without `replace: true` a map patch merges
+  into the existing field, so stale keys survive a pod template update. With it,
+  the field is deleted and re-set, which is wrong for annotations that should
+  merge. Pick per accessor.
 - Listing a defined component's kind under `additionalChildKinds`. The list is
   for managed kinds, and duplicating a kind already modeled as a component is
   usually redundant. The validator does not reject it, though, and it is
@@ -92,11 +103,8 @@ These pass validation but behave incorrectly. Check them first when a definition
   over the real fields instead.
 - Mapping to `Undefined`. It is the implicit no-match result, not a target to
   map. Map only the statuses the workload reports.
-- A non-assignable jq path in a `fragmentedPodSpecDefinition`. These paths are
-  used to mutate the pod spec, not only to read it, so each must be a path jq can
-  assign through. A `//` fallback such as
-  `.spec.templates[].affinity // .spec.affinity` reads correctly and passes every
-  validator, then fails when a consumer writes the field. Use an assignable path
-  (navigation, iteration, or `select(...)`); for override semantics, model the
-  varying items as a multi-instance component with `instanceIdPath` and target
-  one layer.
+- Plain field access on a field that can be absent. `object.status.phase` fails
+  evaluation when `status` is missing; `object[?"status"][?"phase"].orValue(null)`
+  yields a value. Every expression over an optional field needs the optional
+  form, and defaults use the coalesce idiom
+  `([dyn(X.orValue(null))].filter(v, v != null && v != false) + [D])[0]`.

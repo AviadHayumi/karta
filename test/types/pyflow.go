@@ -69,7 +69,7 @@ func PyFlowKarta() *v1alpha1.Karta {
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
-							Path:            ".status.conditions",
+							Expression:      `object[?"status"][?"conditions"].orValue(null)`,
 							TypeFieldName:   "type",
 							StatusFieldName: "status",
 						},
@@ -102,15 +102,19 @@ func PyFlowKarta() *v1alpha1.Karta {
 						Name:     "master",
 						OwnerRef: ptr.To("pyflow"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.master.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{
+								Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
+								Patch:      `{"spec": {"master": {"template": value}}}`,
+								Replace:    true,
+							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath: ptr.To(".spec.master.replicas"),
+							Replicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"master"][?"replicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: ".metadata.labels.role",
-								Value:   ptr.To("master"),
+								Expression: `object[?"metadata"][?"labels"][?"role"].orValue(null)`,
+								Value:      ptr.To("master"),
 							},
 						},
 					},
@@ -118,16 +122,20 @@ func PyFlowKarta() *v1alpha1.Karta {
 						Name:     "worker",
 						OwnerRef: ptr.To("pyflow"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpecPath: ptr.To(".spec.worker.template"),
+							PodTemplateSpec: &v1alpha1.ValueAccessor{
+								Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
+								Patch:      `{"spec": {"worker": {"template": value}}}`,
+								Replace:    true,
+							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							MinReplicasPath: ptr.To(".spec.worker.minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.worker.maxReplicas"),
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"worker"][?"minReplicas"].orValue(null)`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"worker"][?"maxReplicas"].orValue(null)`},
 						},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentTypeSelector: &v1alpha1.ComponentTypeSelector{
-								KeyPath: ".metadata.labels.role",
-								Value:   ptr.To("worker"),
+								Expression: `object[?"metadata"][?"labels"][?"role"].orValue(null)`,
+								Value:      ptr.To("worker"),
 							},
 						},
 					},
@@ -146,8 +154,8 @@ func SuspendablePyFlowKarta() *v1alpha1.Karta {
 	root := &karta.Spec.StructureDefinition.RootComponent
 
 	root.SuspendDefinition = &v1alpha1.SuspendDefinition{
-		SuspendActions: []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "true"}},
-		ResumeActions:  []v1alpha1.SuspendAction{{Path: ".spec.suspend", Value: "false"}},
+		SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
+		ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
 	}
 
 	root.StatusDefinition.StatusMappings.Suspended = []v1alpha1.StatusMatcher{

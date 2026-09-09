@@ -13,14 +13,18 @@ spec:
         version: v1
         kind: Pod
       specDefinition:
-        podTemplateSpecPath: .
+        podTemplateSpec:
+          expression: object
+          patch: value
+          replace: true
       scaleDefinition:
-        replicasPath: "1"
+        replicas:
+          expression: "1"
       statusDefinition:
         phaseDefinition:
-          path: .status.phase
+          expression: object[?"status"][?"phase"].orValue(null)
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
           messageFieldName: message

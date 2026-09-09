@@ -21,8 +21,9 @@ When something does not validate, see [Troubleshooting](./Troubleshooting.md).
 ## Prerequisites
 
 - Basic familiarity with Kubernetes custom resources and YAML.
-- Basic familiarity with [jq](https://jqlang.org/) path syntax. Every path in a
-  Karta is a jq expression.
+- Basic familiarity with
+  [CEL](https://kubernetes.io/docs/reference/using-api/cel/). Every read in a
+  Karta is a CEL expression, and every write is a CEL patch expression.
 - The target workload's CRD. You need to know its Group, Version, and Kind, the
   conditions or phases it reports in `.status`, and where it stores its pod
   template.
@@ -45,9 +46,10 @@ A Karta describes a workload as a tree of components.
   a higher-level CRD creates). Each child must declare an `ownerRef` pointing at
   its parent. A Job has no children, so this tutorial uses only the root.
 
-Every path you write is a jq expression evaluated against a resource. Paths in
-`specDefinition`, `scaleDefinition`, and `statusDefinition` are evaluated
-against the workload object. Paths in `podSelector` and in
+Every read you write is a CEL expression evaluated with the resource bound as
+`object`. Every write is a patch expression that constructs the change.
+Expressions in `specDefinition`, `scaleDefinition`, and `statusDefinition` are
+evaluated against the workload object. Expressions in `podSelector` and in
 `optimizationInstructions` are evaluated against pod manifests. Mixing these up
 is the most common authoring mistake.
 
@@ -82,9 +84,10 @@ Karta's normalized statuses (for example `running`, `completed`, `failed`).
 This is required on the root component.
 
 A `byConditions` rule lists one or more conditions that must all hold (AND
-logic). A `byExpression` rule evaluates a jq expression and compares it to an
-expected result, which is useful when a workload reports state through status
-fields rather than conditions. A Job uses both.
+logic). A `byExpression` rule evaluates a CEL expression and compares its
+result, rendered as a string, to `expectedResult`. This is useful when a
+workload reports state through status fields rather than conditions. A Job
+uses both.
 
 Rules under the same status are ORed: the status matches when any one of its
 rules matches, so mixing `byConditions` and `byExpression` rules under one
@@ -95,19 +98,19 @@ status resolves to `Undefined`.
 ```yaml
       statusDefinition:
         conditionsDefinition:
-          path: .status.conditions
+          expression: object[?"status"][?"conditions"].orValue(null)
           typeFieldName: type
           statusFieldName: status
-          reasonFieldName: reason
           messageFieldName: message
+          reasonFieldName: reason
         statusMappings:
           initializing:
             - byExpression:
-                expression: (.status.active // 0) > 0 and (.status.ready // 0) == 0
+                expression: variables.statusActive > 0 && variables.statusReady == 0
                 expectedResult: "true"
           running:
             - byExpression:
-                expression: (.status.active // 0) > 0 and (.status.ready // 0) > 0
+                expression: variables.statusActive > 0 && variables.statusReady > 0
                 expectedResult: "true"
           completed:
             - byConditions:
@@ -119,9 +122,29 @@ status resolves to `Undefined`.
                   status: "True"
 ```
 
-Note the `// 0` defaults. A path that may be absent must supply a default so the
-expression stays null-safe. `.status.active` does not exist before the Job
-starts, so `(.status.active // 0)` reads as `0` instead of erroring.
+`conditionsDefinition.expression` reads the workload's conditions list. Note
+the optional chaining: `object[?"status"][?"conditions"]` produces an optional
+value, and `.orValue(null)` supplies the fallback when `.status.conditions`
+does not exist yet. A field that may be absent must always be read through
+optionals so the expression stays null-safe.
+
+The `variables.*` references are named expressions. Declare them under
+`spec.variables`, next to `structureDefinition`, and every expression in the
+definition can use them as `variables.<name>`:
+
+```yaml
+  variables:
+    - name: statusActive
+      expression: ([dyn(object.?status.?active.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusReady
+      expression: ([dyn(object.?status.?ready.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+```
+
+The idiom `([dyn(X.orValue(null))].filter(v, v != null && v != false) + [D])[0]`
+reads `X` and falls back to the default `D` when the field is missing or null.
+`.status.active` does not exist before the Job starts, so `statusActive`
+evaluates to `0` instead of erroring. Variables are evaluated in order, and a
+later variable may reference an earlier one.
 
 Map only the statuses the workload actually reports, and base each rule on the
 real condition types and fields in that workload's API. Inventing condition
@@ -133,28 +156,49 @@ validates but never reports the right status.
 `specDefinition` tells Karta where the workload stores its pod template. There
 are three mutually exclusive patterns; pick exactly one per component.
 
-- `podTemplateSpecPath` when the CRD embeds a full pod template.
-- `podSpecPath` (with optional `metadataPath`) when it embeds a bare pod spec.
+- `podTemplateSpec` when the CRD embeds a full pod template.
+- `podSpec` (with optional `metadata`) when it embeds a bare pod spec.
 - `fragmentedPodSpecDefinition` when pod fields are scattered across the spec.
 
-A Job embeds a full pod template at `.spec.template`, so use the first pattern.
+Each of these is an accessor pair: `expression` is the CEL read, and `patch`
+is a CEL expression constructing the write. A Job embeds a full pod template at
+`.spec.template`, so use the first pattern.
 
 ```yaml
       specDefinition:
-        podTemplateSpecPath: .spec.template
+        podTemplateSpec:
+          expression: object[?"spec"][?"template"].orValue(null)
+          patch: '{"spec": {"template": value}}'
+          replace: true
 ```
+
+In the patch expression, `value` is bound to the new value Karta computed. The
+patch builds either a partial object that merges into the workload (maps merge
+recursively, any other value replaces, and null removes the field) or an RFC
+6902 list of operations. `replace: true` makes the write replace the field
+instead of merging into it: the patch is first applied with `value` bound to
+null (removing the field) and then with the real value. A pod template update
+wants this; an annotations update usually does not.
 
 ## Step 5: Declare scale
 
-`scaleDefinition` tells Karta how to read replica counts. A Job's parallelism is
-its replica count.
+`scaleDefinition` tells Karta how to read replica counts. A Job's parallelism
+is its replica count.
 
 ```yaml
       scaleDefinition:
-        replicasPath: .spec.parallelism // 1
+        replicas:
+          expression: variables.specParallelism
 ```
 
-Again the `// 1` default keeps the path null-safe: `parallelism` is optional and
+With the matching variable under `spec.variables`:
+
+```yaml
+    - name: specParallelism
+      expression: ([dyn(object[?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+```
+
+The same default idiom keeps the read null-safe: `parallelism` is optional and
 defaults to 1 when unset.
 
 ## Step 6 (optional, experimental): Add scheduling instructions
@@ -184,8 +228,9 @@ Before using a definition, confirm:
 
 - All kinds use a full GVK.
 - The root component has a `statusDefinition`.
-- All jq paths are absolute and null-safe, and reference the correct resource
-  (workload object versus pod).
+- All expressions are null-safe (read possibly absent fields through optionals
+  with an `orValue` fallback) and reference the correct resource (workload
+  object versus pod).
 - No duplicated child kinds.
 - Pod selectors are mutually exclusive.
 - Status conditions match the workload's real API.
@@ -224,8 +269,8 @@ live workloads through the same uniform API, with no per-CRD code.
   [`docs/catalog/serving-kserve-io-inferenceservice-v1beta1.yaml`](./catalog/serving-kserve-io-inferenceservice-v1beta1.yaml) and
   [`docs/catalog/kubeflow-org-pytorchjob-v1.yaml`](./catalog/kubeflow-org-pytorchjob-v1.yaml).
 - Handle workloads with repeated roles or instances (for example the replicated
-  jobs of a JobSet) with `instanceIdPath` and a matching component instance
-  selector. See [`docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml`](./catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml).
+  jobs of a JobSet) with an `instanceIds` expression and a matching component
+  instance selector. See [`docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml`](./catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml).
 - Consume a definition from a controller with the Go Component API. See
   [`docs/examples/controller-runtime/`](./examples/controller-runtime/).
 - Read the full field reference in the [Technical Guide](./Technical%20Guide.md).

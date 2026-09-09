@@ -17,16 +17,25 @@ func Dynamo() *v1alpha1.Karta {
 		TypeMeta:   metav1.TypeMeta{APIVersion: "run.ai/v1alpha1", Kind: "Karta"},
 		ObjectMeta: metav1.ObjectMeta{Name: "nvidia-com-dynamographdeployment-v1alpha1"},
 		Spec: v1alpha1.KartaSpec{
+			Variables: []v1alpha1.Variable{
+				{Name: "services", Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0]`},
+				{Name: "statusState", Expression: `([dyn(object.?status.?state.orValue(null))].filter(v, v != null && v != false) + [""])[0]`},
+			},
 			StructureDefinition: v1alpha1.StructureDefinition{
 				RootComponent: v1alpha1.ComponentDefinition{
 					Name: "dynamographdeployment",
 					Kind: &v1alpha1.GroupVersionKind{Group: "nvidia.com", Version: "v1alpha1", Kind: "DynamoGraphDeployment"},
 					StatusDefinition: &v1alpha1.StatusDefinition{
-						PhaseDefinition: &v1alpha1.PhaseDefinition{Path: ".status.state"},
+						PhaseDefinition: &v1alpha1.PhaseDefinition{Expression: `object[?"status"][?"state"].orValue(null)`},
 						StatusMappings: v1alpha1.StatusMappings{
 							Initializing: []v1alpha1.StatusMatcher{
 								{ByPhase: "initializing"},
 								{ByPhase: "pending"},
+								// Just created: the operator has not written status.state yet.
+								{ByExpression: &v1alpha1.ExpressionMatcher{
+									Expression:     `variables.statusState == ""`,
+									ExpectedResult: "true",
+								}},
 							},
 							Running: []v1alpha1.StatusMatcher{{ByPhase: "successful"}},
 							Failed:  []v1alpha1.StatusMatcher{{ByPhase: "failed"}},
@@ -39,30 +48,30 @@ func Dynamo() *v1alpha1.Karta {
 						OwnerRef: ptr.To("dynamographdeployment"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerNamePath:     ptr.To(".spec.services | .[] | .extraPodSpec.schedulerName"),
-								LabelsPath:            ptr.To(".spec.services | .[] | .labels"),
-								AnnotationsPath:       ptr.To(".spec.services | .[] | .annotations"),
-								ResourcesPath:         ptr.To(".spec.services | .[] | .resources"),
-								ResourceClaimsPath:    ptr.To(".spec.services | .[] | .extraPodSpec.resourceClaims"),
-								PodAffinityPath:       ptr.To(".spec.services | .[] | .extraPodSpec.affinity.podAffinity"),
-								NodeAffinityPath:      ptr.To(".spec.services | .[] | .extraPodSpec.affinity.nodeAffinity"),
-								ContainerPath:         ptr.To(".spec.services | .[] | .extraPodSpec.mainContainer"),
-								PriorityClassNamePath: ptr.To(".spec.services | .[] | .extraPodSpec.priorityClassName"),
-								ImagePath:             ptr.To(".spec.services | .[] | .extraPodSpec.mainContainer.image"),
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"schedulerName"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"extraPodSpec": {"schedulerName": value}}}}}`, Replace: true},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"labels"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"labels": value}}}}`, Replace: true},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"annotations"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"annotations": value}}}}`, Replace: true},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"resources"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"resources": value}}}}`, Replace: true},
+								ResourceClaims:    &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"resourceClaims"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"extraPodSpec": {"resourceClaims": value}}}}}`, Replace: true},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"affinity"][?"podAffinity"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"podAffinity": value}}}}}}`, Replace: true},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"affinity"][?"nodeAffinity"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"nodeAffinity": value}}}}}}`, Replace: true},
+								Container:         &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"mainContainer"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": value}}}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"priorityClassName"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"extraPodSpec": {"priorityClassName": value}}}}}`, Replace: true},
+								Image:             &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"mainContainer"][?"image"].orValue(null))`, Patch: `{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": {"image": value}}}}}}`, Replace: true},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
-							ReplicasPath:    ptr.To(".spec.services[] | (.replicas // 1) * (.multinode.nodeCount // 1)"),
-							MinReplicasPath: ptr.To(".spec.services | .[] | .autoscaling.minReplicas"),
-							MaxReplicasPath: ptr.To(".spec.services | .[] | .autoscaling.maxReplicas"),
+							Replicas:    &v1alpha1.ValueAccessor{Expression: `variables.services.map(k, string(k)).sort().map(k, ([dyn(variables.services[k].?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0] * ([dyn(variables.services[k].?multinode.?nodeCount.orValue(null))].filter(v, v != null && v != false) + [1.0])[0])`},
+							MinReplicas: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"autoscaling"][?"minReplicas"].orValue(null))`},
+							MaxReplicas: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"autoscaling"][?"maxReplicas"].orValue(null))`},
 						},
-						InstanceIdPath: ptr.To(".spec.services | to_entries[] | .key"),
+						InstanceIds: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort()`},
 						PodSelector: &v1alpha1.PodSelector{
 							ComponentInstanceSelector: &v1alpha1.ComponentInstanceSelector{
-								IdPath: `.metadata.labels["nvidia.com/dynamo-component"]`,
+								Expression: `object[?"metadata"][?"labels"][?"nvidia.com/dynamo-component"].orValue(null)`,
 							},
 							ReplicaSelector: &v1alpha1.ReplicaSelector{
-								KeyPath: `.metadata.labels["grove.io/podcliquescalinggroup-replica-index"] // .metadata.labels["leaderworkerset.sigs.k8s.io/group-index"]`,
+								Expression: `object[?"metadata"][?"labels"][?"grove.io/podcliquescalinggroup-replica-index"].orValue(object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null))`,
 							},
 						},
 					},
@@ -81,8 +90,8 @@ func Dynamo() *v1alpha1.Karta {
 					PodGroups: []v1alpha1.PodGroupDefinition{{
 						Name: "service",
 						Members: []v1alpha1.PodGroupMemberDefinition{{
-							ComponentName:   "service",
-							GroupByKeyPaths: []string{`.metadata.labels["nvidia.com/dynamo-component"]`},
+							ComponentName:      "service",
+							GroupByExpressions: []string{`object[?"metadata"][?"labels"][?"nvidia.com/dynamo-component"].orValue(null)`},
 						}},
 					}},
 				},
