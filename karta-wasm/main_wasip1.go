@@ -3,9 +3,11 @@
 
 //go:build wasip1
 
-// Command karta-wasm is the WASI door: one request on stdin
-// ({definition, workload}), the workload tree on stdout. It calls the same
-// core the browser door calls - no separate guest, no op protocol.
+// Command karta-wasm is the WASI door: one request on stdin, the result on
+// stdout. It calls the same core the browser door calls - no separate guest.
+//
+//	{"op":"buildTree","definition":"<json>","workload":"<json>"}
+//	{"op":"setField","workload":"<json>","path":".spec.schedulerName","value":"kai"}
 package main
 
 import (
@@ -17,30 +19,52 @@ import (
 )
 
 type request struct {
-	Definition string `json:"definition"`
+	Op         string `json:"op"`
+	Definition string `json:"definition,omitempty"`
 	Workload   string `json:"workload"`
+	Path       string `json:"path,omitempty"`
+	Value      any    `json:"value,omitempty"`
 }
 
 type response struct {
-	Data  any    `json:"data"`
-	Error string `json:"error,omitempty"`
+	Data  json.RawMessage `json:"data,omitempty"`
+	Error string          `json:"error,omitempty"`
 }
 
 func main() {
 	var req request
 	if err := json.NewDecoder(os.Stdin).Decode(&req); err != nil {
-		writeError(err)
-		return
+		fail(err)
 	}
-	workloadTree, err := core.BuildTree(context.Background(), req.Definition, req.Workload)
-	if err != nil {
-		writeError(err)
-		return
+	ctx := context.Background()
+
+	switch req.Op {
+	case "buildTree":
+		workloadTree, err := core.BuildTree(ctx, req.Definition, req.Workload)
+		if err != nil {
+			fail(err)
+		}
+		emit(workloadTree)
+	case "setField":
+		object, err := core.SetField(ctx, req.Workload, req.Path, req.Value)
+		if err != nil {
+			fail(err)
+		}
+		emitRaw(object)
+	default:
+		emitError("unknown op " + req.Op)
 	}
-	_ = json.NewEncoder(os.Stdout).Encode(response{Data: workloadTree})
 }
 
-func writeError(err error) {
-	_ = json.NewEncoder(os.Stdout).Encode(response{Error: err.Error()})
+func emit(v any) {
+	data, _ := json.Marshal(v)
+	emitRaw(data)
+}
+func emitRaw(data []byte) {
+	_ = json.NewEncoder(os.Stdout).Encode(response{Data: data})
+}
+func emitError(msg string) {
+	_ = json.NewEncoder(os.Stdout).Encode(response{Error: msg})
 	os.Exit(1)
 }
+func fail(err error) { emitError(err.Error()) }

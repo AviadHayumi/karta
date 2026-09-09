@@ -29,20 +29,39 @@ door calls , and writes the tree to stdout. the sandbox host runs that wasm.
 
 ## use it
 
+the host has two calls, both run in a fresh isolated instance :
+
 ```go
 box, _ := sandbox.New(ctx, wasm)   // compile the wasi door once
 defer box.Close(ctx)
 
-tree, _ := box.BuildTree(ctx, definitionJSON, workloadJSON)
-// tree is the {data, error} envelope holding the workload tree
+tree, _ := box.BuildTree(ctx, definitionJSON, workloadJSON)          // read
+obj,  _ := box.SetField(ctx, workloadJSON, ".metadata.labels.team", `"ml"`) // write one field
 ```
 
-build the wasi door and run the example :
+`BuildTree` returns the {data, error} envelope holding the workload tree.
+`SetField` is the low-level write door - it assigns one jq path and returns the
+mutated object. the typed, capability-checked UpdatePodTemplate is the
+higher-level way.
+
+the example builds the tree, PARSES it by walking every (component, instance),
+then mutates a label - all in the sandbox :
 
 ```sh
 cd karta-wasm && GOOS=wasip1 GOARCH=wasm go build -o karta-wasi.wasm .
-go run ./sandbox/example karta-wasm/karta-wasi.wasm
+go run ./sandbox/example karta-wasi.wasm \
+  ../docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml \
+  ../docs/examples/quickstart/jobset.yaml
 ```
+
+```
+status: [Running]
+  component replicatedjob  instance leader     pods:true
+  component replicatedjob  instance workers    pods:true
+after setField .metadata.labels.team=ml -> map[team:ml]
+```
+
+swap in any catalog definition and workload to try another type.
 
 ## what it costs
 

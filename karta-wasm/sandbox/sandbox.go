@@ -48,11 +48,20 @@ func New(ctx context.Context, wasm []byte) (*Sandbox, error) {
 // Close releases the runtime.
 func (s *Sandbox) Close(ctx context.Context) error { return s.runtime.Close(ctx) }
 
-// BuildTree runs the WASI door in a fresh instance: it writes
-// {definition, workload} to the guest's stdin and returns the guest's stdout,
-// the {data, error} envelope holding the workload tree.
+// BuildTree builds the workload tree in a fresh instance and returns the
+// {data, error} envelope holding it.
 func (s *Sandbox) BuildTree(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
-	request := fmt.Sprintf(`{"definition":%q,"workload":%q}`, definitionJSON, workloadJSON)
+	return s.run(ctx, fmt.Sprintf(`{"op":"buildTree","definition":%q,"workload":%q}`, definitionJSON, workloadJSON))
+}
+
+// SetField applies a single field write to the workload in a fresh instance
+// and returns the {data, error} envelope holding the mutated object. value is
+// JSON-encoded (a quoted string, a number, etc.).
+func (s *Sandbox) SetField(ctx context.Context, workloadJSON, path, valueJSON string) ([]byte, error) {
+	return s.run(ctx, fmt.Sprintf(`{"op":"setField","workload":%q,"path":%q,"value":%s}`, workloadJSON, path, valueJSON))
+}
+
+func (s *Sandbox) run(ctx context.Context, request string) ([]byte, error) {
 	var stdout, stderr bytes.Buffer
 	config := wazero.NewModuleConfig().
 		WithStdin(bytes.NewReader([]byte(request))).
