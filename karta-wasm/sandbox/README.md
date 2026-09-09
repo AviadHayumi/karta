@@ -5,11 +5,13 @@ Copyright (c) 2026 NVIDIA Corporation
 
 # karta in a sandbox
 
-run karta inside an isolated wasm instance instead of in the host process. the
+run karta inside an isolated wasm instance ( the browser door is documented in [karta-wasm](../README.md) ) instead of in the host process. the
 guest cannot reach host memory or state , so it is safer. the cost is time -
 every call boots a fresh instance and runs interpreted.
 
 ## how it fits
+
+![one core , two doors](../../docs/assets/karta-wasm-doors.png)
 
 the karta-wasm module has one shared core and two doors :
 
