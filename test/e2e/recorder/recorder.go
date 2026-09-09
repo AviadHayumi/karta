@@ -201,13 +201,17 @@ func (f *Flow) buildRecording(obs *observation) *Recording {
 		Want:          string(f.terminalState()),
 	}
 	for _, snap := range obs.snapshots {
-		out.Events = append(out.Events, Event{
+		event := Event{
 			Kind:                    EventState,
 			State:                   string(snap.state),
 			StaleObservedGeneration: snap.staleObservedGeneration,
 			ResourceVersion:         snap.cr.GetResourceVersion(),
 			Object:                  stripVolatileFields(snap.cr),
-		})
+		}
+		for _, ref := range snap.refs {
+			event.References = append(event.References, stripVolatileFields(ref))
+		}
+		out.Events = append(out.Events, event)
 		if snap.action != nil {
 			out.Events = append(out.Events, Event{Kind: EventAction, Action: snap.action})
 		}

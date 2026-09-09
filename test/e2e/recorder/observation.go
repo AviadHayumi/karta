@@ -10,9 +10,11 @@ import (
 	"reflect"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
@@ -35,12 +37,14 @@ type observation struct {
 	failure   string                     // why the flow did not finish, empty if it did
 }
 
-// snapshot is one recorded CR: the state read from its own fields, the object, and any action performed at it.
+// snapshot is one recorded CR: the state read from its own fields, the object, any action performed at it,
+// and the referenced CRs captured with it.
 type snapshot struct {
 	state                   kartav1alpha1.ResourceStatus
 	cr                      *unstructured.Unstructured
 	action                  *RecordedAction
 	staleObservedGeneration bool // the controller had not observed the spec yet; recorded, but never judged
+	refs                    []*unstructured.Unstructured
 }
 
 // watchAndAct watches the workload until the flow finishes or fails, recording each CR it sees and acting
@@ -122,7 +126,9 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 		state = kartav1alpha1.UndefinedStatus
 	}
 	observed := hasObservedCurrentGeneration(cr)
-	o.keep(cr, state, observed)
+	if !o.keep(ctx, cr, state, observed) {
+		return false
+	}
 	if !observed {
 		return false
 	}
@@ -134,14 +140,64 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 }
 
 // keep appends cr as a new snapshot, unless it duplicates the last kept one (same content once the volatile
-// fields are stripped).
-func (o *observation) keep(cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) {
+// fields are stripped). A kept frame also captures the flow's declared references; a capture
+// failure other than NotFound ends the run, since a recording with a silently missing reference
+// would replay wrong. Returns false when the run must stop.
+func (o *observation) keep(ctx context.Context, cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) (ok bool) {
 	sig := stripVolatileFields(cr)
 	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, sig) {
-		return
+		return true
+	}
+	refs, err := o.captureReferences(ctx)
+	if err != nil {
+		o.failure = err.Error()
+		return false
 	}
 	o.lastSig = sig
-	o.snapshots = append(o.snapshots, snapshot{state: state, cr: cr.DeepCopy(), staleObservedGeneration: !observed})
+	o.snapshots = append(o.snapshots, snapshot{state: state, cr: cr.DeepCopy(), staleObservedGeneration: !observed, refs: refs})
+	return true
+}
+
+// captureReferences fetches the flow's declared references as they are right now. A reference
+// that does not exist is skipped: that is exactly the shape a lookup miss replays as.
+func (o *observation) captureReferences(ctx context.Context) ([]*unstructured.Unstructured, error) {
+	if o.flow == nil || len(o.flow.captures) == 0 {
+		return nil, nil
+	}
+	out := make([]*unstructured.Unstructured, 0, len(o.flow.captures))
+	for _, capture := range o.flow.captures {
+		object := &unstructured.Unstructured{}
+		object.SetGroupVersionKind(schema.GroupVersionKind{
+			Group: capture.GVK.Group, Version: capture.GVK.Version, Kind: capture.GVK.Kind,
+		})
+		key := client.ObjectKey{Name: capture.Name}
+		if namespaced, err := o.flow.isNamespaced(object); err != nil {
+			return nil, fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
+		} else if namespaced {
+			key.Namespace = o.flow.rec.config.Cluster.Namespace
+		}
+		err := o.flow.client().Get(ctx, key, object)
+		switch {
+		case apierrors.IsNotFound(err):
+			continue
+		case err != nil:
+			return nil, fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
+		}
+		out = append(out, object)
+	}
+
+	return out, nil
+}
+
+// isNamespaced reports whether the object's kind is namespace-scoped.
+func (f *Flow) isNamespaced(object *unstructured.Unstructured) (bool, error) {
+	gvk := object.GroupVersionKind()
+	mapping, err := f.client().RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return false, fmt.Errorf("rest mapping for %s: %w", gvk, err)
+	}
+
+	return mapping.Scope.Name() == meta.RESTScopeNameNamespace, nil
 }
 
 // advanceStep performs the next pending step's action if the workload just reached its state and gate, then

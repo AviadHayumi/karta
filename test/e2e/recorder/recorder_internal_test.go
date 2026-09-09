@@ -4,6 +4,7 @@
 package recorder
 
 import (
+	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -101,7 +102,7 @@ var _ = Describe("the recorded walk", func() {
 
 		o := &observation{}
 		for _, cr := range seq {
-			o.keep(cr, classify(cr, states), true)
+			o.keep(context.Background(), cr, classify(cr, states), true)
 		}
 
 		Expect(o.states()).To(Equal([]kartav1alpha1.ResourceStatus{initializing, running, initializing, completed}))
@@ -115,8 +116,8 @@ var _ = Describe("the recorded walk", func() {
 	// order-checked walk.
 	It("keeps a stale frame out of the judged walk", func() {
 		o := &observation{}
-		o.keep(objWithStatus(map[string]any{"active": int64(1)}), initializing, true)
-		o.keep(objWithStatus(map[string]any{"active": int64(2)}), initializing, false)
+		o.keep(context.Background(), objWithStatus(map[string]any{"active": int64(1)}), initializing, true)
+		o.keep(context.Background(), objWithStatus(map[string]any{"active": int64(2)}), initializing, false)
 
 		Expect(o.snapshots).To(HaveLen(2))
 		Expect(o.snapshots[1].staleObservedGeneration).To(BeTrue())

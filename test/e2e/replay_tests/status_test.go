@@ -50,7 +50,9 @@ var _ = Describe("Karta reads the recorded state", func() {
 
 			for r.Next() {
 				state, cr := r.State(), r.Object()
-				root, err := resource.NewComponentFactoryFromObject(karta, cr).GetRootComponent()
+				reader := &recordedReader{objects: r.References()}
+				root, err := resource.NewComponentFactoryFromObject(karta, cr,
+					resource.WithReferenceReader(reader)).GetRootComponent()
 				Expect(err).NotTo(HaveOccurred(), "Karta could not parse the %q CR", state)
 				status, err := root.GetStatus(ctx)
 				Expect(err).NotTo(HaveOccurred(), "Karta could not read the %q CR", state)
