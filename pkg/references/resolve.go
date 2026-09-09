@@ -39,10 +39,9 @@ func Resolve(ctx context.Context, reader ResourceReader, karta *v1alpha1.Karta, 
 		return nil, fmt.Errorf("resolve references: %w", err)
 	}
 
-	checker, _ := reader.(PermissionChecker)
 	resolved := make(ResolvedReferences, len(karta.Spec.StructureDefinition.References))
 	for _, ref := range karta.Spec.StructureDefinition.References {
-		value, err := resolveOne(ctx, reader, checker, runner, ref, namespace)
+		value, err := resolveOne(ctx, reader, runner, ref, namespace)
 		if err != nil {
 			return nil, fmt.Errorf("reference %q: %w", ref.Name, err)
 		}
@@ -52,8 +51,9 @@ func Resolve(ctx context.Context, reader ResourceReader, karta *v1alpha1.Karta, 
 	return resolved, nil
 }
 
-func resolveOne(ctx context.Context, reader ResourceReader, checker PermissionChecker,
+func resolveOne(ctx context.Context, reader ResourceReader,
 	runner expression.Runner, ref v1alpha1.ResourceReference, namespace string) (ReferenceValue, error) {
+	checker, _ := reader.(PermissionChecker)
 	gvk := schema.GroupVersionKind{Group: ref.GVK.Group, Version: ref.GVK.Version, Kind: ref.GVK.Kind}
 	switch {
 	case ref.Lookup != nil:

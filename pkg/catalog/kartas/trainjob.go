@@ -17,8 +17,8 @@ import (
 // is the TrainJob's override coalesced onto the runtime's base - the first definition in the
 // catalog whose reads need more than the workload object.
 func TrainJob() *v1alpha1.Karta {
-	// The runtime's single replicated job holds the pod template at
-	// template.spec.replicatedJobs[0].template.spec.template.spec, container "node".
+	// A ClusterTrainingRuntime template holds one replicated job whose only container carries
+	// the training image and resources, so [0] addresses it deterministically.
 	const runtimeContainer = `references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0]`
 
 	return &v1alpha1.Karta{

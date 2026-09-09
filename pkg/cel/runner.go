@@ -88,14 +88,14 @@ var referencesAny = regexp.MustCompile(`\breferences\b`)
 
 // needsReferences reports whether any of the expressions, or any of the definition variables the
 // needed set selects, mentions the references binding.
-func (r *runner) needsReferences(needed map[string]bool, expressions ...string) bool {
+func (r *runner) needsReferences(neededVars map[string]bool, expressions ...string) bool {
 	for _, expr := range expressions {
 		if referencesAny.MatchString(expr) {
 			return true
 		}
 	}
 	for _, variable := range r.variables {
-		if needed != nil && !needed[variable.Name] {
+		if neededVars != nil && !neededVars[variable.Name] {
 			continue
 		}
 		if referencesAny.MatchString(variable.Expression) {
@@ -108,7 +108,9 @@ func (r *runner) needsReferences(needed map[string]bool, expressions ...string) 
 
 // references resolves the definition's references and memoizes a successful result, so
 // addressing stays stable across a multi-pass write. A failed resolution is not cached: a
-// transient fetch error on one call must not poison every later one.
+// transient fetch error on one call must not poison every later one. The lock is deliberately
+// held across the provider call - a single flight, so concurrent first readers cannot each hit
+// the cluster.
 func (r *runner) references(ctx context.Context) (map[string]any, error) {
 	if r.referencesProvider == nil {
 		return nil, expression.ErrReferencesNotSupported
@@ -132,8 +134,8 @@ func (r *runner) references(ctx context.Context) (map[string]any, error) {
 
 // referencesFor returns the references binding for an evaluation: the resolved values when any
 // involved expression mentions references, an empty map otherwise.
-func (r *runner) referencesFor(ctx context.Context, needed map[string]bool, expressions ...string) (map[string]any, error) {
-	if !r.needsReferences(needed, expressions...) {
+func (r *runner) referencesFor(ctx context.Context, neededVars map[string]bool, expressions ...string) (map[string]any, error) {
+	if !r.needsReferences(neededVars, expressions...) {
 		return map[string]any{}, nil
 	}
 
@@ -141,9 +143,9 @@ func (r *runner) referencesFor(ctx context.Context, needed map[string]bool, expr
 }
 
 // ResolveVariables evaluates the definition's variables against the CURRENT document and returns
-// them, so a caller can freeze addressing across a multi-pass write - every
-// path before the first write landed. When expressions are given, only the variables they
-// reference (transitively) are resolved.
+// them, so a caller can freeze addressing across a multi-pass write: every path is computed
+// against the document as it stood before the first write landed. When expressions are given,
+// only the variables they reference (transitively) are resolved.
 func (r *runner) ResolveVariables(ctx context.Context, expressions ...string) (map[string]any, error) {
 	object, err := r.GetObject()
 	if err != nil {
@@ -245,26 +247,22 @@ func (r *runner) EvaluateWithVariables(ctx context.Context, expression string, v
 		}
 		converted[name] = primitive
 	}
-	needed := neededVariables(r.variables, []string{expression})
-	if _, bound := converted["references"]; !bound {
-		// With a frozen variables map the definition variables never re-run, so only the
-		// expression itself decides whether references are needed.
-		scanScope := needed
-		if _, frozen := converted["variables"]; frozen {
-			scanScope = map[string]bool{}
-		}
-		refs, err := r.referencesFor(ctx, scanScope, expression)
-		if err != nil {
-			return nil, err
-		}
-		converted["references"] = refs
+	neededVars := neededVariables(r.variables, []string{expression})
+	// The references binding is runner-managed, never caller-supplied. With a frozen variables
+	// map the definition variables never re-run, so only the expression itself decides whether
+	// references are needed.
+	scanScope := neededVars
+	_, frozen := converted["variables"]
+	if frozen {
+		scanScope = map[string]bool{}
 	}
-	refs, ok := converted["references"].(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("the references binding must be a map, got %T", converted["references"])
+	refs, err := r.referencesFor(ctx, scanScope, expression)
+	if err != nil {
+		return nil, err
 	}
-	if _, frozen := converted["variables"]; !frozen {
-		resolved, err := r.resolveVariables(ctx, object, needed, refs)
+	converted["references"] = refs
+	if !frozen {
+		resolved, err := r.resolveVariables(ctx, object, neededVars, refs)
 		if err != nil {
 			return nil, err
 		}

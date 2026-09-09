@@ -52,10 +52,10 @@ type PermissionChecker interface {
 	CheckRead(ctx context.Context, gvk schema.GroupVersionKind, namespace, verb string) error
 }
 
-// ReferenceValue is the fetched value of one reference: exactly one of Object or List is set.
+// ReferenceValue is the fetched value of one reference: at most one of Object or List is set.
 // Build values with LookupValue and ListValue, which canonicalize the empty cases; the zero
 // value means a lookup that found nothing (the reference stays unbound, so only an expression
-// that reads it fails). When both fields are set, Object wins.
+// that reads it fails). Should both fields ever be set, Object wins.
 type ReferenceValue struct {
 	// Object is set for a lookup; nil when the object was not found.
 	Object *unstructured.Unstructured

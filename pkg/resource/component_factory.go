@@ -113,11 +113,14 @@ func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObjec
 	for _, opt := range opts {
 		opt(&options)
 	}
+	if options.hasResolved && options.reader != nil {
+		err := errors.New("both WithReferences and WithReferenceReader were provided; pass exactly one")
+
+		return NewComponentFactory(karta, NewAccessor(errRunner{err}))
+	}
 
 	provider := func(ctx context.Context) (map[string]any, error) {
 		switch {
-		case options.hasResolved && options.reader != nil:
-			return nil, errors.New("both WithReferences and WithReferenceReader were provided; pass exactly one")
 		case options.hasResolved:
 			return options.resolved.Bindings()
 		case options.reader != nil:
