@@ -96,6 +96,42 @@ scaleDefinition:
     expression: variables.specReplicas
 ```
 
+### References
+Some workloads keep part of their spec in another object. A TrainJob points at a
+ClusterTrainingRuntime that holds the base pod template; the TrainJob itself carries only
+overrides. `structureDefinition.references` declares such resources, and every expression reads
+them as `references.<name>`.
+
+A reference has one of two shapes. A `lookup` fetches one object by a name resolved from the
+workload; a `list` fetches a set by a structured label selector whose values can also come from
+the workload. There is no namespace field: a namespaced reference always resolves in the
+workload's own namespace.
+
+```YAML
+spec:
+  structureDefinition:
+    references:
+    - name: trainingRuntime
+      gvk: { group: trainer.kubeflow.org, version: v1alpha1, kind: ClusterTrainingRuntime }
+      lookup:
+        nameExpression: object.spec.runtimeRef.name
+```
+
+```YAML
+specDefinition:
+  fragmentedPodSpecDefinition:
+    image:
+      expression: object.?spec.?trainer.?image.orValue(references.trainingRuntime.spec.template.spec.replicatedJobs[0].template.spec.template.spec.containers[0][?"image"].orValue(null))
+```
+
+Karta fetches nothing itself. The consumer either resolves the references and passes the values
+(`resource.WithReferences`), or hands the factory a reader (`resource.WithReferenceReader`) and
+resolution happens lazily on the first expression that mentions references. A lookup that finds
+nothing stays unbound: plain access fails on use, and optional access
+(`references[?"name"].orValue(...)`) supplies a default. A reader that implements the permission
+check interface is asked before every fetch, so a denial names the reference and the missing
+verb. See `docs/design/references/high-level-design.md` for the full design.
+
 ## Spec Definitions
 
 There are multiple, mutually exclusive, types of specDefinitions:
