@@ -178,7 +178,11 @@ func (f *Flow) deleteWorkload(ctx context.Context, workload *unstructured.Unstru
 // observe watches the workload and records every distinct CR until the flow finishes, acting on the
 // journey's action steps as their states are reached. Its failure is set if the terminal state was not met.
 func (f *Flow) observe(ctx context.Context, workload *unstructured.Unstructured) *observation {
-	o := &observation{flow: f, workload: workload, pending: actionSteps(f.journey)}
+	o := &observation{flow: f, workload: workload, lastSeen: workload, pending: actionSteps(f.journey)}
+	if err := o.startReferenceWatches(ctx); err != nil {
+		o.failure = err.Error()
+		return o
+	}
 
 	// A workload whose terminal state is already visible in the create response may never produce a watch
 	// event at all: a suspended CronJob never schedules, so its controller never writes status, and a watch

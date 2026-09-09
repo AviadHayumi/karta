@@ -35,6 +35,20 @@ type observation struct {
 	lastSig   map[string]any             // last kept CR minus volatile fields, for dedup
 	lastSeen  *unstructured.Unstructured // most recent CR, shown in triage on timeout
 	failure   string                     // why the flow did not finish, empty if it did
+
+	// References are watched, not polled: refCache holds each captured CR's latest state, fed by
+	// one watcher per capture into refEvents, so a reference that changes under an unchanged
+	// workload still cuts a frame the moment it happens.
+	refCache  map[string]*unstructured.Unstructured
+	refEvents chan referenceEvent
+}
+
+// referenceEvent is one change to a captured reference, or the death of its watcher.
+type referenceEvent struct {
+	key    string
+	typ    watch.EventType
+	object *unstructured.Unstructured
+	err    error
 }
 
 // snapshot is one recorded CR: the state read from its own fields, the object, any action performed at it,
@@ -64,6 +78,15 @@ func (o *observation) watchAndAct(ctx context.Context) {
 			o.failure = fmt.Sprintf("did not reach %q within %s; observed %v\nlast-seen status:\n%s",
 				o.flow.terminalState(), o.flow.rec.timeout, o.states(), dumpStatus(o.lastSeen))
 			return
+		case change := <-o.refEvents:
+			if change.err != nil {
+				o.failure = fmt.Sprintf("reference watch %s: %v; observed %v; re-record the flow", change.key, change.err, o.states())
+				return
+			}
+			o.applyReferenceChange(change)
+			// The evaluation input changed even though the workload did not: cut a frame from the
+			// last-seen workload. Actions and the terminal check belong to workload events only.
+			o.keep(o.lastSeen, o.classify(o.lastSeen), hasObservedCurrentGeneration(o.lastSeen))
 		case event, open := <-watcher.ResultChan():
 			switch {
 			case !open:
@@ -87,6 +110,26 @@ func (o *observation) watchAndAct(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// classify names the workload's state from its own fields, keeping an unrecognisable frame as
+// Undefined so it fails the order check loudly instead of vanishing.
+func (o *observation) classify(cr *unstructured.Unstructured) kartav1alpha1.ResourceStatus {
+	state := classify(cr, o.flow.rec.states)
+	if state == "" {
+		return kartav1alpha1.UndefinedStatus
+	}
+
+	return state
+}
+
+// applyReferenceChange folds one watched change into the cache.
+func (o *observation) applyReferenceChange(change referenceEvent) {
+	if change.typ == watch.Deleted {
+		delete(o.refCache, change.key)
+		return
+	}
+	o.refCache[change.key] = change.object
 }
 
 // startWatch starts a resilient watch of the workload by name that resumes after transient drops.
@@ -119,17 +162,9 @@ func (f *Flow) startWatch(ctx context.Context, workload *unstructured.Unstructur
 // terminal state, or an action failed (the failure itself is in o.failure).
 func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured) (stop bool) {
 	o.lastSeen = cr
-	state := classify(cr, o.flow.rec.states)
-	if state == "" {
-		// A CR we cannot classify is a real gap: keep it as Undefined so an observed frame fails the order
-		// check and the run is saved for triage, rather than skipping it silently.
-		state = kartav1alpha1.UndefinedStatus
-	}
+	state := o.classify(cr)
 	observed := hasObservedCurrentGeneration(cr)
-	if err := o.keep(ctx, cr, state, observed); err != nil {
-		o.failure = err.Error()
-		return true
-	}
+	o.keep(cr, state, observed)
 	if !observed {
 		return false
 	}
@@ -141,56 +176,129 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 }
 
 // keep appends cr as a new snapshot, unless it duplicates the last kept one - same workload and
-// same references once the volatile fields are stripped. References are captured before the
-// dedup so a runtime that changed under an unchanged workload still produces a frame, and a
-// capture failure ends the run: a recording with a silently missing reference would replay
-// wrong.
-func (o *observation) keep(ctx context.Context, cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) error {
-	refs, err := o.captureReferences(ctx)
-	if err != nil {
-		return err
-	}
+// same references once the volatile fields are stripped. References come from the watch-fed
+// cache, so a frame always pairs the workload with the reference state that was current when
+// the change happened, not with a later re-read.
+func (o *observation) keep(cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) {
+	refs := o.cachedReferences()
 	signature := map[string]any{"workload": stripVolatileFields(cr)}
 	for _, ref := range refs {
 		signature["ref/"+ref.GetName()] = stripVolatileFields(ref)
 	}
 	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, signature) {
-		return nil
+		return
 	}
 	o.lastSig = signature
 	o.snapshots = append(o.snapshots, snapshot{state: state, cr: cr.DeepCopy(), staleObservedGeneration: !observed, refs: refs})
-	return nil
 }
 
-// captureReferences fetches the flow's declared references as they are right now. A reference
-// that does not exist is skipped: that is exactly the shape a lookup miss replays as.
-func (o *observation) captureReferences(ctx context.Context) ([]*unstructured.Unstructured, error) {
+// cachedReferences returns the captured references' current state in declaration order. An
+// absent reference is skipped: that is exactly the shape a lookup miss replays as.
+func (o *observation) cachedReferences() []*unstructured.Unstructured {
 	if o.flow == nil || len(o.flow.captures) == 0 {
-		return nil, nil
+		return nil
 	}
 	out := make([]*unstructured.Unstructured, 0, len(o.flow.captures))
 	for _, capture := range o.flow.captures {
-		object := &unstructured.Unstructured{}
-		object.SetGroupVersionKind(schema.GroupVersionKind{
-			Group: capture.GVK.Group, Version: capture.GVK.Version, Kind: capture.GVK.Kind,
-		})
-		key := client.ObjectKey{Name: capture.Name}
-		if namespaced, err := o.flow.isNamespaced(object); err != nil {
-			return nil, fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
-		} else if namespaced {
-			key.Namespace = o.flow.rec.config.Cluster.Namespace
+		if object, ok := o.refCache[capture.key()]; ok {
+			out = append(out, object.DeepCopy())
 		}
-		err := o.flow.client().Get(ctx, key, object)
-		switch {
-		case apierrors.IsNotFound(err):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
-		}
-		out = append(out, object)
 	}
 
-	return out, nil
+	return out
+}
+
+// startReferenceWatches seeds the cache with each capture's current state and starts a resilient
+// watch per capture, all funneled into refEvents. Starting from the seed's resourceVersion means
+// no change is lost between the seed and the watch; a capture that does not exist yet starts
+// from the list's version, so even its creation is caught.
+func (o *observation) startReferenceWatches(ctx context.Context) error {
+	if len(o.flow.captures) == 0 {
+		return nil
+	}
+	o.refCache = make(map[string]*unstructured.Unstructured, len(o.flow.captures))
+	o.refEvents = make(chan referenceEvent)
+	for _, capture := range o.flow.captures {
+		if err := o.watchReference(ctx, capture); err != nil {
+			return fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (o *observation) watchReference(ctx context.Context, capture CapturedReference) error {
+	gvk := schema.GroupVersionKind{Group: capture.GVK.Group, Version: capture.GVK.Version, Kind: capture.GVK.Kind}
+	mapping, err := o.flow.client().RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return fmt.Errorf("rest mapping for %s: %w", gvk, err)
+	}
+	namespace := ""
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		namespace = o.flow.rec.config.Cluster.Namespace
+	}
+
+	resource := o.flow.rec.config.Cluster.Dynamic.Resource(mapping.Resource)
+	nameSelector := fields.OneTermEqualSelector("metadata.name", capture.Name).String()
+	list, err := resource.Namespace(namespace).List(ctx, metav1.ListOptions{FieldSelector: nameSelector})
+	if err != nil {
+		return fmt.Errorf("seed %s: %w", capture.Name, err)
+	}
+	if len(list.Items) > 0 {
+		o.refCache[capture.key()] = &list.Items[0]
+	}
+
+	watcher, err := watchtools.NewRetryWatcherWithContext(ctx, list.GetResourceVersion(), &cache.ListWatch{
+		WatchFuncWithContext: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			opts.FieldSelector = nameSelector
+			return resource.Namespace(namespace).Watch(ctx, opts)
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("watch %s: %w", capture.Name, err)
+	}
+
+	go o.forwardReferenceEvents(ctx, capture.key(), watcher)
+
+	return nil
+}
+
+// forwardReferenceEvents relays one watcher's events into the shared channel until the watcher
+// dies or the run ends. A watcher that cannot resume is reported as an event, so the main loop
+// fails the run instead of recording with silently stale references.
+func (o *observation) forwardReferenceEvents(ctx context.Context, key string, watcher watch.Interface) {
+	defer watcher.Stop()
+	var lastErr error
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, open := <-watcher.ResultChan():
+			switch {
+			case !open:
+				o.sendReferenceEvent(ctx, referenceEvent{key: key,
+					err: fmt.Errorf("watch lost its position and cannot resume; last watch error: %v", lastErr)})
+				return
+			case event.Type == watch.Error:
+				lastErr = apierrors.FromObject(event.Object)
+			default:
+				object, ok := event.Object.(*unstructured.Unstructured)
+				if !ok {
+					o.sendReferenceEvent(ctx, referenceEvent{key: key,
+						err: fmt.Errorf("watch delivered a %T instead of the reference", event.Object)})
+					return
+				}
+				o.sendReferenceEvent(ctx, referenceEvent{key: key, typ: event.Type, object: object})
+			}
+		}
+	}
+}
+
+func (o *observation) sendReferenceEvent(ctx context.Context, event referenceEvent) {
+	select {
+	case <-ctx.Done():
+	case o.refEvents <- event:
+	}
 }
 
 // isNamespaced asks the cluster for the kind's scope: a capture may name a namespaced or a

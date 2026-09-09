@@ -30,6 +30,10 @@ type CapturedReference struct {
 	Name string
 }
 
+func (c CapturedReference) key() string {
+	return c.GVK.Group + "/" + c.GVK.Version + "/" + c.GVK.Kind + "/" + c.Name
+}
+
 // Step is one declared journey step, built with Reaches and refined with Optional, With, and Do.
 type Step struct {
 	step journeyStep
