@@ -4,11 +4,11 @@ events:
     apiVersion: grove.io/v1alpha1
     kind: PodCliqueSet
     metadata:
-      creationTimestamp: "2026-09-08T20:53:35Z"
+      creationTimestamp: "2026-09-09T02:17:20Z"
       generation: 1
-      name: karta-e2e-grove-initializing
-      namespace: test-zzhrw
-      uid: c77db491-8578-4d9c-b11e-d9786ab923bb
+      name: karta-e2e-grove-progressing
+      namespace: test-2l7dq
+      uid: b9007c8a-6c1d-49dd-b2a2-912112b9214e
     spec:
       replicas: 1
       template:
@@ -38,7 +38,7 @@ events:
         terminationDelay: 4h0m0s
   phases:
   - Progressing
-  resourceVersion: "60974"
+  resourceVersion: "73283"
   state: Progressing
 flow: progressing
 kartaFile: docs/catalog/grove-io-podcliqueset-v1alpha1.yaml

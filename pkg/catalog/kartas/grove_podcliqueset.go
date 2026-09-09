@@ -22,7 +22,7 @@ func GrovePodCliqueSet() *v1alpha1.Karta {
 					Name: "podcliqueset",
 					Kind: &v1alpha1.GroupVersionKind{Group: "grove.io", Version: "v1alpha1", Kind: "PodCliqueSet"},
 					// Grove PCS has no aggregate phase field. The reliable signal for
-					// running/initializing is replica counts (availableReplicas vs
+					// running/progressing is replica counts (availableReplicas vs
 					// spec.replicas). TopologyLevelsUnavailable is the only PCS-level
 					// failure condition (TAS-specific); broader failures surface on
 					// child PodClique/Pod resources.

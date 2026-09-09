@@ -6,13 +6,13 @@ events:
     metadata:
       annotations:
         nvidia.com/dynamo-operator-origin-version: 1.2.1
-      creationTimestamp: "2026-09-08T20:56:50Z"
+      creationTimestamp: "2026-09-09T02:17:22Z"
       finalizers:
       - nvidia.com/finalizer
       generation: 1
-      name: karta-e2e-dynamo-initializing
-      namespace: test-zzhrw
-      uid: 8e6c61c8-68dc-47ae-9f2f-e97ed166bbea
+      name: karta-e2e-dynamo-pending
+      namespace: test-2l7dq
+      uid: cfc099a0-47cc-468f-9fbf-264d1731ce4c
     spec:
       services:
         Frontend:
@@ -49,7 +49,7 @@ events:
       state: ""
   phases:
   - Undefined
-  resourceVersion: "63035"
+  resourceVersion: "73301"
   state: Undefined
 - kind: STATE
   object:
@@ -58,15 +58,15 @@ events:
     metadata:
       annotations:
         nvidia.com/current-worker-hash: 43fa66e8
-        nvidia.com/current-worker-hash-v2: f81a947f
+        nvidia.com/current-worker-hash-v2: 2f55f251
         nvidia.com/dynamo-operator-origin-version: 1.2.1
-      creationTimestamp: "2026-09-08T20:56:50Z"
+      creationTimestamp: "2026-09-09T02:17:22Z"
       finalizers:
       - nvidia.com/finalizer
       generation: 1
-      name: karta-e2e-dynamo-initializing
-      namespace: test-zzhrw
-      uid: 8e6c61c8-68dc-47ae-9f2f-e97ed166bbea
+      name: karta-e2e-dynamo-pending
+      namespace: test-2l7dq
+      uid: cfc099a0-47cc-468f-9fbf-264d1731ce4c
     spec:
       services:
         Frontend:
@@ -103,7 +103,7 @@ events:
       state: ""
   phases:
   - Undefined
-  resourceVersion: "63037"
+  resourceVersion: "73302"
   state: Undefined
 - kind: STATE
   object:
@@ -112,15 +112,15 @@ events:
     metadata:
       annotations:
         nvidia.com/current-worker-hash: 43fa66e8
-        nvidia.com/current-worker-hash-v2: f81a947f
+        nvidia.com/current-worker-hash-v2: 2f55f251
         nvidia.com/dynamo-operator-origin-version: 1.2.1
-      creationTimestamp: "2026-09-08T20:56:50Z"
+      creationTimestamp: "2026-09-09T02:17:22Z"
       finalizers:
       - nvidia.com/finalizer
       generation: 1
-      name: karta-e2e-dynamo-initializing
-      namespace: test-zzhrw
-      uid: 8e6c61c8-68dc-47ae-9f2f-e97ed166bbea
+      name: karta-e2e-dynamo-pending
+      namespace: test-2l7dq
+      uid: cfc099a0-47cc-468f-9fbf-264d1731ce4c
     spec:
       services:
         Frontend:
@@ -155,9 +155,9 @@ events:
           subComponentType: decode
     status:
       conditions:
-      - lastTransitionTime: "2026-09-08T20:56:50Z"
-        message: 'Resources not ready: karta-e2e-dynamo-initializing-decode-43fa66e8:
-          Component deployment not ready - Available condition not true; karta-e2e-dynamo-initializing-frontend:
+      - lastTransitionTime: "2026-09-09T02:17:23Z"
+        message: 'Resources not ready: karta-e2e-dynamo-pending-decode-43fa66e8: Component
+          deployment not ready - Available condition not true; karta-e2e-dynamo-pending-frontend:
           Component deployment not ready - Available condition not true'
         reason: some_resources_are_not_ready
         status: "False"
@@ -166,7 +166,7 @@ events:
       state: pending
   phases:
   - Pending
-  resourceVersion: "63073"
+  resourceVersion: "73322"
   state: Pending
 flow: pending
 kartaFile: docs/catalog/nvidia-com-dynamographdeployment-v1alpha1.yaml

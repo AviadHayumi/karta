@@ -58,6 +58,6 @@ var _ = Describe("Pod (built-in)", Ordered, Label("pod", "builtin"), func() {
 		out, err := recorder.NewFlow(rec, "pending", "testdata/pod/pending.yaml").
 			Through(recorder.Reaches(kartav1alpha1.PendingStatus)).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
-		Expect(err).NotTo(HaveOccurred(), "run pod flow initializing")
+		Expect(err).NotTo(HaveOccurred(), "run pod flow pending")
 	})
 })

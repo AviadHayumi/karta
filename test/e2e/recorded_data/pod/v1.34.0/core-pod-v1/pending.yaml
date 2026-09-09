@@ -4,11 +4,11 @@ events:
     apiVersion: v1
     kind: Pod
     metadata:
-      creationTimestamp: "2026-09-08T20:54:32Z"
+      creationTimestamp: "2026-09-09T02:17:14Z"
       generation: 1
-      name: karta-e2e-pod-initializing
-      namespace: test-zzhrw
-      uid: 41a0795e-b4d3-442d-a51a-91306c9e2b56
+      name: karta-e2e-pod-pending
+      namespace: test-2l7dq
+      uid: 2ed77709-41e6-4ce3-83a2-4f59b13f6c7d
     spec:
       automountServiceAccountToken: false
       containers:
@@ -51,7 +51,7 @@ events:
       qosClass: Burstable
   phases:
   - Pending
-  resourceVersion: "61674"
+  resourceVersion: "73183"
   state: Pending
 flow: pending
 kartaFile: docs/catalog/core-pod-v1.yaml

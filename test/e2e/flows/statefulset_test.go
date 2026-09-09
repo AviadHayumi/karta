@@ -24,7 +24,7 @@ var _ = Describe("StatefulSet (built-in)", Ordered, Label("statefulset", "builti
 			AddState(kartav1alpha1.DegradedStatus, ReplicasDegraded())
 	})
 
-	// A StatefulSet takes transient Initializing/Degraded dips while scaling; the Optional steps declare them
+	// A StatefulSet takes transient Progressing/Degraded dips while scaling; the Optional steps declare them
 	// so the order check tolerates them, and the recorder only stops at the ReplicasReady gates.
 	It("scaled", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "scaled", "testdata/statefulset/running.yaml").Through(

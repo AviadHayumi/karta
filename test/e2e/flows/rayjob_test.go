@@ -31,7 +31,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 	})
 
 	// jobStatus jumps between PENDING/RUNNING/SUCCEEDED/FAILED; a fast job can skip intermediates, so
-	// Initializing and (for terminal flows) Running are Optional.
+	// Progressing, Pending, and (for terminal flows) Running are Optional.
 	It("running", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "running", "testdata/rayjob/running.yaml").Through(
 			recorder.Reaches(kartav1alpha1.ProgressingStatus).Optional(),

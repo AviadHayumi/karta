@@ -12,7 +12,7 @@ import (
 // State predicates: each reads a workload's own fields to recognise one state, never Karta.
 
 // AllOf matches when every check matches, for a state read from more than one condition (a Deployment
-// is initializing while Progressing is True and Available is False).
+// is progressing while Progressing is True and Available is False).
 func AllOf(checks ...recorder.StateCheck) recorder.StateCheck {
 	return func(u *unstructured.Unstructured) bool {
 		for _, c := range checks {
@@ -71,13 +71,14 @@ func CondStatus(condType, status string) recorder.StateCheck {
 	}
 }
 
-// CondReason matches when the condition of the given type is True with the given reason. A Deployment is
-// Running only when Progressing is True with reason NewReplicaSetAvailable, so status alone is not enough.
-func CondReason(condType, reason string) recorder.StateCheck {
+// CondReason matches when the condition of the given type has the given status and reason. A Deployment is
+// Running only when Progressing is True with reason NewReplicaSetAvailable, and Failed only when it is False
+// with reason ProgressDeadlineExceeded, so type and status alone are not enough.
+func CondReason(condType, status, reason string) recorder.StateCheck {
 	return func(u *unstructured.Unstructured) bool {
 		conds, _, _ := unstructured.NestedSlice(u.Object, "status", "conditions")
 		for _, c := range conds {
-			if m, ok := c.(map[string]any); ok && m["type"] == condType && m["status"] == "True" && m["reason"] == reason {
+			if m, ok := c.(map[string]any); ok && m["type"] == condType && m["status"] == status && m["reason"] == reason {
 				return true
 			}
 		}
@@ -226,7 +227,7 @@ func AllReplicasAvailable() recorder.StateCheck {
 	}
 }
 
-// ReplicasComingUp is the initializing counterpart of AllReplicasAvailable: spec.replicas > 0 and not every
+// ReplicasComingUp is the progressing counterpart of AllReplicasAvailable: spec.replicas > 0 and not every
 // desired replica is available yet (status.availableReplicas < spec.replicas).
 func ReplicasComingUp() recorder.StateCheck {
 	return func(u *unstructured.Unstructured) bool {

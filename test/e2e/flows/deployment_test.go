@@ -20,8 +20,8 @@ var _ = Describe("Deployment (built-in)", Ordered, Label("deployment", "builtin"
 		fx = recorder.Fixture{Operator: "deployment", Version: operatorVersion("deployment"), KartaName: "apps-deployment-v1", KartaFile: "docs/catalog/apps-deployment-v1.yaml"}
 		rec = recorder.New(cfg).
 			AddState(kartav1alpha1.ProgressingStatus, AllOf(CondTrue("Progressing"), CondFalse("Available"))).
-			AddState(kartav1alpha1.RunningStatus, CondReason("Progressing", "NewReplicaSetAvailable")).
-			AddState(kartav1alpha1.FailedStatus, CondFalse("Progressing"))
+			AddState(kartav1alpha1.RunningStatus, CondReason("Progressing", "True", "NewReplicaSetAvailable")).
+			AddState(kartav1alpha1.FailedStatus, CondReason("Progressing", "False", "ProgressDeadlineExceeded"))
 	})
 
 	It("scaled", func(ctx SpecContext) {
