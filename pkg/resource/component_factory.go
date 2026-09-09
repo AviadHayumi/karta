@@ -14,6 +14,7 @@ import (
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	celpkg "github.com/run-ai/karta/pkg/cel"
 	"github.com/run-ai/karta/pkg/expression"
+	"github.com/run-ai/karta/pkg/references"
 )
 
 type ComponentReader interface {
@@ -75,10 +76,53 @@ func NewComponentFactory(karta *v1alpha1.Karta, accessor ComponentAccessor) *Com
 	}
 }
 
+// FactoryOption configures NewComponentFactoryFromObject.
+type FactoryOption func(*factoryOptions)
+
+type factoryOptions struct {
+	resolved references.ResolvedReferences
+	reader   references.ResourceReader
+}
+
+// WithReferences passes pre-resolved reference values: the consumer fetched them from wherever
+// its data lives and Karta only sees the finished values.
+func WithReferences(resolved references.ResolvedReferences) FactoryOption {
+	return func(o *factoryOptions) { o.resolved = resolved }
+}
+
+// WithReferenceReader hands the factory a reader to resolve references with. Resolution is lazy:
+// the first expression that reads references.<name> resolves all of them with that call's
+// context and memoizes the result, so a definition without references never touches the reader.
+func WithReferenceReader(reader references.ResourceReader) FactoryOption {
+	return func(o *factoryOptions) { o.reader = reader }
+}
+
 // NewComponentFactoryFromObject creates a new Karta-based component factory from a Kubernetes
 // object. Expressions are CEL, evaluated against the object bound as `object`.
-func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObject) *ComponentFactory {
-	celRunner, err := celpkg.NewRunnerWithVariables(object, namedExpressions(karta))
+func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObject, opts ...FactoryOption) *ComponentFactory {
+	var options factoryOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	provider := func(ctx context.Context) (map[string]any, error) {
+		switch {
+		case options.resolved != nil:
+			return options.resolved.Bindings(), nil
+		case options.reader != nil:
+			resolved, err := references.Resolve(ctx, options.reader, karta, object)
+			if err != nil {
+				return nil, err
+			}
+
+			return resolved.Bindings(), nil
+		}
+
+		return nil, expression.ErrReferencesNotSupported
+	}
+
+	celRunner, err := celpkg.NewRunnerWithVariables(object, namedExpressions(karta),
+		celpkg.WithReferenceProvider(provider))
 	if err != nil {
 		// Nothing may silently evaluate against the wrong document, so every call reports
 		// the construction error instead.

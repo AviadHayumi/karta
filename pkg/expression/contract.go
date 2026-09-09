@@ -7,7 +7,16 @@
 // A Runner is bound to one workload document and is not safe for concurrent use.
 package expression
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+// ErrReferencesNotSupported is returned when an expression reads references.<name> but the
+// consumer provided neither resolved references nor a reader to resolve them with. A consumer
+// that has not implemented resolution rejects such definitions loudly instead of failing with a
+// cryptic expression error.
+var ErrReferencesNotSupported = errors.New("the definition declares references but the consumer provided no resolved references and no reader")
 
 //go:generate go run go.uber.org/mock/mockgen -source=contract.go -destination=runner_mock.go -package=expression Runner
 

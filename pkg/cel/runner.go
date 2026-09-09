@@ -29,12 +29,30 @@ type runner struct {
 	evaluator *evaluator
 	variables []NamedExpression
 
+	// referencesProvider resolves the definition's references on first use. Nil means the
+	// consumer provided nothing: an expression that reads references.<name> fails with
+	// expression.ErrReferencesNotSupported.
+	referencesProvider func(ctx context.Context) (map[string]any, error)
+	refOnce            sync.Once
+	refValues          map[string]any
+	refErr             error
+
 	mu     sync.Mutex
 	source any
 
 	once sync.Once
 	data any
 	err  error
+}
+
+// Option configures a runner.
+type Option func(*runner)
+
+// WithReferenceProvider makes references.<name> available to every expression. The provider runs
+// on the first expression that mentions references and its result is memoized, so resolution is
+// required by use and addressing stays stable across a multi-pass write.
+func WithReferenceProvider(provider func(ctx context.Context) (map[string]any, error)) Option {
+	return func(r *runner) { r.referencesProvider = provider }
 }
 
 // NamedExpression is a definition-level variable: evaluated in order before an expression runs,
@@ -49,13 +67,64 @@ func NewRunner(source any) (expression.Runner, error) {
 
 // NewRunnerWithVariables returns a Runner whose expressions see the definition's named
 // variables as variables.<name>, the way a ValidatingAdmissionPolicy composes expressions.
-func NewRunnerWithVariables(source any, variables []NamedExpression) (expression.Runner, error) {
+func NewRunnerWithVariables(source any, variables []NamedExpression, opts ...Option) (expression.Runner, error) {
 	shared, err := Shared()
 	if err != nil {
 		return nil, err
 	}
 
-	return &runner{evaluator: shared.(*evaluator), source: source, variables: variables}, nil
+	r := &runner{evaluator: shared.(*evaluator), source: source, variables: variables}
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r, nil
+}
+
+// referencesAny finds every mention of the references binding, so resolution stays lazy: an
+// expression that never mentions references never triggers a fetch.
+var referencesAny = regexp.MustCompile(`\breferences\b`)
+
+// needsReferences reports whether any of the expressions, or any of the definition variables the
+// needed set selects, mentions the references binding.
+func (r *runner) needsReferences(needed map[string]bool, expressions ...string) bool {
+	for _, expr := range expressions {
+		if referencesAny.MatchString(expr) {
+			return true
+		}
+	}
+	for _, variable := range r.variables {
+		if needed != nil && !needed[variable.Name] {
+			continue
+		}
+		if referencesAny.MatchString(variable.Expression) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// references resolves the definition's references once and memoizes the result.
+func (r *runner) references(ctx context.Context) (map[string]any, error) {
+	if r.referencesProvider == nil {
+		return nil, expression.ErrReferencesNotSupported
+	}
+	r.refOnce.Do(func() {
+		r.refValues, r.refErr = r.referencesProvider(ctx)
+	})
+
+	return r.refValues, r.refErr
+}
+
+// referencesFor returns the references binding for an evaluation: the resolved values when any
+// involved expression mentions references, an empty map otherwise.
+func (r *runner) referencesFor(ctx context.Context, needed map[string]bool, expressions ...string) (map[string]any, error) {
+	if !r.needsReferences(needed, expressions...) {
+		return map[string]any{}, nil
+	}
+
+	return r.references(ctx)
 }
 
 // ResolveVariables evaluates the definition's variables against the CURRENT document and returns
@@ -68,7 +137,13 @@ func (r *runner) ResolveVariables(ctx context.Context, expressions ...string) (m
 		return nil, err
 	}
 
-	return r.resolveVariables(ctx, object, neededVariables(r.variables, expressions))
+	needed := neededVariables(r.variables, expressions)
+	refs, err := r.referencesFor(ctx, needed, expressions...)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.resolveVariables(ctx, object, needed, refs)
 }
 
 // variableRef matches both static spellings a variable reference has: variables.name and
@@ -120,14 +195,14 @@ func neededVariables(variables []NamedExpression, expressions []string) map[stri
 // is syntactic, not lazy: only the variables the expression mentions run, so one variable's
 // failure cannot poison an expression that never references it, but a mentioned variable runs
 // even on a branch evaluation would never take.
-func (r *runner) resolveVariables(ctx context.Context, object any, needed map[string]bool) (map[string]any, error) {
+func (r *runner) resolveVariables(ctx context.Context, object any, needed map[string]bool, refs map[string]any) (map[string]any, error) {
 	resolved := make(map[string]any, len(r.variables))
 	for _, variable := range r.variables {
 		if needed != nil && !needed[variable.Name] {
 			continue
 		}
 		out, err := r.evaluator.EvaluateWithVariables(ctx, variable.Expression, object,
-			map[string]any{"variables": resolved})
+			map[string]any{"variables": resolved, "references": refs})
 		if err != nil {
 			return nil, fmt.Errorf("variable %q: %w", variable.Name, err)
 		}
@@ -156,8 +231,16 @@ func (r *runner) EvaluateWithVariables(ctx context.Context, expression string, v
 		}
 		converted[name] = primitive
 	}
+	needed := neededVariables(r.variables, []string{expression})
+	if _, bound := converted["references"]; !bound {
+		refs, err := r.referencesFor(ctx, needed, expression)
+		if err != nil {
+			return nil, err
+		}
+		converted["references"] = refs
+	}
 	if _, frozen := converted["variables"]; !frozen {
-		resolved, err := r.resolveVariables(ctx, object, neededVariables(r.variables, []string{expression}))
+		resolved, err := r.resolveVariables(ctx, object, needed, converted["references"].(map[string]any))
 		if err != nil {
 			return nil, err
 		}
@@ -200,11 +283,17 @@ func (r *runner) Evaluate(ctx context.Context, expression string) ([]any, error)
 		return nil, err
 	}
 
-	resolved, err := r.resolveVariables(ctx, object, neededVariables(r.variables, []string{expression}))
+	needed := neededVariables(r.variables, []string{expression})
+	refs, err := r.referencesFor(ctx, needed, expression)
 	if err != nil {
 		return nil, err
 	}
-	out, err := r.evaluator.EvaluateWithVariables(ctx, expression, object, map[string]any{"variables": resolved})
+	resolved, err := r.resolveVariables(ctx, object, needed, refs)
+	if err != nil {
+		return nil, err
+	}
+	out, err := r.evaluator.EvaluateWithVariables(ctx, expression, object,
+		map[string]any{"variables": resolved, "references": refs})
 	if err != nil {
 		return nil, err
 	}

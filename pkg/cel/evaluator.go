@@ -62,6 +62,7 @@ func newEvaluator() (*evaluator, error) {
 		cel.Variable("instance", cel.DynType),
 		cel.Variable("index", cel.DynType),
 		cel.Variable("variables", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("references", cel.MapType(cel.StringType, cel.DynType)),
 		// Optional types give `object.status.?readyReplicas.orValue(0)`, the CEL spelling of
 		// `.status.readyReplicas // 0`, so an absent field is a value rather than an error.
 		cel.OptionalTypes(),

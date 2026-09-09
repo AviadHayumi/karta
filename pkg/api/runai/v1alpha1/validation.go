@@ -42,6 +42,10 @@ func (v *KartaValidator) Validate() error {
 		errs = append(errs, instructionErrs...)
 	}
 
+	if referenceErrs := v.validateReferences(); referenceErrs != nil {
+		errs = append(errs, referenceErrs...)
+	}
+
 	return errors.Join(errs...)
 }
 
@@ -234,5 +238,66 @@ func (v *KartaValidator) validateGangScheduling() []error {
 			}
 		}
 	}
+	return errs
+}
+
+func (v *KartaValidator) validateReferences() []error {
+	var errs []error
+
+	names := make(map[string]bool, len(v.karta.Spec.StructureDefinition.References))
+	for _, ref := range v.karta.Spec.StructureDefinition.References {
+		if ref.Name == "" {
+			errs = append(errs, fmt.Errorf("reference name is empty"))
+		}
+		if names[ref.Name] {
+			errs = append(errs, fmt.Errorf("reference name %q is not unique", ref.Name))
+		}
+		names[ref.Name] = true
+
+		if ref.GVK.Version == "" || ref.GVK.Kind == "" {
+			errs = append(errs, fmt.Errorf("reference %q must have version and kind", ref.Name))
+		}
+
+		if (ref.Lookup == nil) == (ref.List == nil) {
+			errs = append(errs, fmt.Errorf("reference %q must set exactly one of lookup or list", ref.Name))
+			continue
+		}
+
+		switch {
+		case ref.Lookup != nil:
+			if ref.Lookup.NameExpression == "" {
+				errs = append(errs, fmt.Errorf("reference %q lookup has an empty nameExpression", ref.Name))
+			}
+		case ref.List != nil:
+			if len(ref.List.MatchLabels) == 0 && len(ref.List.MatchExpressions) == 0 {
+				errs = append(errs, fmt.Errorf("reference %q list must set matchLabels or matchExpressions", ref.Name))
+			}
+			for key, value := range ref.List.MatchLabels {
+				if (value.Value == nil) == (value.Expression == nil) {
+					errs = append(errs, fmt.Errorf("reference %q matchLabels[%s] must set exactly one of value or expression", ref.Name, key))
+				}
+			}
+			for _, req := range ref.List.MatchExpressions {
+				switch req.Operator {
+				case LabelSelectorOpIn, LabelSelectorOpNotIn:
+					if len(req.Values) == 0 {
+						errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] requires values for operator %s", ref.Name, req.Key, req.Operator))
+					}
+				case LabelSelectorOpExists, LabelSelectorOpDoesNotExist:
+					if len(req.Values) != 0 {
+						errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] must not set values for operator %s", ref.Name, req.Key, req.Operator))
+					}
+				default:
+					errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] has unknown operator %q", ref.Name, req.Key, req.Operator))
+				}
+				for _, value := range req.Values {
+					if (value.Value == nil) == (value.Expression == nil) {
+						errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] values must set exactly one of value or expression", ref.Name, req.Key))
+					}
+				}
+			}
+		}
+	}
+
 	return errs
 }
