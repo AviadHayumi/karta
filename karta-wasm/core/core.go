@@ -76,7 +76,7 @@ func SetField(ctx context.Context, workloadJSON, path string, value any) ([]byte
 // Suspend applies every component's suspend actions to the workload and
 // returns the mutated object as JSON.
 func Suspend(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
-	return applySuspendActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
+	return applySuspendStateActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
 		return component.Suspend(ctx)
 	})
 }
@@ -84,12 +84,12 @@ func Suspend(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, 
 // Resume applies every component's resume actions to the workload and returns
 // the mutated object as JSON.
 func Resume(ctx context.Context, definitionJSON, workloadJSON string) ([]byte, error) {
-	return applySuspendActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
+	return applySuspendStateActions(ctx, definitionJSON, workloadJSON, func(ctx context.Context, component *resource.Component) error {
 		return component.Resume(ctx)
 	})
 }
 
-func applySuspendActions(ctx context.Context, definitionJSON, workloadJSON string, apply func(context.Context, *resource.Component) error) ([]byte, error) {
+func applySuspendStateActions(ctx context.Context, definitionJSON, workloadJSON string, apply func(context.Context, *resource.Component) error) ([]byte, error) {
 	definition, err := DecodeDefinition(definitionJSON)
 	if err != nil {
 		return nil, err
@@ -107,11 +107,16 @@ func applySuspendActions(ctx context.Context, definitionJSON, workloadJSON strin
 	if err != nil {
 		return nil, err
 	}
-	for _, component := range append(children, root) {
+	for _, component := range children {
 		if !component.HasSuspendDefinition() {
 			continue
 		}
 		if err := apply(ctx, component); err != nil {
+			return nil, err
+		}
+	}
+	if root.HasSuspendDefinition() {
+		if err := apply(ctx, root); err != nil {
 			return nil, err
 		}
 	}

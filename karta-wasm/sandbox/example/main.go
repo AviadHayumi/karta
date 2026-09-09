@@ -11,8 +11,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"sigs.k8s.io/yaml"
 
@@ -38,19 +40,49 @@ func main() {
 		fmt.Fprintln(os.Stderr, "usage: example <karta-wasi.wasm> <definition.yaml> <workload.yaml>")
 		os.Exit(1)
 	}
-	wasm := mustRead(os.Args[1])
-	definitionJSON := toJSON(mustRead(os.Args[2]))
-	workloadJSON := toJSON(mustRead(os.Args[3]))
+	if err := run(os.Args[1], os.Args[2], os.Args[3]); err != nil {
+		fmt.Fprintln(os.Stderr, "example:", err)
+		os.Exit(1)
+	}
+}
+
+func run(wasmPath, definitionPath, workloadPath string) (returnErr error) {
+	wasm, err := os.ReadFile(wasmPath)
+	if err != nil {
+		return fmt.Errorf("read wasm: %w", err)
+	}
+	definitionJSON, err := readYAMLAsJSON(definitionPath)
+	if err != nil {
+		return err
+	}
+	workloadJSON, err := readYAMLAsJSON(workloadPath)
+	if err != nil {
+		return err
+	}
 
 	ctx := context.Background()
 	box, err := sandbox.New(ctx, wasm)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("create sandbox: %w", err)
 	}
-	defer box.Close(ctx)
+	defer func() {
+		if err := box.Close(ctx); err != nil && returnErr == nil {
+			returnErr = fmt.Errorf("close sandbox: %w", err)
+		}
+	}()
 
 	// 1. build the tree, in the sandbox
-	workloadTree := parse(box.BuildTree(ctx, definitionJSON, workloadJSON))
+	treeJSON, err := parseRaw(box.BuildTree(ctx, definitionJSON, workloadJSON))
+	if err != nil {
+		return fmt.Errorf("build tree: %w", err)
+	}
+	var workloadTree tree.WorkloadTree
+	if err := json.Unmarshal(treeJSON, &workloadTree); err != nil {
+		return fmt.Errorf("decode workload tree: %w", err)
+	}
+	if workloadTree.Status == nil {
+		return errors.New("workload tree has no status")
+	}
 
 	// 2. parse it: the status, then every component and its instances
 	fmt.Println("status:", workloadTree.Status.Phases)
@@ -59,30 +91,55 @@ func main() {
 	// 3. suspend, then resume. offline this flips the workload's suspend
 	// INTENT (the definition's suspendActions, e.g. .spec.suspend) - the
 	// Suspended phase itself appears once the operator reports it in status.
-	suspended := parseRaw(box.Suspend(ctx, definitionJSON, workloadJSON))
-	fmt.Println("after suspend : .spec.suspend =", field(suspended, "spec", "suspend"))
+	suspended, err := parseRaw(box.Suspend(ctx, definitionJSON, workloadJSON))
+	if err != nil {
+		return fmt.Errorf("suspend workload: %w", err)
+	}
+	suspendedValue, err := field(suspended, "spec", "suspend")
+	if err != nil {
+		return err
+	}
+	fmt.Println("after suspend : .spec.suspend =", suspendedValue)
 
-	resumed := parseRaw(box.Resume(ctx, definitionJSON, string(suspended)))
-	fmt.Println("after resume  : .spec.suspend =", field(resumed, "spec", "suspend"))
+	resumed, err := parseRaw(box.Resume(ctx, definitionJSON, string(suspended)))
+	if err != nil {
+		return fmt.Errorf("resume workload: %w", err)
+	}
+	resumedValue, err := field(resumed, "spec", "suspend")
+	if err != nil {
+		return err
+	}
+	fmt.Println("after resume  : .spec.suspend =", resumedValue)
 
-	// 5. the low-level write door : set one field, read the object back
-	mutated := parseRaw(box.SetField(ctx, workloadJSON, `.metadata.labels.team`, `"ml"`))
-	var object map[string]any
-	json.Unmarshal(mutated, &object)
-	labels := object["metadata"].(map[string]any)["labels"]
+	// 4. the low-level write door: set one field, read the object back
+	mutated, err := parseRaw(box.SetField(ctx, workloadJSON, `.metadata.labels.team`, `"ml"`))
+	if err != nil {
+		return fmt.Errorf("set workload field: %w", err)
+	}
+	labels, err := field(mutated, "metadata", "labels")
+	if err != nil {
+		return err
+	}
 	fmt.Println("after setField .metadata.labels.team=ml ->", labels)
+	return nil
 }
 
-func field(raw json.RawMessage, path ...string) any {
-	var object map[string]any
-	if err := json.Unmarshal(raw, &object); err != nil {
-		panic(err)
+func field(raw json.RawMessage, path ...string) (any, error) {
+	var value any
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil, fmt.Errorf("decode workload: %w", err)
 	}
-	var v any = object
 	for _, key := range path {
-		v = v.(map[string]any)[key]
+		object, ok := value.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("read field .%s: parent is %T, not an object", strings.Join(path, "."), value)
+		}
+		value, ok = object[key]
+		if !ok {
+			return nil, fmt.Errorf("field .%s not found", strings.Join(path, "."))
+		}
 	}
-	return v
+	return value, nil
 }
 
 type envelope struct {
@@ -90,41 +147,31 @@ type envelope struct {
 	Error string          `json:"error"`
 }
 
-func parse(out []byte, err error) *tree.WorkloadTree {
-	raw := parseRaw(out, err)
-	var t tree.WorkloadTree
-	if err := json.Unmarshal(raw, &t); err != nil {
-		panic(err)
-	}
-	return &t
-}
-
-func parseRaw(out []byte, err error) json.RawMessage {
-	if err != nil {
-		panic(err)
+func parseRaw(out []byte, runErr error) (json.RawMessage, error) {
+	if runErr != nil {
+		return nil, runErr
 	}
 	var env envelope
 	if err := json.Unmarshal(out, &env); err != nil {
-		panic(err)
+		return nil, fmt.Errorf("decode sandbox response: %w", err)
 	}
 	if env.Error != "" {
-		panic(env.Error)
+		return nil, errors.New(env.Error)
 	}
-	return env.Data
+	if len(env.Data) == 0 {
+		return nil, errors.New("sandbox response has no data")
+	}
+	return env.Data, nil
 }
 
-func mustRead(path string) []byte {
-	b, err := os.ReadFile(path)
+func readYAMLAsJSON(path string) (string, error) {
+	yamlBytes, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("read %s: %w", path, err)
 	}
-	return b
-}
-
-func toJSON(y []byte) string {
-	j, err := yaml.YAMLToJSON(y)
+	jsonBytes, err := yaml.YAMLToJSON(yamlBytes)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("convert %s to JSON: %w", path, err)
 	}
-	return string(j)
+	return string(jsonBytes), nil
 }

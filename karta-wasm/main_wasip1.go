@@ -16,6 +16,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/run-ai/karta/karta-wasm/core"
@@ -30,13 +31,22 @@ type request struct {
 }
 
 type response struct {
-	Data  json.RawMessage `json:"data,omitempty"`
-	Error string          `json:"error,omitempty"`
+	Data  any    `json:"data,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func main() {
 	var req request
-	if err := json.NewDecoder(os.Stdin).Decode(&req); err != nil {
+	decoder := json.NewDecoder(os.Stdin)
+	if err := decoder.Decode(&req); err != nil {
+		fail(err)
+	}
+	var trailing any
+	switch err := decoder.Decode(&trailing); err {
+	case nil:
+		emitError("multiple JSON requests")
+	case io.EOF:
+	default:
 		fail(err)
 	}
 	ctx := context.Background()
@@ -73,12 +83,11 @@ func main() {
 	}
 }
 
-func emit(v any) {
-	data, _ := json.Marshal(v)
-	emitRaw(data)
+func emit(data any) {
+	_ = json.NewEncoder(os.Stdout).Encode(response{Data: data})
 }
 func emitRaw(data []byte) {
-	_ = json.NewEncoder(os.Stdout).Encode(response{Data: data})
+	emit(json.RawMessage(data))
 }
 func emitError(msg string) {
 	_ = json.NewEncoder(os.Stdout).Encode(response{Error: msg})
