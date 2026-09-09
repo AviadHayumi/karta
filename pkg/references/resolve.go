@@ -8,12 +8,13 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	celpkg "github.com/run-ai/karta/pkg/cel"
+	"github.com/run-ai/karta/pkg/expression"
 )
 
 // Resolve fetches every reference the definition declares. The name and label expressions run
@@ -33,11 +34,7 @@ func Resolve(ctx context.Context, reader ResourceReader, karta *v1alpha1.Karta, 
 	if err != nil {
 		return nil, fmt.Errorf("resolve references: %w", err)
 	}
-	evaluator, ok := runner.(expressionEvaluator)
-	if !ok {
-		return nil, errors.New("resolve references: the engine runner does not evaluate whole values")
-	}
-	namespace, err := workloadNamespace(ctx, evaluator)
+	namespace, err := workloadNamespace(ctx, runner)
 	if err != nil {
 		return nil, fmt.Errorf("resolve references: %w", err)
 	}
@@ -45,7 +42,7 @@ func Resolve(ctx context.Context, reader ResourceReader, karta *v1alpha1.Karta, 
 	checker, _ := reader.(PermissionChecker)
 	resolved := make(ResolvedReferences, len(karta.Spec.StructureDefinition.References))
 	for _, ref := range karta.Spec.StructureDefinition.References {
-		value, err := resolveOne(ctx, reader, checker, evaluator, ref, namespace)
+		value, err := resolveOne(ctx, reader, checker, runner, ref, namespace)
 		if err != nil {
 			return nil, fmt.Errorf("reference %q: %w", ref.Name, err)
 		}
@@ -56,7 +53,8 @@ func Resolve(ctx context.Context, reader ResourceReader, karta *v1alpha1.Karta, 
 }
 
 func resolveOne(ctx context.Context, reader ResourceReader, checker PermissionChecker,
-	runner expressionEvaluator, ref v1alpha1.ResourceReference, namespace string) (ReferenceValue, error) {
+	runner expression.Runner, ref v1alpha1.ResourceReference, namespace string) (ReferenceValue, error) {
+	gvk := schema.GroupVersionKind{Group: ref.GVK.Group, Version: ref.GVK.Version, Kind: ref.GVK.Kind}
 	switch {
 	case ref.Lookup != nil:
 		name, err := evaluateString(ctx, runner, ref.Lookup.NameExpression)
@@ -64,12 +62,11 @@ func resolveOne(ctx context.Context, reader ResourceReader, checker PermissionCh
 			return ReferenceValue{}, fmt.Errorf("nameExpression: %w", err)
 		}
 		if checker != nil {
-			if err := checker.CanRead(ctx, ref.GVK, namespace, "get"); err != nil {
-				return ReferenceValue{}, fmt.Errorf("the reader may not get %s/%s %s %q: %w",
-					ref.GVK.Group, ref.GVK.Version, ref.GVK.Kind, name, err)
+			if err := checker.CheckRead(ctx, gvk, namespace, "get"); err != nil {
+				return ReferenceValue{}, fmt.Errorf("the reader may not get %s %q: %w", gvk, name, err)
 			}
 		}
-		object, err := reader.Get(ctx, ref.GVK, namespace, name)
+		object, err := reader.Get(ctx, gvk, namespace, name)
 		if errors.Is(err, ErrNotFound) {
 			return ReferenceValue{}, nil
 		}
@@ -77,7 +74,7 @@ func resolveOne(ctx context.Context, reader ResourceReader, checker PermissionCh
 			return ReferenceValue{}, err
 		}
 
-		return ReferenceValue{Object: object}, nil
+		return LookupValue(object), nil
 
 	case ref.List != nil:
 		selector, err := buildSelector(ctx, runner, ref.List)
@@ -85,36 +82,25 @@ func resolveOne(ctx context.Context, reader ResourceReader, checker PermissionCh
 			return ReferenceValue{}, err
 		}
 		if checker != nil {
-			if err := checker.CanRead(ctx, ref.GVK, namespace, "list"); err != nil {
-				return ReferenceValue{}, fmt.Errorf("the reader may not list %s/%s %s: %w",
-					ref.GVK.Group, ref.GVK.Version, ref.GVK.Kind, err)
+			if err := checker.CheckRead(ctx, gvk, namespace, "list"); err != nil {
+				return ReferenceValue{}, fmt.Errorf("the reader may not list %s: %w", gvk, err)
 			}
 		}
-		items, err := reader.List(ctx, ref.GVK, ListQuery{Namespace: namespace, Selector: selector})
+		items, err := reader.List(ctx, gvk, ListQuery{Namespace: namespace, Selector: selector})
 		if err != nil {
 			return ReferenceValue{}, err
 		}
-		if items == nil {
-			// An empty match binds as an empty list; only a lookup miss stays unbound.
-			items = []unstructured.Unstructured{}
-		}
 
-		return ReferenceValue{List: items}, nil
+		return ListValue(items), nil
 	}
 
 	return ReferenceValue{}, errors.New("neither lookup nor list is set")
 }
 
-// expressionEvaluator is the slice of the engine contract resolution needs. The whole-value
-// method is used so a list result cannot masquerade as a scalar through stream spreading.
-type expressionEvaluator interface {
-	Evaluate(ctx context.Context, expression string) ([]any, error)
-	EvaluateWithVariables(ctx context.Context, expression string, vars map[string]any) ([]any, error)
-}
-
 // evaluateString evaluates one expression against the workload and requires a non-empty string
-// result.
-func evaluateString(ctx context.Context, runner expressionEvaluator, expr string) (string, error) {
+// result. The whole-value method is used so a list result cannot masquerade as a scalar through
+// stream spreading.
+func evaluateString(ctx context.Context, runner expression.Runner, expr string) (string, error) {
 	results, err := runner.EvaluateWithVariables(ctx, expr, map[string]any{})
 	if err != nil {
 		return "", err
@@ -132,7 +118,7 @@ func evaluateString(ctx context.Context, runner expressionEvaluator, expr string
 
 // buildSelector converts the structured selector into a Kubernetes label selector, resolving
 // every expression-sourced value against the workload.
-func buildSelector(ctx context.Context, runner expressionEvaluator, list *v1alpha1.ListReference) (labels.Selector, error) {
+func buildSelector(ctx context.Context, runner expression.Runner, list *v1alpha1.ListReference) (labels.Selector, error) {
 	selector := labels.NewSelector()
 	for key, value := range list.MatchLabels {
 		resolved, err := labelValue(ctx, runner, value)
@@ -168,7 +154,7 @@ func buildSelector(ctx context.Context, runner expressionEvaluator, list *v1alph
 	return selector, nil
 }
 
-func labelValue(ctx context.Context, runner expressionEvaluator, value v1alpha1.LabelValue) (string, error) {
+func labelValue(ctx context.Context, runner expression.Runner, value v1alpha1.LabelValue) (string, error) {
 	switch {
 	case value.Value != nil:
 		return *value.Value, nil
@@ -197,7 +183,7 @@ func operatorFor(op v1alpha1.LabelSelectorOperator) (selection.Operator, error) 
 // workloadNamespace reads metadata.namespace from the workload. Empty is allowed: a
 // cluster-scoped workload resolves cluster-scoped references, and a namespaced reader decides
 // what an empty namespace means.
-func workloadNamespace(ctx context.Context, runner expressionEvaluator) (string, error) {
+func workloadNamespace(ctx context.Context, runner expression.Runner) (string, error) {
 	results, err := runner.EvaluateWithVariables(ctx, `object[?"metadata"][?"namespace"].orValue("")`, map[string]any{})
 	if err != nil {
 		return "", err

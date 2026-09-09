@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	kartav1alpha1 "github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/pkg/references"
 )
 
@@ -20,7 +19,7 @@ type recordedReader struct {
 	objects []*unstructured.Unstructured
 }
 
-func (r *recordedReader) Get(_ context.Context, gvk kartav1alpha1.GroupVersionKind, namespace, name string) (*unstructured.Unstructured, error) {
+func (r *recordedReader) Get(_ context.Context, gvk schema.GroupVersionKind, namespace, name string) (*unstructured.Unstructured, error) {
 	for _, object := range r.objects {
 		if !matchesGVK(object, gvk) || object.GetName() != name {
 			continue
@@ -35,7 +34,7 @@ func (r *recordedReader) Get(_ context.Context, gvk kartav1alpha1.GroupVersionKi
 	return nil, references.ErrNotFound
 }
 
-func (r *recordedReader) List(_ context.Context, gvk kartav1alpha1.GroupVersionKind, query references.ListQuery) ([]unstructured.Unstructured, error) {
+func (r *recordedReader) List(_ context.Context, gvk schema.GroupVersionKind, query references.ListQuery) ([]unstructured.Unstructured, error) {
 	var out []unstructured.Unstructured
 	for _, object := range r.objects {
 		if !matchesGVK(object, gvk) {
@@ -53,8 +52,6 @@ func (r *recordedReader) List(_ context.Context, gvk kartav1alpha1.GroupVersionK
 	return out, nil
 }
 
-func matchesGVK(object *unstructured.Unstructured, gvk kartav1alpha1.GroupVersionKind) bool {
-	got := object.GroupVersionKind()
-
-	return got == schema.GroupVersionKind{Group: gvk.Group, Version: gvk.Version, Kind: gvk.Kind}
+func matchesGVK(object *unstructured.Unstructured, gvk schema.GroupVersionKind) bool {
+	return object.GroupVersionKind() == gvk
 }

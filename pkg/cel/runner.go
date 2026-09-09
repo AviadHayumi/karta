@@ -48,8 +48,9 @@ type runner struct {
 type Option func(*runner)
 
 // WithReferenceProvider makes references.<name> available to every expression. The provider runs
-// on the first expression that mentions references and its result is memoized, so resolution is
-// required by use and addressing stays stable across a multi-pass write.
+// on the first expression that mentions references and its successful result is memoized - the
+// runner owns the returned map - so resolution is required by use and addressing stays stable
+// across a multi-pass write.
 func WithReferenceProvider(provider func(ctx context.Context) (map[string]any, error)) Option {
 	return func(r *runner) { r.referencesProvider = provider }
 }
@@ -60,8 +61,8 @@ func WithReferenceProvider(provider func(ctx context.Context) (map[string]any, e
 type NamedExpression = expression.NamedExpression
 
 // NewRunner returns a Runner that evaluates source with CEL.
-func NewRunner(source any) (expression.Runner, error) {
-	return NewRunnerWithVariables(source, nil)
+func NewRunner(source any, opts ...Option) (expression.Runner, error) {
+	return NewRunnerWithVariables(source, nil, opts...)
 }
 
 // NewRunnerWithVariables returns a Runner whose expressions see the definition's named
@@ -80,8 +81,9 @@ func NewRunnerWithVariables(source any, variables []NamedExpression, opts ...Opt
 	return r, nil
 }
 
-// referencesAny finds every mention of the references binding, so resolution stays lazy: an
-// expression that never mentions references never triggers a fetch.
+// referencesAny finds every mention of the references binding. Detection is syntactic, like the
+// variables scan above it: an expression that never mentions references never triggers a fetch,
+// and a mention on a branch evaluation would not take still resolves.
 var referencesAny = regexp.MustCompile(`\breferences\b`)
 
 // needsReferences reports whether any of the expressions, or any of the definition variables the
@@ -227,8 +229,9 @@ func (r *runner) resolveVariables(ctx context.Context, object any, needed map[st
 	return resolved, nil
 }
 
-// EvaluateWithVariables evaluates a CEL expression with value and instance bound, returning the
-// results in the stream shape Evaluate uses. Used by patch writes; never a path.
+// EvaluateWithVariables evaluates a CEL expression with value and instance bound. The result is
+// always a single entry holding the whole value - a list result is never spread. Used by patch
+// writes; never a path.
 func (r *runner) EvaluateWithVariables(ctx context.Context, expression string, vars map[string]any) ([]any, error) {
 	object, err := r.GetObject()
 	if err != nil {
@@ -256,8 +259,12 @@ func (r *runner) EvaluateWithVariables(ctx context.Context, expression string, v
 		}
 		converted["references"] = refs
 	}
+	refs, ok := converted["references"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("the references binding must be a map, got %T", converted["references"])
+	}
 	if _, frozen := converted["variables"]; !frozen {
-		resolved, err := r.resolveVariables(ctx, object, needed, converted["references"].(map[string]any))
+		resolved, err := r.resolveVariables(ctx, object, needed, refs)
 		if err != nil {
 			return nil, err
 		}
@@ -275,8 +282,6 @@ func (r *runner) EvaluateWithVariables(ctx context.Context, expression string, v
 	return []any{native}, nil
 }
 
-// Language names the expression language this runner evaluates. The accessor uses it to route a
-// matcher whose definition is CEL at the spec level rather than on the matcher itself.
 // GetObject returns the workload as plain Go types.
 func (r *runner) GetObject() (any, error) {
 	r.once.Do(func() {

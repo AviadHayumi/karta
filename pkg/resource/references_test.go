@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	"github.com/run-ai/karta/pkg/expression"
@@ -25,7 +26,7 @@ type countingReader struct {
 	denied  error
 }
 
-func (r *countingReader) Get(context.Context, v1alpha1.GroupVersionKind, string, string) (*unstructured.Unstructured, error) {
+func (r *countingReader) Get(context.Context, schema.GroupVersionKind, string, string) (*unstructured.Unstructured, error) {
 	r.gets++
 	if r.runtime == nil {
 		return nil, references.ErrNotFound
@@ -34,11 +35,11 @@ func (r *countingReader) Get(context.Context, v1alpha1.GroupVersionKind, string,
 	return r.runtime, nil
 }
 
-func (r *countingReader) List(context.Context, v1alpha1.GroupVersionKind, references.ListQuery) ([]unstructured.Unstructured, error) {
+func (r *countingReader) List(context.Context, schema.GroupVersionKind, references.ListQuery) ([]unstructured.Unstructured, error) {
 	return nil, nil
 }
 
-func (r *countingReader) CanRead(context.Context, v1alpha1.GroupVersionKind, string, string) error {
+func (r *countingReader) CheckRead(context.Context, schema.GroupVersionKind, string, string) error {
 	return r.denied
 }
 

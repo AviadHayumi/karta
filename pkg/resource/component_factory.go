@@ -81,14 +81,22 @@ func NewComponentFactory(karta *v1alpha1.Karta, accessor ComponentAccessor) *Com
 type FactoryOption func(*factoryOptions)
 
 type factoryOptions struct {
-	resolved references.ResolvedReferences
-	reader   references.ResourceReader
+	resolved    references.ResolvedReferences
+	hasResolved bool
+	reader      references.ResourceReader
 }
 
 // WithReferences passes pre-resolved reference values: the consumer fetched them from wherever
-// its data lives and Karta only sees the finished values.
+// its data lives and Karta only sees the finished values. A nil map means "resolved to nothing":
+// every lookup stays unbound, every list is empty.
 func WithReferences(resolved references.ResolvedReferences) FactoryOption {
-	return func(o *factoryOptions) { o.resolved = resolved }
+	return func(o *factoryOptions) {
+		if resolved == nil {
+			resolved = references.ResolvedReferences{}
+		}
+		o.resolved = resolved
+		o.hasResolved = true
+	}
 }
 
 // WithReferenceReader hands the factory a reader to resolve references with. Resolution is lazy:
@@ -108,17 +116,17 @@ func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObjec
 
 	provider := func(ctx context.Context) (map[string]any, error) {
 		switch {
-		case options.resolved != nil && options.reader != nil:
+		case options.hasResolved && options.reader != nil:
 			return nil, errors.New("both WithReferences and WithReferenceReader were provided; pass exactly one")
-		case options.resolved != nil:
-			return options.resolved.Bindings(), nil
+		case options.hasResolved:
+			return options.resolved.Bindings()
 		case options.reader != nil:
 			resolved, err := references.Resolve(ctx, options.reader, karta, object)
 			if err != nil {
 				return nil, err
 			}
 
-			return resolved.Bindings(), nil
+			return resolved.Bindings()
 		}
 
 		return nil, expression.ErrReferencesNotSupported

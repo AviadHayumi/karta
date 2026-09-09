@@ -12,14 +12,15 @@ import (
 	"errors"
 )
 
-// ErrReferencesNotSupported is returned when an expression reads references.<name> but the
-// consumer provided neither resolved references nor a reader to resolve them with. A consumer
+// ErrReferencesNotSupported is returned when an expression requires the references binding but
+// the consumer configured no way to resolve it - neither resolved values nor a reader. A consumer
 // that has not implemented resolution rejects such definitions loudly instead of failing with a
 // cryptic expression error.
-var ErrReferencesNotSupported = errors.New("the definition declares references but the consumer provided no resolved references and no reader")
+var ErrReferencesNotSupported = errors.New("an expression reads references but the consumer provided no resolved references and no reader")
 
 //go:generate go run go.uber.org/mock/mockgen -source=contract.go -destination=runner_mock.go -package=expression Runner
 
+// Evaluator reads values from the workload document.
 type Evaluator interface {
 	// Evaluate evaluates an expression against the document. The results have a stream shape:
 	// an expression yielding a list is spread into one entry per element.
@@ -28,6 +29,7 @@ type Evaluator interface {
 	GetObject() (any, error)
 }
 
+// Assigner replaces the workload document after a patch was applied to a copy.
 type Assigner interface {
 	// Assign replaces the document. Writes go through patches - an expression constructs the
 	// change and shared code applies it - so the only location a runner assigns is the root.
@@ -39,7 +41,7 @@ type Assigner interface {
 type VariableEvaluator interface {
 	// EvaluateWithVariables evaluates expression with value, instance and index bound (null when
 	// absent) alongside the definition's variables. Unlike Evaluate, the result keeps its whole
-	// value: a list is one result. A caller that already resolved the variables passes them
+	// value: always exactly one entry, and a list result is never spread. A caller that already resolved the variables passes them
 	// under the "variables" key to freeze addressing across a multi-pass write.
 	EvaluateWithVariables(ctx context.Context, expression string, vars map[string]any) ([]any, error)
 	// ResolveVariables evaluates the definition's variables against the current document. When

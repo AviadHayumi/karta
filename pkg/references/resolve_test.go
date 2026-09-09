@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
 
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
@@ -28,11 +29,11 @@ type fakeReader struct {
 	denyVerbs map[string]error
 }
 
-func key(gvk v1alpha1.GroupVersionKind, namespace, name string) string {
+func key(gvk schema.GroupVersionKind, namespace, name string) string {
 	return fmt.Sprintf("%s/%s/%s/%s/%s", gvk.Group, gvk.Version, gvk.Kind, namespace, name)
 }
 
-func (f *fakeReader) Get(_ context.Context, gvk v1alpha1.GroupVersionKind, namespace, name string) (*unstructured.Unstructured, error) {
+func (f *fakeReader) Get(_ context.Context, gvk schema.GroupVersionKind, namespace, name string) (*unstructured.Unstructured, error) {
 	f.gets = append(f.gets, key(gvk, namespace, name))
 	object, ok := f.objects[key(gvk, namespace, name)]
 	if !ok {
@@ -42,7 +43,7 @@ func (f *fakeReader) Get(_ context.Context, gvk v1alpha1.GroupVersionKind, names
 	return object, nil
 }
 
-func (f *fakeReader) List(_ context.Context, gvk v1alpha1.GroupVersionKind, query references.ListQuery) ([]unstructured.Unstructured, error) {
+func (f *fakeReader) List(_ context.Context, gvk schema.GroupVersionKind, query references.ListQuery) ([]unstructured.Unstructured, error) {
 	f.listQ = append(f.listQ, query)
 
 	return f.lists[gvk.Kind], nil
@@ -53,7 +54,7 @@ type deniedReader struct {
 	*fakeReader
 }
 
-func (d *deniedReader) CanRead(_ context.Context, _ v1alpha1.GroupVersionKind, _ string, verb string) error {
+func (d *deniedReader) CheckRead(_ context.Context, _ schema.GroupVersionKind, _ string, verb string) error {
 	if err, ok := d.denyVerbs[verb]; ok {
 		return err
 	}
@@ -64,8 +65,7 @@ func (d *deniedReader) CanRead(_ context.Context, _ v1alpha1.GroupVersionKind, _
 var _ = Describe("Resolve", func() {
 	ctx := context.Background()
 
-	runtimeGVK := v1alpha1.GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"}
-	podGVK := v1alpha1.GroupVersionKind{Version: "v1", Kind: "Pod"}
+	runtimeGVK := schema.GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"}
 
 	workload := map[string]any{
 		"metadata": map[string]any{"name": "fine-tune", "namespace": "team-a"},
@@ -88,7 +88,7 @@ var _ = Describe("Resolve", func() {
 		}}
 		karta := kartaWith(v1alpha1.ResourceReference{
 			Name:   "trainingRuntime",
-			GVK:    runtimeGVK,
+			GVK:    v1alpha1.GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"},
 			Lookup: &v1alpha1.LookupReference{NameExpression: "object.spec.runtimeRef.name"},
 		})
 
@@ -97,7 +97,8 @@ var _ = Describe("Resolve", func() {
 		Expect(resolved["trainingRuntime"].Object).To(Equal(runtime))
 		Expect(reader.gets).To(ConsistOf(key(runtimeGVK, "team-a", "torch-distributed")))
 
-		bindings := resolved.Bindings()
+		bindings, err := resolved.Bindings()
+		Expect(err).NotTo(HaveOccurred())
 		Expect(bindings["trainingRuntime"]).To(Equal(runtime.Object))
 	})
 
@@ -105,14 +106,16 @@ var _ = Describe("Resolve", func() {
 		reader := &fakeReader{}
 		karta := kartaWith(v1alpha1.ResourceReference{
 			Name:   "trainingRuntime",
-			GVK:    runtimeGVK,
+			GVK:    v1alpha1.GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"},
 			Lookup: &v1alpha1.LookupReference{NameExpression: "object.spec.runtimeRef.name"},
 		})
 
 		resolved, err := references.Resolve(ctx, reader, karta, workload)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resolved).To(HaveKey("trainingRuntime"))
-		Expect(resolved.Bindings()).NotTo(HaveKey("trainingRuntime"))
+		noBind, err := resolved.Bindings()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(noBind).NotTo(HaveKey("trainingRuntime"))
 	})
 
 	It("resolves a list with literal and expression-sourced selector values", func() {
@@ -120,7 +123,7 @@ var _ = Describe("Resolve", func() {
 		reader := &fakeReader{lists: map[string][]unstructured.Unstructured{"Pod": {pod}}}
 		karta := kartaWith(v1alpha1.ResourceReference{
 			Name: "pods",
-			GVK:  podGVK,
+			GVK:  v1alpha1.GroupVersionKind{Version: "v1", Kind: "Pod"},
 			List: &v1alpha1.ListReference{
 				MatchLabels: map[string]v1alpha1.LabelValue{
 					"job-name":   {Expression: ptr.To("object.metadata.name")},
@@ -142,7 +145,8 @@ var _ = Describe("Resolve", func() {
 		Expect(selector).To(ContainSubstring("managed-by=karta"))
 		Expect(selector).To(ContainSubstring("component"))
 
-		bindings := resolved.Bindings()
+		bindings, err := resolved.Bindings()
+		Expect(err).NotTo(HaveOccurred())
 		Expect(bindings["pods"]).To(Equal([]any{pod.Object}))
 	})
 
@@ -152,7 +156,7 @@ var _ = Describe("Resolve", func() {
 		}}
 		karta := kartaWith(v1alpha1.ResourceReference{
 			Name:   "trainingRuntime",
-			GVK:    runtimeGVK,
+			GVK:    v1alpha1.GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"},
 			Lookup: &v1alpha1.LookupReference{NameExpression: "object.spec.runtimeRef.name"},
 		})
 
@@ -168,7 +172,7 @@ var _ = Describe("Resolve", func() {
 		reader := &deniedReader{fakeReader: &fakeReader{denyVerbs: map[string]error{}}}
 		karta := kartaWith(v1alpha1.ResourceReference{
 			Name: "pods",
-			GVK:  podGVK,
+			GVK:  v1alpha1.GroupVersionKind{Version: "v1", Kind: "Pod"},
 			List: &v1alpha1.ListReference{MatchLabels: map[string]v1alpha1.LabelValue{
 				"app": {Value: ptr.To("x")},
 			}},
@@ -183,7 +187,7 @@ var _ = Describe("Resolve", func() {
 		reader := &fakeReader{}
 		karta := kartaWith(v1alpha1.ResourceReference{
 			Name:   "trainingRuntime",
-			GVK:    runtimeGVK,
+			GVK:    v1alpha1.GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"},
 			Lookup: &v1alpha1.LookupReference{NameExpression: `object[?"spec"][?"missing"].orValue(null)`},
 		})
 
