@@ -15,7 +15,7 @@ GO_LDFLAGS  := -X $(VERSION_PKG).version=$(VERSION)
 LDFLAGS     := -ldflags "$(GO_LDFLAGS)"
 
 # The component inventory every aggregate fans out over.
-PRIMARY_COMPONENTS := lib cli operator
+PRIMARY_COMPONENTS := lib cli operator karta-wasm
 
 KARTA_CHART_DIR := $(PROJECT_DIR)/charts/karta
 KARTA_CRDS_DIR := $(KARTA_CHART_DIR)/crds
@@ -115,6 +115,34 @@ test-lib: lib-generate-mocks ## Run the library tests, plus the offline e2e reco
 
 .PHONY: check-lib
 check-lib: fmt-check-lib vet-lib lint-lib validate verify-recordings test-lib test-replay ## Full library presubmit
+
+##@ Karta WASM (karta-wasm module)
+
+.PHONY: fmt-karta-wasm
+fmt-karta-wasm: ## Format the karta-wasm module
+	go -C karta-wasm fmt ./...
+
+.PHONY: fmt-check-karta-wasm
+fmt-check-karta-wasm: ## Check karta-wasm formatting without modifying files
+	@set -e; \
+	unformatted="$$(gofmt -l karta-wasm)"; \
+	test -z "$$unformatted" || { echo "go fmt required:"; echo "$$unformatted"; exit 1; }
+
+.PHONY: vet-karta-wasm
+vet-karta-wasm: ## go vet the karta-wasm module (host and js builds)
+	go -C karta-wasm vet ./...
+	cd karta-wasm && GOOS=js GOARCH=wasm go vet ./...
+
+.PHONY: lint-karta-wasm
+lint-karta-wasm: golangci-lint ## Lint the karta-wasm module
+	cd karta-wasm && $(GOLANGCI_LINT) run $(GOLANGCI_LINT_FLAGS) -c $(PROJECT_DIR)/.golangci.yml
+
+.PHONY: test-karta-wasm
+test-karta-wasm: ## Run the karta-wasm module tests on the host
+	go -C karta-wasm test ./...
+
+.PHONY: check-karta-wasm
+check-karta-wasm: fmt-check-karta-wasm vet-karta-wasm lint-karta-wasm test-karta-wasm ## Full karta-wasm presubmit
 
 ##@ CLI
 
@@ -240,14 +268,14 @@ operator-image-buildx-push: ## Build and push a multi-arch operator image with a
 
 ##@ Headlamp plugin
 
-.PHONY: wasm-engine
-wasm-engine: ## Build the WASM engine module (used by the Headlamp plugin)
-	cd wasm-engine && GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o karta.wasm .
-	rm -f wasm-engine/wasm_exec.js
-	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm-engine/wasm_exec.js
+.PHONY: karta-wasm
+karta-wasm: ## Build the WASM engine module (used by the Headlamp plugin)
+	cd karta-wasm && GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o karta.wasm .
+	rm -f karta-wasm/wasm_exec.js
+	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" karta-wasm/wasm_exec.js
 
 .PHONY: headlamp-plugin-build
-headlamp-plugin-build: wasm-engine ## Build the Headlamp plugin (requires Node.js >= 22)
+headlamp-plugin-build: karta-wasm ## Build the Headlamp plugin (requires Node.js >= 22)
 	npm --prefix headlamp-plugin ci
 	npm --prefix headlamp-plugin run lint
 	npm --prefix headlamp-plugin run tsc
@@ -278,8 +306,8 @@ generate-licenses: go-licence-detector ## Regenerate NOTICE and THIRD_PARTY_LICE
 	echo "Generating NOTICE and THIRD_PARTY_LICENSES files from current dependencies using go-licence-detector"; \
 	go mod download -json > $(LOCALBIN)/root-deps.json; \
 	(cd cli && go mod download -json) > $(LOCALBIN)/cli-deps.json; \
-	(cd wasm-engine && go mod download -json) > $(LOCALBIN)/wasm-engine-deps.json; \
-	python3 hack/merge-go-deps.py $(LOCALBIN)/root-deps.json $(LOCALBIN)/cli-deps.json $(LOCALBIN)/wasm-engine-deps.json > $(LOCALBIN)/deps.json; \
+	(cd karta-wasm && go mod download -json) > $(LOCALBIN)/karta-wasm-deps.json; \
+	python3 hack/merge-go-deps.py $(LOCALBIN)/root-deps.json $(LOCALBIN)/cli-deps.json $(LOCALBIN)/karta-wasm-deps.json > $(LOCALBIN)/deps.json; \
 	$(GO_LICENCE_DETECTOR) -in $(LOCALBIN)/deps.json \
 		-noticeTemplate=hack/licenses/notice.tpl \
 		-noticeOut=NOTICE \
