@@ -56,8 +56,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"leaderWorkerTemplate"][?"leaderTemplate"].orValue(null)
-            patch: '{"spec": {"leaderWorkerTemplate": {"leaderTemplate": value}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"leaderWorkerTemplate": {"leaderTemplate": value}}}'
+            patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: variables.specReplicas
@@ -74,8 +76,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)
-            patch: '{"spec": {"leaderWorkerTemplate": {"workerTemplate": value}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"leaderWorkerTemplate": {"workerTemplate": value}}}'
+            patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: variables.specReplicasFloat * (variables.specLeaderWorkerTemplateSize - 1.0)

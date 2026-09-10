@@ -15,8 +15,10 @@ spec:
       specDefinition:
         podTemplateSpec:
           expression: object[?"spec"][?"jobTemplate"][?"spec"][?"template"].orValue(null)
-          patch: '{"spec": {"jobTemplate": {"spec": {"template": value}}}}'
-          replace: true
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"jobTemplate": {"spec": {"template": value}}}}'
+          patchStrategy: Replace
       scaleDefinition:
         replicas:
           expression: variables.specJobTemplateSpecParallelism
@@ -36,9 +38,11 @@ spec:
                 expectedResult: "true"
       suspendDefinition:
         suspendActions:
-          - patch: '{"spec": {"suspend": true}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
         resumeActions:
-          - patch: '{"spec": {"suspend": false}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
     childComponents:
       - name: job
         kind:

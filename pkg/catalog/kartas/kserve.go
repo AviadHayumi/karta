@@ -63,18 +63,21 @@ func KServe() *v1alpha1.Karta {
 						OwnerRef: ptr.To("inferenceservice"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"predictor": {"schedulerName": value}}}`, Replace: true},
-								Labels:        &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"labels"].orValue(null)`, Patch: `{"spec": {"predictor": {"labels": value}}}`, Replace: true},
-								Annotations:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"annotations"].orValue(null)`, Patch: `{"spec": {"predictor": {"annotations": value}}}`, Replace: true},
-								PodAffinity:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"predictor": {"affinity": {"podAffinity": value}}}}`, Replace: true},
-								NodeAffinity:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}`, Replace: true},
-								Containers:    &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"containers"].orValue(null)`, Patch: `{"spec": {"predictor": {"containers": value}}}`, Replace: true},
+								SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"predictor": {"schedulerName": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Labels:        &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"labels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"predictor": {"labels": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Annotations:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"annotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"predictor": {"annotations": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								PodAffinity:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"predictor": {"affinity": {"podAffinity": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								NodeAffinity:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Containers:    &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"containers"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"predictor": {"containers": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 								Container: &v1alpha1.ValueAccessor{
 									Expression: `variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null`,
-									Patch:      `variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}`,
-									Replace:    true,
+									Patches: []v1alpha1.PatchEntry{{
+										PatchType:  v1alpha1.PatchTypeMergePatch,
+										Expression: `variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}`,
+									}},
+									PatchStrategy: v1alpha1.PatchStrategyReplace,
 								},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"priorityClassName"].orValue(null)`, Patch: `{"spec": {"predictor": {"priorityClassName": value}}}`, Replace: true},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"predictor"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"predictor": {"priorityClassName": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -93,8 +96,8 @@ func KServe() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
 						OwnerRef: ptr.To("inferenceservice"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodSpec:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"].orValue(null)`, Patch: `{"spec": {"transformer": value}}`, Replace: true},
-							Metadata: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"].orValue(null)`, Patch: `{"spec": {"transformer": value}}`, Replace: true},
+							PodSpec:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"transformer": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							Metadata: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"transformer": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							MinReplicas: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"transformer"][?"minReplicas"].orValue(null)`},

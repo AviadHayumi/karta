@@ -40,32 +40,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"standalone"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"standalone": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"standalone": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"standalone"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"standalone": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"standalone": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"standalone"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"standalone": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"standalone"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"standalone": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"standalone"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"standalone": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"standalone"][?"replicas"].orValue(null)
@@ -83,32 +97,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"proxy"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"proxy": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"proxy"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"proxy": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"proxy"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"proxy": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"proxy"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"proxy": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"proxy"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"proxy": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"proxy"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"proxy": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"proxy"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"proxy": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"proxy"][?"replicas"].orValue(null)
@@ -126,32 +154,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"mixCoord"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"mixCoord": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"mixCoord"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"mixCoord": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"mixCoord"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"mixCoord": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"mixCoord"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"mixCoord": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"mixCoord": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"mixCoord": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"mixCoord"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"mixCoord": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"mixCoord"][?"replicas"].orValue(null)
@@ -169,32 +211,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"dataNode"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"dataNode": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"dataNode"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"dataNode": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"dataNode"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"dataNode": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"dataNode"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"dataNode": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"dataNode": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"dataNode": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"dataNode"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"dataNode": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"dataNode"][?"replicas"].orValue(null)
@@ -212,32 +268,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"queryNode"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"queryNode": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"queryNode"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"queryNode": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"queryNode"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"queryNode": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"queryNode"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"queryNode": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"queryNode": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"queryNode": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"queryNode"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"queryNode": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"queryNode"][?"replicas"].orValue(null)
@@ -255,32 +325,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"streamingNode"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"streamingNode": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"streamingNode"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"streamingNode": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"streamingNode"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"streamingNode": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"streamingNode"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"streamingNode": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"streamingNode": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"streamingNode": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"streamingNode"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"streamingNode": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"streamingNode"][?"replicas"].orValue(null)
@@ -298,32 +382,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"indexNode"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"indexNode": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"indexNode"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"indexNode": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"indexNode"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"indexNode": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"indexNode"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"indexNode": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"indexNode": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"indexNode": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"indexNode"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"indexNode": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"indexNode"][?"replicas"].orValue(null)
@@ -341,32 +439,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"rootCoord"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"rootCoord": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"rootCoord"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"rootCoord": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"rootCoord"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"rootCoord": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"rootCoord"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"rootCoord": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"rootCoord": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"rootCoord": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"rootCoord"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"rootCoord": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"rootCoord"][?"replicas"].orValue(null)
@@ -384,32 +496,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"dataCoord"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"dataCoord": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"dataCoord"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"dataCoord": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"dataCoord"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"dataCoord": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"dataCoord"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"dataCoord": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"dataCoord": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"dataCoord": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"dataCoord"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"dataCoord": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"dataCoord"][?"replicas"].orValue(null)
@@ -427,32 +553,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"queryCoord"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"queryCoord": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"queryCoord"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"queryCoord": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"queryCoord"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"queryCoord": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"queryCoord"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"queryCoord": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"queryCoord": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"queryCoord": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"queryCoord"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"queryCoord": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"queryCoord"][?"replicas"].orValue(null)
@@ -470,32 +610,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"indexCoord"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"indexCoord": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"indexCoord"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"indexCoord": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"indexCoord"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"indexCoord": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"indexCoord"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"indexCoord": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"indexCoord": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"indexCoord": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"indexCoord"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"indexCoord": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"indexCoord"][?"replicas"].orValue(null)
@@ -513,32 +667,46 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"components"][?"cdc"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"components": {"cdc": {"schedulerName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"schedulerName": value}}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"components"][?"cdc"][?"podLabels"].orValue(null)
-              patch: '{"spec": {"components": {"cdc": {"podLabels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"podLabels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"components"][?"cdc"][?"podAnnotations"].orValue(null)
-              patch: '{"spec": {"components": {"cdc": {"podAnnotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: object[?"spec"][?"components"][?"cdc"][?"resources"].orValue(null)
-              patch: '{"spec": {"components": {"cdc": {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"resources": value}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"components"][?"cdc"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"cdc": {"affinity": {"podAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"components"][?"cdc"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"components": {"cdc": {"affinity": {"nodeAffinity": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"components"][?"cdc"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"components": {"cdc": {"priorityClassName": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"components"][?"cdc"][?"replicas"].orValue(null)
@@ -556,8 +724,10 @@ spec:
           fragmentedPodSpecDefinition:
             resources:
               expression: object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"resources"].orValue(null)
-              patch: '{"spec": {"dependencies": {"etcd": {"inCluster": {"values": {"resources": value}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"etcd": {"inCluster": {"values": {"resources": value}}}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"replicaCount"].orValue(null)
@@ -571,8 +741,10 @@ spec:
           fragmentedPodSpecDefinition:
             resources:
               expression: object[?"spec"][?"dependencies"][?"storage"][?"inCluster"][?"values"][?"resources"].orValue(null)
-              patch: '{"spec": {"dependencies": {"storage": {"inCluster": {"values": {"resources": value}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"storage": {"inCluster": {"values": {"resources": value}}}}}}'
+              patchStrategy: Replace
       - name: pulsar-zookeeper
         kind:
           group: apps
@@ -583,8 +755,10 @@ spec:
           fragmentedPodSpecDefinition:
             resources:
               expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"resources"].orValue(null)
-              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"zookeeper": {"resources": value}}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"zookeeper": {"resources": value}}}}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"replicaCount"].orValue(null)
@@ -598,8 +772,10 @@ spec:
           fragmentedPodSpecDefinition:
             resources:
               expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"resources"].orValue(null)
-              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"bookkeeper": {"resources": value}}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"bookkeeper": {"resources": value}}}}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"replicaCount"].orValue(null)
@@ -613,8 +789,10 @@ spec:
           fragmentedPodSpecDefinition:
             resources:
               expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"resources"].orValue(null)
-              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"broker": {"resources": value}}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"broker": {"resources": value}}}}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"replicaCount"].orValue(null)
@@ -628,8 +806,10 @@ spec:
           fragmentedPodSpecDefinition:
             resources:
               expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"resources"].orValue(null)
-              patch: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"proxy": {"resources": value}}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"proxy": {"resources": value}}}}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"replicaCount"].orValue(null)

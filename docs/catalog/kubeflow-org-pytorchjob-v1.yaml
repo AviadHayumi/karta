@@ -41,9 +41,11 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - patch: '{"spec": {"runPolicy": {"suspend": true}}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": true}}}'
         resumeActions:
-          - patch: '{"spec": {"runPolicy": {"suspend": false}}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": false}}}'
     childComponents:
       - name: master
         kind:
@@ -54,8 +56,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"template"].orValue(null)
-            patch: '{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}'
+            patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: variables.specPytorchReplicaSpecsMasterReplicas
@@ -72,8 +76,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)
-            patch: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
+            patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: variables.specPytorchReplicaSpecsWorkerReplicas

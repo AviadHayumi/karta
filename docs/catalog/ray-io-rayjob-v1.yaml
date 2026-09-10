@@ -38,9 +38,11 @@ spec:
                 expectedResult: "true"
       suspendDefinition:
         suspendActions:
-          - patch: '{"spec": {"suspend": true}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
         resumeActions:
-          - patch: '{"spec": {"suspend": false}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
     childComponents:
       - name: head
         kind:
@@ -51,8 +53,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"rayClusterSpec"][?"headGroupSpec"][?"template"].orValue(null)
-            patch: '{"spec": {"rayClusterSpec": {"headGroupSpec": {"template": value}}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"rayClusterSpec": {"headGroupSpec": {"template": value}}}}'
+            patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: "1"
@@ -69,7 +73,9 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))
-            patch: '[{"op": "add", "path": "/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
+            patches:
+              - patchType: JSONPatch
+                expression: '[{"op": "add", "path": "/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
         scaleDefinition:
           replicas:
             expression: '(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])'

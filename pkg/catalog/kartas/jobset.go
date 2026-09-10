@@ -22,8 +22,8 @@ func Jobset() *v1alpha1.Karta {
 					Name: "jobset",
 					Kind: &v1alpha1.GroupVersionKind{Group: "jobset.x-k8s.io", Version: "v1alpha2", Kind: "JobSet"},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
+						SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`}},
+						ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`}},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
@@ -62,7 +62,7 @@ func Jobset() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "batch", Version: "v1", Kind: "Job"},
 						OwnerRef: ptr.To("jobset"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]`},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]`}}},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							// Total pods per replicatedJob = replicas (Job instances) * parallelism (pods per Job).

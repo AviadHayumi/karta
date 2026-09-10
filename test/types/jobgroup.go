@@ -95,13 +95,19 @@ func JobGroupKarta() *v1alpha1.Karta {
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodSpec: &v1alpha1.ValueAccessor{
 								Expression: `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
-								Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`,
-								Replace:    true,
+								Patches: []v1alpha1.PatchEntry{{
+									PatchType:  v1alpha1.PatchTypeJSONPatch,
+									Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`,
+								}},
+								PatchStrategy: v1alpha1.PatchStrategyReplace,
 							},
 							Metadata: &v1alpha1.ValueAccessor{
 								Expression: `object.spec.replicatedJobs.map(x, x[?"metadata"].orValue(null))`,
-								Patch:      `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/metadata", "value": value}]`,
-								Replace:    true,
+								Patches: []v1alpha1.PatchEntry{{
+									PatchType:  v1alpha1.PatchTypeJSONPatch,
+									Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/metadata", "value": value}]`,
+								}},
+								PatchStrategy: v1alpha1.PatchStrategyReplace,
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{

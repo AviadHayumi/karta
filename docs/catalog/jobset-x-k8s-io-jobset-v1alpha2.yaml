@@ -42,9 +42,11 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - patch: '{"spec": {"suspend": true}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
         resumeActions:
-          - patch: '{"spec": {"suspend": false}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
     childComponents:
       - name: replicatedjob
         kind:
@@ -55,7 +57,9 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))
-            patch: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
+            patches:
+              - patchType: JSONPatch
+                expression: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
         scaleDefinition:
           replicas:
             expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(j, j.replicas * j.template.spec.parallelism)

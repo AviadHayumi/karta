@@ -33,44 +33,64 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"schedulerName"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"schedulerName": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"extraPodSpec": {"schedulerName": value}}}}}'
+              patchStrategy: Replace
             labels:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"labels"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"labels": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"labels": value}}}}'
+              patchStrategy: Replace
             annotations:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"annotations"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"annotations": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"annotations": value}}}}'
+              patchStrategy: Replace
             resources:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"resources"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"resources": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"resources": value}}}}'
+              patchStrategy: Replace
             resourceClaims:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"resourceClaims"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"resourceClaims": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"extraPodSpec": {"resourceClaims": value}}}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"affinity"][?"podAffinity"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"podAffinity": value}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"podAffinity": value}}}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"affinity"][?"nodeAffinity"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"nodeAffinity": value}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"extraPodSpec": {"affinity": {"nodeAffinity": value}}}}}}'
+              patchStrategy: Replace
             container:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"mainContainer"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": value}}}}}'
+              patchStrategy: Replace
             priorityClassName:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"priorityClassName"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"priorityClassName": value}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"extraPodSpec": {"priorityClassName": value}}}}}'
+              patchStrategy: Replace
             image:
               expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"extraPodSpec"][?"mainContainer"][?"image"].orValue(null))
-              patch: '{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": {"image": value}}}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"services": {instance: {"extraPodSpec": {"mainContainer": {"image": value}}}}}}'
+              patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: variables.services.map(k, string(k)).sort().map(k, ([dyn(variables.services[k].?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0] * ([dyn(variables.services[k].?multinode.?nodeCount.orValue(null))].filter(v, v != null && v != false) + [1.0])[0])

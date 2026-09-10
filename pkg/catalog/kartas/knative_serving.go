@@ -47,7 +47,7 @@ func KnativeServing() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "serving.knative.dev", Version: "v1", Kind: "Revision"},
 						OwnerRef: ptr.To("knativeservice"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patch: `{"spec": {"template": value}}`, Replace: true},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							MinReplicas: &v1alpha1.ValueAccessor{Expression: `variables.minScale`},

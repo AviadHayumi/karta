@@ -131,13 +131,13 @@ var _ = Describe("Suspend and Resume (integration)", func() {
 	Describe("Multi-action SuspendDefinition", func() {
 		It("should apply all suspend actions in sequence", func() {
 			karta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
-				SuspendActions: []v1alpha1.SuspendAction{
-					{Patch: `{"spec": {"suspend": true}}`},
-					{Patch: `{"metadata": {"annotations": {"suspended-by": "karta"}}}`},
+				SuspendActions: []v1alpha1.PatchEntry{
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`},
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"annotations": {"suspended-by": "karta"}}}`},
 				},
-				ResumeActions: []v1alpha1.SuspendAction{
-					{Patch: `{"spec": {"suspend": false}}`},
-					{Patch: `{"metadata": {"annotations": {"suspended-by": null}}}`},
+				ResumeActions: []v1alpha1.PatchEntry{
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`},
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"annotations": {"suspended-by": null}}}`},
 				},
 			}
 			accessor, component = sharedSetup(karta, pyflow, "pyflow")

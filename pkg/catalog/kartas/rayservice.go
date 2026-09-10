@@ -50,7 +50,7 @@ func RayService() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("rayservice"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"rayClusterConfig"][?"headGroupSpec"][?"template"].orValue(null)`, Patch: `{"spec": {"rayClusterConfig": {"headGroupSpec": {"template": value}}}}`, Replace: true},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"rayClusterConfig"][?"headGroupSpec"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"rayClusterConfig": {"headGroupSpec": {"template": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `1`},
@@ -67,7 +67,7 @@ func RayService() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("rayservice"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"rayClusterConfig"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/rayClusterConfig/workerGroupSpecs/" + string(index) + "/template", "value": value}]`},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"rayClusterConfig"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/rayClusterConfig/workerGroupSpecs/" + string(index) + "/template", "value": value}]`}}},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])`},

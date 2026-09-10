@@ -37,7 +37,7 @@ var _ = Describe("Pod Utils", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patch:      `{"spec": {"template": value}}`,
+										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
 									},
 								},
 							},
@@ -70,7 +70,7 @@ var _ = Describe("Pod Utils", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patch:      `{"spec": {"template": value}}`,
+										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
 									},
 								},
 								PodSelector: &v1alpha1.PodSelector{
@@ -119,7 +119,7 @@ var _ = Describe("Pod Utils", func() {
 										SpecDefinition: &v1alpha1.SpecDefinition{
 											PodTemplateSpec: &v1alpha1.ValueAccessor{
 												Expression: `object[?"spec"][?"replicaSpecs"][?"Worker"][?"template"].orValue(null)`,
-												Patch:      `{"spec": {"replicaSpecs": {"Worker": {"template": value}}}}`,
+												Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicaSpecs": {"Worker": {"template": value}}}}`}},
 											},
 										},
 										PodSelector: &v1alpha1.PodSelector{
@@ -134,7 +134,7 @@ var _ = Describe("Pod Utils", func() {
 										SpecDefinition: &v1alpha1.SpecDefinition{
 											PodTemplateSpec: &v1alpha1.ValueAccessor{
 												Expression: `object[?"spec"][?"replicaSpecs"][?"Master"][?"template"].orValue(null)`,
-												Patch:      `{"spec": {"replicaSpecs": {"Master": {"template": value}}}}`,
+												Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicaSpecs": {"Master": {"template": value}}}}`}},
 											},
 										},
 										PodSelector: &v1alpha1.PodSelector{
@@ -204,7 +204,7 @@ var _ = Describe("Pod Utils", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"replicaSpecs"][?"Worker"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"replicaSpecs": {"Worker": {"template": value}}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicaSpecs": {"Worker": {"template": value}}}}`}},
 										},
 									},
 									PodSelector: &v1alpha1.PodSelector{
@@ -219,7 +219,7 @@ var _ = Describe("Pod Utils", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"replicaSpecs"][?"Master"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"replicaSpecs": {"Master": {"template": value}}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicaSpecs": {"Master": {"template": value}}}}`}},
 										},
 									},
 									PodSelector: &v1alpha1.PodSelector{

@@ -32,7 +32,7 @@ func BatchJob() *v1alpha1.Karta {
 						Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specParallelism`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patch: `{"spec": {"template": value}}`, Replace: true},
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
@@ -67,8 +67,8 @@ func BatchJob() *v1alpha1.Karta {
 						},
 					},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
+						SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`}},
+						ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`}},
 					},
 				},
 			},

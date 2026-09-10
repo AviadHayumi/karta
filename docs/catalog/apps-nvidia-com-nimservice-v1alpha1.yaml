@@ -16,28 +16,40 @@ spec:
         fragmentedPodSpecDefinition:
           schedulerName:
             expression: object[?"spec"][?"schedulerName"].orValue(null)
-            patch: '{"spec": {"schedulerName": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"schedulerName": value}}'
+            patchStrategy: Replace
           labels:
             expression: object[?"spec"][?"labels"].orValue(null)
-            patch: '{"spec": {"labels": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"labels": value}}'
+            patchStrategy: Replace
           annotations:
             expression: object[?"spec"][?"annotations"].orValue(null)
-            patch: '{"spec": {"annotations": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"annotations": value}}'
+            patchStrategy: Replace
           resources:
             expression: object[?"spec"][?"resources"].orValue(null)
-            patch: '{"spec": {"resources": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"resources": value}}'
+            patchStrategy: Replace
           podAffinity:
             expression: object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)
-            patch: '{"spec": {"affinity": {"podAffinity": value}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"affinity": {"podAffinity": value}}}'
+            patchStrategy: Replace
           nodeAffinity:
             expression: object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)
-            patch: '{"spec": {"affinity": {"nodeAffinity": value}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"affinity": {"nodeAffinity": value}}}'
+            patchStrategy: Replace
       scaleDefinition:
         replicas:
           expression: variables.specReplicas

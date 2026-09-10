@@ -50,36 +50,52 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"predictor"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"predictor": {"schedulerName": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"schedulerName": value}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"predictor"][?"labels"].orValue(null)
-              patch: '{"spec": {"predictor": {"labels": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"labels": value}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"predictor"][?"annotations"].orValue(null)
-              patch: '{"spec": {"predictor": {"annotations": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"annotations": value}}}'
+              patchStrategy: Replace
             podAffinity:
               expression: object[?"spec"][?"predictor"][?"affinity"][?"podAffinity"].orValue(null)
-              patch: '{"spec": {"predictor": {"affinity": {"podAffinity": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"affinity": {"podAffinity": value}}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"predictor"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}'
+              patchStrategy: Replace
             containers:
               expression: object[?"spec"][?"predictor"][?"containers"].orValue(null)
-              patch: '{"spec": {"predictor": {"containers": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"containers": value}}}'
+              patchStrategy: Replace
             container:
               expression: 'variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null'
-              patch: 'variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: 'variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"predictor"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"predictor": {"priorityClassName": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"priorityClassName": value}}}'
+              patchStrategy: Replace
         scaleDefinition:
           minReplicas:
             expression: object[?"spec"][?"predictor"][?"minReplicas"].orValue(null)
@@ -98,12 +114,16 @@ spec:
         specDefinition:
           podSpec:
             expression: object[?"spec"][?"transformer"].orValue(null)
-            patch: '{"spec": {"transformer": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"transformer": value}}'
+            patchStrategy: Replace
           metadata:
             expression: object[?"spec"][?"transformer"].orValue(null)
-            patch: '{"spec": {"transformer": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"transformer": value}}'
+            patchStrategy: Replace
         scaleDefinition:
           minReplicas:
             expression: object[?"spec"][?"transformer"][?"minReplicas"].orValue(null)

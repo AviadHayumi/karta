@@ -103,9 +103,9 @@ func PyFlowKarta() *v1alpha1.Karta {
 						OwnerRef: ptr.To("pyflow"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodTemplateSpec: &v1alpha1.ValueAccessor{
-								Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
-								Patch:      `{"spec": {"master": {"template": value}}}`,
-								Replace:    true,
+								Expression:    `object[?"spec"][?"master"][?"template"].orValue(null)`,
+								Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
+								PatchStrategy: v1alpha1.PatchStrategyReplace,
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -123,9 +123,9 @@ func PyFlowKarta() *v1alpha1.Karta {
 						OwnerRef: ptr.To("pyflow"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodTemplateSpec: &v1alpha1.ValueAccessor{
-								Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
-								Patch:      `{"spec": {"worker": {"template": value}}}`,
-								Replace:    true,
+								Expression:    `object[?"spec"][?"worker"][?"template"].orValue(null)`,
+								Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"template": value}}}`}},
+								PatchStrategy: v1alpha1.PatchStrategyReplace,
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -154,8 +154,8 @@ func SuspendablePyFlowKarta() *v1alpha1.Karta {
 	root := &karta.Spec.StructureDefinition.RootComponent
 
 	root.SuspendDefinition = &v1alpha1.SuspendDefinition{
-		SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
-		ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
+		SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`}},
+		ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`}},
 	}
 
 	root.StatusDefinition.StatusMappings.Suspended = []v1alpha1.StatusMatcher{

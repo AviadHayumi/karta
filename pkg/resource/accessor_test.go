@@ -1869,12 +1869,12 @@ var _ = Describe("Accessor", func() {
 			reactorObject := types.NewReactorObject()
 			reactorKarta := types.ReactorKarta()
 			reactorKarta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
-				SuspendActions: []v1alpha1.SuspendAction{
-					{Patch: `{"spec": {"suspend": true}}`},
-					{Patch: `{"metadata": {"labels": {"state": "suspended"}}}`},
+				SuspendActions: []v1alpha1.PatchEntry{
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`},
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"labels": {"state": "suspended"}}}`},
 				},
-				ResumeActions: []v1alpha1.SuspendAction{
-					{Patch: `{"spec": {"suspend": false}}`},
+				ResumeActions: []v1alpha1.PatchEntry{
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`},
 				},
 			}
 			accessor, reactorComp := accessorForObject(reactorKarta, reactorObject, "reactor")
@@ -1906,12 +1906,12 @@ var _ = Describe("Accessor", func() {
 			reactorObject := types.NewReactorObject()
 			reactorKarta := types.ReactorKarta()
 			reactorKarta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
-				SuspendActions: []v1alpha1.SuspendAction{
-					{Patch: `{"spec": {"suspend": true}}`},
+				SuspendActions: []v1alpha1.PatchEntry{
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`},
 				},
-				ResumeActions: []v1alpha1.SuspendAction{
-					{Patch: `{"spec": {"suspend": false}}`},
-					{Patch: `{"metadata": {"labels": {"state": "running"}}}`},
+				ResumeActions: []v1alpha1.PatchEntry{
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`},
+					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"labels": {"state": "running"}}}`},
 				},
 			}
 			accessor, reactorComp := accessorForObject(reactorKarta, reactorObject, "reactor")
@@ -1956,9 +1956,9 @@ var _ = Describe("Patch writes addressed by a variable", func() {
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
 								Container: &v1alpha1.ValueAccessor{
-									Expression: `variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null`,
-									Patch:      `variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}`,
-									Replace:    true,
+									Expression:    `variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null`,
+									Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}`}},
+									PatchStrategy: v1alpha1.PatchStrategyReplace,
 								},
 							},
 						},
@@ -2016,9 +2016,9 @@ var _ = Describe("Patch writes addressed by an inline object expression", func()
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
 								Container: &v1alpha1.ValueAccessor{
 									Expression: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]).map(k, object.spec.predictor[k]) + [null])[0]`,
-									Patch: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]) + [""])[0] != "" ?
-										{"spec": {"predictor": {(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]))[0]: value}}} : {}`,
-									Replace: true,
+									Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]) + [""])[0] != "" ?
+										{"spec": {"predictor": {(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]))[0]: value}}} : {}`}},
+									PatchStrategy: v1alpha1.PatchStrategyReplace,
 								},
 							},
 						},
@@ -2063,7 +2063,7 @@ var _ = Describe("UpdateFragmentedPodSpec atomicity", func() {
 					Name: "root",
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"schedulerName": value}}`},
+							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"schedulerName": value}}`}}},
 						},
 					},
 				},
@@ -2096,7 +2096,7 @@ var _ = Describe("multi-instance patch writes", func() {
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						PodSpec: &v1alpha1.ValueAccessor{
 							Expression: `[{"containers": []}, {"containers": []}]`,
-							Patch:      `[{"op": "add", "path": "/spec/items/" + string(index) + "/x", "value": "written"}]`,
+							Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/items/" + string(index) + "/x", "value": "written"}]`}},
 						},
 					},
 				},

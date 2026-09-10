@@ -157,6 +157,95 @@ func (v *KartaValidator) validateComponent(component ComponentDefinition) []erro
 		errs = append(errs, err)
 	}
 
+	errs = append(errs, validateComponentPatches(component)...)
+
+	return errs
+}
+
+// validateComponentPatches checks every patch entry the component declares: a
+// declared patch type and an expression on each entry, named conditions, and in a
+// value accessor an unconditional entry only as the last one, since entry selection
+// is first match wins.
+func validateComponentPatches(component ComponentDefinition) []error {
+	var errs []error
+
+	accessors := map[string]*ValueAccessor{
+		"instanceIds": component.InstanceIds,
+	}
+	if spec := component.SpecDefinition; spec != nil {
+		accessors["specDefinition.podTemplateSpec"] = spec.PodTemplateSpec
+		accessors["specDefinition.podSpec"] = spec.PodSpec
+		accessors["specDefinition.metadata"] = spec.Metadata
+		if fragmented := spec.FragmentedPodSpecDefinition; fragmented != nil {
+			accessors["fragmentedPodSpecDefinition.schedulerName"] = fragmented.SchedulerName
+			accessors["fragmentedPodSpecDefinition.labels"] = fragmented.Labels
+			accessors["fragmentedPodSpecDefinition.annotations"] = fragmented.Annotations
+			accessors["fragmentedPodSpecDefinition.resources"] = fragmented.Resources
+			accessors["fragmentedPodSpecDefinition.resourceClaims"] = fragmented.ResourceClaims
+			accessors["fragmentedPodSpecDefinition.podAffinity"] = fragmented.PodAffinity
+			accessors["fragmentedPodSpecDefinition.nodeAffinity"] = fragmented.NodeAffinity
+			accessors["fragmentedPodSpecDefinition.containers"] = fragmented.Containers
+			accessors["fragmentedPodSpecDefinition.container"] = fragmented.Container
+			accessors["fragmentedPodSpecDefinition.priorityClassName"] = fragmented.PriorityClassName
+			accessors["fragmentedPodSpecDefinition.image"] = fragmented.Image
+		}
+	}
+	if scale := component.ScaleDefinition; scale != nil {
+		accessors["scaleDefinition.replicas"] = scale.Replicas
+		accessors["scaleDefinition.minReplicas"] = scale.MinReplicas
+		accessors["scaleDefinition.maxReplicas"] = scale.MaxReplicas
+	}
+	for field, accessor := range accessors {
+		if accessor == nil {
+			continue
+		}
+		if accessor.PatchStrategy != "" && accessor.PatchStrategy != PatchStrategyMerge && accessor.PatchStrategy != PatchStrategyReplace {
+			errs = append(errs, fmt.Errorf("component '%s' %s: unknown patchStrategy %q", component.Name, field, accessor.PatchStrategy))
+		}
+		for i, entry := range accessor.Patches {
+			errs = append(errs, validatePatchEntry(component.Name, fmt.Sprintf("%s.patches[%d]", field, i), entry)...)
+			if len(entry.MatchConditions) == 0 && i != len(accessor.Patches)-1 {
+				errs = append(errs, fmt.Errorf("component '%s' %s.patches[%d]: an entry without matchConditions always matches and may only appear last", component.Name, field, i))
+			}
+		}
+	}
+	if component.InstanceIds != nil && len(component.InstanceIds.Patches) > 0 {
+		errs = append(errs, fmt.Errorf("component '%s' instanceIds: is read-only and cannot declare patches", component.Name))
+	}
+	if suspend := component.SuspendDefinition; suspend != nil {
+		for i, entry := range suspend.SuspendActions {
+			errs = append(errs, validatePatchEntry(component.Name, fmt.Sprintf("suspendActions[%d]", i), entry)...)
+		}
+		for i, entry := range suspend.ResumeActions {
+			errs = append(errs, validatePatchEntry(component.Name, fmt.Sprintf("resumeActions[%d]", i), entry)...)
+		}
+	}
+
+	return errs
+}
+
+func validatePatchEntry(componentName, field string, entry PatchEntry) []error {
+	var errs []error
+
+	if entry.PatchType != PatchTypeMergePatch && entry.PatchType != PatchTypeJSONPatch {
+		errs = append(errs, fmt.Errorf("component '%s' %s: patchType must be %s or %s, got %q", componentName, field, PatchTypeMergePatch, PatchTypeJSONPatch, entry.PatchType))
+	}
+	if entry.Expression == "" {
+		errs = append(errs, fmt.Errorf("component '%s' %s: expression is required", componentName, field))
+	}
+	seen := map[string]bool{}
+	for j, condition := range entry.MatchConditions {
+		if condition.Name == "" {
+			errs = append(errs, fmt.Errorf("component '%s' %s.matchConditions[%d]: name is required", componentName, field, j))
+		} else if seen[condition.Name] {
+			errs = append(errs, fmt.Errorf("component '%s' %s.matchConditions[%d]: name %q is not unique", componentName, field, j, condition.Name))
+		}
+		seen[condition.Name] = true
+		if condition.Expression == "" {
+			errs = append(errs, fmt.Errorf("component '%s' %s.matchConditions[%d]: expression is required", componentName, field, j))
+		}
+	}
+
 	return errs
 }
 

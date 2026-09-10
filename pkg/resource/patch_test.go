@@ -6,6 +6,8 @@ package resource
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 )
 
 func TestMergePatch(t *testing.T) {
@@ -64,7 +66,7 @@ func TestApplyConstructedPatchAddParents(t *testing.T) {
 		"path":  "/spec/template/cliques/0/spec/podSpec/affinity/nodeAffinity",
 		"value": map[string]any{"requiredDuringSchedulingIgnoredDuringExecution": map[string]any{}},
 	}}
-	out, err := applyConstructedPatch(live, ops)
+	out, err := applyConstructedPatch(live, ops, v1alpha1.PatchTypeJSONPatch)
 	if err != nil {
 		t.Fatalf("add under a missing affinity parent: %v", err)
 	}
@@ -78,7 +80,7 @@ func TestApplyConstructedPatchAddParents(t *testing.T) {
 	}
 
 	badIndex := []any{map[string]any{"op": "add", "path": "/spec/template/cliques/3/spec/affinity", "value": map[string]any{}}}
-	if _, err := applyConstructedPatch(live, badIndex); err == nil {
+	if _, err := applyConstructedPatch(live, badIndex, v1alpha1.PatchTypeJSONPatch); err == nil {
 		t.Fatal("an out-of-range list index must stay an error")
 	}
 	if _, stray := live["spec"].(map[string]any)["template"].(map[string]any)["cliques"].([]any)[0].(map[string]any)["spec"].(map[string]any)["affinity"]; stray {
@@ -87,13 +89,13 @@ func TestApplyConstructedPatchAddParents(t *testing.T) {
 
 	wholeElement := map[string]any{"spec": map[string]any{}}
 	elementAdd := []any{map[string]any{"op": "add", "path": "/spec/containers/0", "value": map[string]any{"name": "c"}}}
-	if _, err := applyConstructedPatch(wholeElement, elementAdd); err == nil {
+	if _, err := applyConstructedPatch(wholeElement, elementAdd, v1alpha1.PatchTypeJSONPatch); err == nil {
 		t.Fatal("adding element 0 of a missing list must stay an error, never build a map keyed 0")
 	}
 
 	missingList := map[string]any{"spec": map[string]any{}}
 	numericParent := []any{map[string]any{"op": "add", "path": "/spec/containers/0/image", "value": "img"}}
-	if _, err := applyConstructedPatch(missingList, numericParent); err == nil {
+	if _, err := applyConstructedPatch(missingList, numericParent, v1alpha1.PatchTypeJSONPatch); err == nil {
 		t.Fatal("a numeric segment under a missing list must stay an error, never become a map key")
 	}
 	if _, stray := missingList["spec"].(map[string]any)["containers"]; stray {
@@ -102,7 +104,7 @@ func TestApplyConstructedPatchAddParents(t *testing.T) {
 
 	escaped := map[string]any{"metadata": map[string]any{}}
 	ops2 := []any{map[string]any{"op": "add", "path": "/metadata/a~1b/leaf", "value": "v"}}
-	out2, err := applyConstructedPatch(escaped, ops2)
+	out2, err := applyConstructedPatch(escaped, ops2, v1alpha1.PatchTypeJSONPatch)
 	if err != nil {
 		t.Fatalf("escaped pointer segment: %v", err)
 	}

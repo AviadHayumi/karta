@@ -28,8 +28,8 @@ func Rayjob() *v1alpha1.Karta {
 					Name: "rayjob",
 					Kind: &v1alpha1.GroupVersionKind{Group: "ray.io", Version: "v1", Kind: "RayJob"},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": true}}`}},
-						ResumeActions:  []v1alpha1.SuspendAction{{Patch: `{"spec": {"suspend": false}}`}},
+						SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`}},
+						ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`}},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						PhaseDefinition: &v1alpha1.PhaseDefinition{
@@ -70,7 +70,7 @@ func Rayjob() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("rayjob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"rayClusterSpec"][?"headGroupSpec"][?"template"].orValue(null)`, Patch: `{"spec": {"rayClusterSpec": {"headGroupSpec": {"template": value}}}}`, Replace: true},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"rayClusterSpec"][?"headGroupSpec"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"rayClusterSpec": {"headGroupSpec": {"template": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `1`},
@@ -87,7 +87,7 @@ func Rayjob() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("rayjob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))`, Patch: `[{"op": "add", "path": "/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template", "value": value}]`},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template", "value": value}]`}}},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas:    &v1alpha1.ValueAccessor{Expression: `(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])`},

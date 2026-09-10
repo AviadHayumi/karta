@@ -41,8 +41,10 @@ childComponents:
   specDefinition:
     podTemplateSpec:
       expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)
-      patch: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
-      replace: true
+      patches:
+        - patchType: MergePatch
+          expression: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
+      patchStrategy: Replace
 ```
 
 ## Expressions
@@ -50,18 +52,18 @@ All expressions in a Karta are written in [CEL](https://github.com/google/cel-sp
 
 Reads and writes are separate. A field is accessed through a pair:
 - `expression` reads the value. The workload manifest is bound as `object`.
-- `patch` writes the value. It is a CEL expression that constructs the change to apply.
+- `patches` writes the value. Each entry has an `expression`, a CEL expression that constructs the change to apply, and a `patchType` naming how it is applied.
 
-A `patch` can construct one of two shapes:
-- A map: applied as a JSON merge patch. Maps merge recursively, any other value replaces, and `null` deletes the field.
-- A list: applied as an RFC 6902 operation list, for example `[{"op": "add", "path": "/spec/template", "value": value}]`.
+A patch expression constructs the shape matching its `patchType`:
+- `MergePatch`: a map, applied as a JSON merge patch. Maps merge recursively, any other value replaces, and `null` deletes the field.
+- `JSONPatch`: a list, applied as an RFC 6902 operation list, for example `[{"op": "add", "path": "/spec/template", "value": value}]`.
 
-Inside a `patch`, these names are bound:
+Inside a patch expression, these names are bound:
 - `value`: the new value being written.
 - `instance` and `index`: the instance id and its position, for instanced components.
 - `variables.<name>`: the named expressions defined in `spec.variables`.
 
-Setting `replace: true` makes the write replace the field instead of merging into it: the patch is first applied with `value` bound to `null` (deleting the field) and then with the real value. A pod template update wants this; an annotations update usually does not.
+Setting `patchStrategy: Replace` on the accessor makes the write replace the field instead of merging into it: the patch is first applied with `value` bound to `null` (deleting the field) and then with the real value. A pod template update wants this; an annotations update usually does not.
 
 ### Null safety
 Use optional selection instead of plain field access so a missing field does not fail the evaluation:
@@ -112,8 +114,10 @@ Full pod template:
 specDefinition:
   podTemplateSpec:
     expression: object[?"spec"][?"template"].orValue(null)
-    patch: '{"spec": {"template": value}}'
-    replace: true
+    patches:
+      - patchType: MergePatch
+        expression: '{"spec": {"template": value}}'
+    patchStrategy: Replace
 ```
 
 Fragmented pod fields:
@@ -123,22 +127,28 @@ specDefinition:
   fragmentedPodSpecDefinition:
     labels:
       expression: object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)
-      patch: '{"spec": {"components": {"standalone": {"podLabels": value}}}}'
-      replace: true
+      patches:
+        - patchType: MergePatch
+          expression: '{"spec": {"components": {"standalone": {"podLabels": value}}}}'
+      patchStrategy: Replace
     resources:
       expression: object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)
-      patch: '{"spec": {"components": {"standalone": {"resources": value}}}}'
-      replace: true
+      patches:
+        - patchType: MergePatch
+          expression: '{"spec": {"components": {"standalone": {"resources": value}}}}'
+      patchStrategy: Replace
     schedulerName:
       expression: object[?"spec"][?"components"][?"standalone"][?"schedulerName"].orValue(null)
-      patch: '{"spec": {"components": {"standalone": {"schedulerName": value}}}}'
-      replace: true
+      patches:
+        - patchType: MergePatch
+          expression: '{"spec": {"components": {"standalone": {"schedulerName": value}}}}'
+      patchStrategy: Replace
 ```
 
 ## Component Instances
 
 A component's spec definition might point to multiple instance specs (in map/array format). In those cases it is crucial to be able to distinguish between each instance of that component.
-To do so, define `instanceIds`: an expression returning the list of instance ids. Every other accessor of the component then returns a list aligned with that order, and its `patch` receives `instance` (the id) and `index` (its position).
+To do so, define `instanceIds`: an expression returning the list of instance ids. Every other accessor of the component then returns a list aligned with that order, and its patch expressions receive `instance` (the id) and `index` (its position).
 For example:
 
 1. Array of specs (each entry carries its own name):
@@ -154,7 +164,9 @@ A per-index write uses an RFC 6902 patch built with `index`:
 specDefinition:
   podTemplateSpec:
     expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))
-    patch: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
+    patches:
+      - patchType: JSONPatch
+        expression: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
 ```
 
 2. Map of specs (the map keys are the instance ids, sorted for a stable order):
@@ -169,8 +181,10 @@ A per-instance write uses a merge patch keyed by `instance`:
 ```YAML
 labels:
   expression: ([dyn(object[?"spec"][?"services"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, k).sort().map(k, object.spec.services[k][?"labels"].orValue(null))
-  patch: '{"spec": {"services": {instance: {"labels": value}}}}'
-  replace: true
+  patches:
+    - patchType: MergePatch
+      expression: '{"spec": {"services": {instance: {"labels": value}}}}'
+  patchStrategy: Replace
 ```
 
 ## Pod Selectors
@@ -249,14 +263,16 @@ statusMappings:
 ```
 
 ## Suspend Definitions
-For frameworks with native, first-class suspension support (e.g. `spec.suspend` for batch/v1 Job), define the patches applied on suspend and resume. Each action is a `patch` expression merged into the workload; actions are applied in order.
+For frameworks with native, first-class suspension support (e.g. `spec.suspend` for batch/v1 Job), define the patches applied on suspend and resume. Each action is a patch entry with a `patchType` and an `expression`, applied to the workload; actions are applied in order.
 
 ```YAML
 suspendDefinition:
   suspendActions:
-  - patch: '{"spec": {"suspend": true}}'
+  - patchType: MergePatch
+    expression: '{"spec": {"suspend": true}}'
   resumeActions:
-  - patch: '{"spec": {"suspend": false}}'
+  - patchType: MergePatch
+    expression: '{"spec": {"suspend": false}}'
 ```
 
 ## Additional child kinds
@@ -392,28 +408,40 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: object[?"spec"][?"predictor"][?"schedulerName"].orValue(null)
-              patch: '{"spec": {"predictor": {"schedulerName": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"schedulerName": value}}}'
+              patchStrategy: Replace
             labels:
               expression: object[?"spec"][?"predictor"][?"labels"].orValue(null)
-              patch: '{"spec": {"predictor": {"labels": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"labels": value}}}'
+              patchStrategy: Replace
             annotations:
               expression: object[?"spec"][?"predictor"][?"annotations"].orValue(null)
-              patch: '{"spec": {"predictor": {"annotations": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"annotations": value}}}'
+              patchStrategy: Replace
             nodeAffinity:
               expression: object[?"spec"][?"predictor"][?"affinity"][?"nodeAffinity"].orValue(null)
-              patch: '{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}'
+              patchStrategy: Replace
             container:
               expression: 'variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null'
-              patch: 'variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: 'variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}'
+              patchStrategy: Replace
             priorityClassName:
               expression: object[?"spec"][?"predictor"][?"priorityClassName"].orValue(null)
-              patch: '{"spec": {"predictor": {"priorityClassName": value}}}'
-              replace: true
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"priorityClassName": value}}}'
+              patchStrategy: Replace
         scaleDefinition:
           minReplicas:
             expression: object[?"spec"][?"predictor"][?"minReplicas"].orValue(null)
@@ -432,12 +460,16 @@ spec:
         specDefinition:
           podSpec:
             expression: object[?"spec"][?"transformer"].orValue(null)
-            patch: '{"spec": {"transformer": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"transformer": value}}'
+            patchStrategy: Replace
           metadata:
             expression: object[?"spec"][?"transformer"].orValue(null)
-            patch: '{"spec": {"transformer": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"transformer": value}}'
+            patchStrategy: Replace
         scaleDefinition:
           minReplicas:
             expression: object[?"spec"][?"transformer"][?"minReplicas"].orValue(null)
@@ -495,8 +527,10 @@ spec:
       specDefinition:
         podTemplateSpec:
           expression: object[?"spec"][?"template"].orValue(null)
-          patch: '{"spec": {"template": value}}'
-          replace: true
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"template": value}}'
+          patchStrategy: Replace
       statusDefinition:
         statusMappings:
           running:
@@ -513,9 +547,11 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - patch: '{"spec": {"suspend": true}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
         resumeActions:
-          - patch: '{"spec": {"suspend": false}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
   variables:
     - name: statusActive
       expression: ([dyn(object.?status.?active.orValue(null))].filter(v, v != null && v != false) + [0])[0]
@@ -538,8 +574,10 @@ spec:
       specDefinition:
         podTemplateSpec:
           expression: object[?"spec"][?"template"].orValue(null)
-          patch: '{"spec": {"template": value}}'
-          replace: true
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"template": value}}'
+          patchStrategy: Replace
       scaleDefinition:
         replicas:
           expression: variables.specReplicas
@@ -597,8 +635,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"template"].orValue(null)
-            patch: '{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}'
+            patchStrategy: Replace
         podSelector:
           componentTypeSelector:
             expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)
@@ -612,8 +652,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)
-            patch: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
+            patchStrategy: Replace
         podSelector:
           componentTypeSelector:
             expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)
@@ -648,8 +690,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"template"].orValue(null)
-            patch: '{"spec": {"template": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"template": value}}'
+            patchStrategy: Replace
 ```
 
 ## Minimum requirements for defining a Karta

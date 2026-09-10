@@ -32,7 +32,7 @@ var _ = Describe("StructureSummary", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patch:      `{"spec": {"template": value}}`,
+										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
 									},
 								},
 							},
@@ -78,7 +78,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"worker": {"template": value}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"template": value}}}`}},
 										},
 									},
 								},
@@ -88,7 +88,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"podSpec"].orValue(null)`,
-											Patch:      `{"spec": {"master": {"podSpec": value}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"podSpec": value}}}`}},
 										},
 									},
 								},
@@ -136,7 +136,7 @@ var _ = Describe("StructureSummary", func() {
 										FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
 											Containers: &v1alpha1.ValueAccessor{
 												Expression: `object[?"spec"][?"containers"].orValue(null)`,
-												Patch:      `{"spec": {"containers": value}}`,
+												Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"containers": value}}`}},
 											},
 										},
 									},
@@ -147,7 +147,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"coordinator"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"coordinator": {"template": value}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"coordinator": {"template": value}}}`}},
 										},
 									},
 								},
@@ -187,7 +187,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"worker": {"template": value}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"template": value}}}`}},
 										},
 									},
 								},
@@ -197,7 +197,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"master": {"template": value}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
 										},
 									},
 								},
@@ -260,7 +260,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"pre"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"pre": {"template": value}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"pre": {"template": value}}}`}},
 										},
 									},
 								},
@@ -270,7 +270,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"decode"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"decode": {"template": value}}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"decode": {"template": value}}}`}},
 										},
 									},
 								},
@@ -328,7 +328,7 @@ var _ = Describe("StructureSummary", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"template"].orValue(null)`,
-											Patch:      `{"spec": {"template": value}}`,
+											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
 										},
 									},
 								},
@@ -397,7 +397,7 @@ var _ = Describe("StructureSummary", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patch:      `{"spec": {"template": value}}`,
+										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
 									},
 								},
 							},
@@ -488,7 +488,7 @@ var _ = Describe("StructureSummary", func() {
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-										Patch:      `{"spec": {"replicas": value}}`,
+										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
 									},
 								},
 							},

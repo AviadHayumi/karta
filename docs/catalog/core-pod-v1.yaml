@@ -15,8 +15,10 @@ spec:
       specDefinition:
         podTemplateSpec:
           expression: object
-          patch: value
-          replace: true
+          patches:
+            - patchType: MergePatch
+              expression: value
+          patchStrategy: Replace
       scaleDefinition:
         replicas:
           expression: "1"

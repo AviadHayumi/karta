@@ -352,27 +352,78 @@ func (a *Accessor) ApplyResumeActions(ctx context.Context, definition v1alpha1.C
 	return nil
 }
 
-// applyActions runs an ordered action list: each patch evaluates its expression and the
-// constructed object merges into the workload, applyConfiguration style.
-func (a *Accessor) applyActions(ctx context.Context, actions []v1alpha1.SuspendAction) error {
+// applyActions runs an ordered action list: entries whose conditions hold construct
+// their patch and apply it in sequence. An empty action list is a no-op, but a
+// non-empty list where no entry applied fails loudly: the definition said nothing
+// about this document shape.
+func (a *Accessor) applyActions(ctx context.Context, actions []v1alpha1.PatchEntry) error {
+	applied := 0
 	for i, action := range actions {
-		results, err := a.runner.Evaluate(ctx, action.Patch)
+		matched, err := a.entryMatches(ctx, action, nil)
+		if err != nil {
+			return fmt.Errorf("[%d]: %w", i, err)
+		}
+		if !matched {
+			continue
+		}
+		// EvaluateWithVariables, not Evaluate: a JSONPatch expression builds one list of
+		// operations, and Evaluate would spread it into one result per element.
+		results, err := a.runner.EvaluateWithVariables(ctx, action.Expression, nil)
 		if err != nil {
 			return fmt.Errorf("[%d]: evaluate patch: %w", i, err)
 		}
 		if len(results) != 1 {
 			return fmt.Errorf("[%d]: a patch must construct exactly one object, got %d results", i, len(results))
 		}
+		patch, empty, err := checkConstructedPatch(results[0], action.PatchType)
+		if err != nil {
+			return fmt.Errorf("[%d]: %w", i, err)
+		}
+		applied++
+		if empty {
+			continue
+		}
 		live, err := a.runner.GetObject()
 		if err != nil {
 			return fmt.Errorf("[%d]: %w", i, err)
 		}
-		if err := a.runner.Assign(ctx, ".", mergePatch(live, results[0])); err != nil {
+		patched, err := applyConstructedPatch(live, patch, action.PatchType)
+		if err != nil {
+			return fmt.Errorf("[%d]: apply patch: %w", i, err)
+		}
+		if err := a.runner.Assign(ctx, ".", patched); err != nil {
 			return fmt.Errorf("[%d]: apply patch: %w", i, err)
 		}
 	}
+	if len(actions) > 0 && applied == 0 {
+		return fmt.Errorf("no action matched the document")
+	}
 
 	return nil
+}
+
+// entryMatches evaluates an entry's match conditions with the given bindings. Every
+// condition must return a boolean; an error, a null, or a non-boolean result fails
+// the operation instead of counting as false.
+func (a *Accessor) entryMatches(ctx context.Context, entry v1alpha1.PatchEntry, vars map[string]any) (bool, error) {
+	for _, condition := range entry.MatchConditions {
+		results, err := a.runner.EvaluateWithVariables(ctx, condition.Expression, vars)
+		if err != nil {
+			return false, fmt.Errorf("match condition %q: %w", condition.Name, err)
+		}
+		if len(results) != 1 {
+			return false, fmt.Errorf("match condition %q: must return exactly one value, got %d", condition.Name, len(results))
+		}
+		matched, isBool := results[0].(bool)
+		if !isBool {
+			return false, fmt.Errorf("match condition %q: must return a boolean, got %T", condition.Name, results[0])
+		}
+		if !matched {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 func (a *Accessor) ExtractInstanceIds(ctx context.Context, definition v1alpha1.ComponentDefinition) ([]string, error) {
@@ -547,8 +598,9 @@ func instancedComponent(definition v1alpha1.ComponentDefinition) bool {
 	return definition.InstanceIds != nil && definition.InstanceIds.Expression != ""
 }
 
-// applyPatches writes values through the pair's patch: one evaluation per value with `value` and
-// `instance` bound, each result merged into the workload and applied at the root.
+// applyPatches writes values through the accessor's patches: per value, the first
+// entry whose conditions hold supplies the patch, evaluated with `value`, `instance`,
+// and `index` bound, and the result applied at the root.
 func (a *Accessor) applyPatches(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any) error {
 	ids, err := a.ExtractInstanceIds(ctx, def)
 	if err != nil {
@@ -559,20 +611,43 @@ func (a *Accessor) applyPatches(ctx context.Context, def v1alpha1.ComponentDefin
 	// sets, and an addressing expression (a variable or the patch itself) must keep naming the
 	// location the delete just emptied; a later instance must not address through an earlier
 	// instance's write either.
+	expressions := make([]string, 0, len(via.Patches))
+	for _, entry := range via.Patches {
+		expressions = append(expressions, entry.Expression)
+		for _, condition := range entry.MatchConditions {
+			expressions = append(expressions, condition.Expression)
+		}
+	}
 	var frozen map[string]any
-	if resolved, err := a.runner.ResolveVariables(ctx, via.Patch); err == nil {
+	if resolved, err := a.runner.ResolveVariables(ctx, expressions...); err == nil {
 		frozen = resolved
 	}
-	var patches []any
+	type constructedPatch struct {
+		patchType v1alpha1.PatchType
+		patch     any
+	}
+	var patches []constructedPatch
 	for i, value := range values {
 		var instance any
 		if i < len(ids) {
 			instance = ids[i]
 		}
+		vars := map[string]any{"value": value, "instance": instance, "index": i}
+		if frozen != nil {
+			vars["variables"] = frozen
+		}
+		// The first entry whose conditions hold supplies the patch. The entry is picked
+		// once and reused for both Replace passes.
+		entry, err := a.selectPatchEntry(ctx, via.Patches, vars)
+		if err != nil {
+			return err
+		}
 		// Replace = delete first : the same patch with value bound to null removes the field ,
 		// so the second application sets the value clean instead of merging into what was there.
+		// Only a merge patch has an implicit prior value to clear; RFC 6902 operations state
+		// their removals explicitly, so a JSONPatch entry gets a single pass.
 		binds := []any{value}
-		if via.Replace {
+		if via.PatchStrategy == v1alpha1.PatchStrategyReplace && entry.PatchType == v1alpha1.PatchTypeMergePatch {
 			binds = []any{nil, value}
 		}
 		for _, bound := range binds {
@@ -580,14 +655,21 @@ func (a *Accessor) applyPatches(ctx context.Context, def v1alpha1.ComponentDefin
 			if frozen != nil {
 				vars["variables"] = frozen
 			}
-			results, err := a.runner.EvaluateWithVariables(ctx, via.Patch, vars)
+			results, err := a.runner.EvaluateWithVariables(ctx, entry.Expression, vars)
 			if err != nil {
 				return fmt.Errorf("evaluate patch: %w", err)
 			}
 			if len(results) != 1 {
 				return fmt.Errorf("a patch must construct exactly one object, got %d results", len(results))
 			}
-			patches = append(patches, results[0])
+			patch, empty, err := checkConstructedPatch(results[0], entry.PatchType)
+			if err != nil {
+				return err
+			}
+			if empty {
+				continue
+			}
+			patches = append(patches, constructedPatch{patchType: entry.PatchType, patch: patch})
 		}
 	}
 	// The patches land all-or-nothing: every path is resolved before the
@@ -604,12 +686,12 @@ func (a *Accessor) applyPatches(ctx context.Context, def v1alpha1.ComponentDefin
 	if err := json.Unmarshal(encoded, &snapshot); err != nil {
 		return err
 	}
-	for _, patch := range patches {
+	for _, constructed := range patches {
 		live, err := a.runner.GetObject()
 		if err != nil {
 			return err
 		}
-		merged, err := applyConstructedPatch(live, patch)
+		merged, err := applyConstructedPatch(live, constructed.patch, constructed.patchType)
 		if err == nil {
 			err = a.runner.Assign(ctx, ".", merged)
 		}
@@ -625,17 +707,34 @@ func (a *Accessor) applyPatches(ctx context.Context, def v1alpha1.ComponentDefin
 	return nil
 }
 
-// assignVia writes one field through the pair's patch.
+// selectPatchEntry picks the first entry whose conditions all hold. If none matches,
+// the write fails: the definition said nothing about this document shape, and
+// guessing a location is not an option.
+func (a *Accessor) selectPatchEntry(ctx context.Context, entries []v1alpha1.PatchEntry, vars map[string]any) (v1alpha1.PatchEntry, error) {
+	for _, entry := range entries {
+		matched, err := a.entryMatches(ctx, entry, vars)
+		if err != nil {
+			return v1alpha1.PatchEntry{}, err
+		}
+		if matched {
+			return entry, nil
+		}
+	}
+
+	return v1alpha1.PatchEntry{}, fmt.Errorf("no patch entry matched the document")
+}
+
+// assignVia writes one field through the accessor's patches.
 func (a *Accessor) assignVia(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any) error {
-	if via == nil || via.Patch == "" {
-		return fmt.Errorf("the field has no patch and cannot be written")
+	if via == nil || len(via.Patches) == 0 {
+		return fmt.Errorf("the field has no patches and cannot be written")
 	}
 
 	return a.applyPatches(ctx, def, via, values)
 }
 
 func (a *Accessor) updateField(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any, isEmpty func(any) bool) error {
-	if via != nil && via.Patch != "" {
+	if via != nil && len(via.Patches) > 0 {
 		// Skip assignment if all values are empty/nil to avoid writing null
 		// into the JSON.
 		allEmpty := true
@@ -652,7 +751,7 @@ func (a *Accessor) updateField(ctx context.Context, def v1alpha1.ComponentDefini
 	}
 	for _, v := range values {
 		if !isEmpty(v) {
-			return fmt.Errorf("the field has no patch and values are not empty")
+			return fmt.Errorf("the field has no patches and values are not empty")
 		}
 	}
 	return nil

@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
+
+	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 )
 
 // mergePatch merges a constructed partial object into the live one, the way a
@@ -85,23 +87,51 @@ func ensureAddParents(doc any, path string) {
 	}
 }
 
-// applyConstructedPatch applies what a patch expression built. A list of RFC 6902 operations is
-// applied as a JSON patch - the mechanism a MutatingAdmissionPolicy jsonPatch mutation uses, and
-// the one that can address a list element by index. Anything else merges, applyConfiguration
-// style.
-func applyConstructedPatch(live, constructed any) (any, error) {
-	ops, ok := constructed.([]any)
-	if !ok {
+// checkConstructedPatch checks what a patch expression built against the entry's
+// declared patchType: a map for MergePatch, a list of RFC 6902 operations for
+// JSONPatch. Anything else is an error, never a guess. An empty map or list means no
+// change, reported through the empty result.
+func checkConstructedPatch(constructed any, patchType v1alpha1.PatchType) (any, bool, error) {
+	switch patchType {
+	case v1alpha1.PatchTypeMergePatch:
+		patch, ok := constructed.(map[string]any)
+		if !ok {
+			return nil, false, fmt.Errorf("a MergePatch expression must build a map, got %T", constructed)
+		}
+
+		return patch, len(patch) == 0, nil
+	case v1alpha1.PatchTypeJSONPatch:
+		ops, ok := constructed.([]any)
+		if !ok {
+			return nil, false, fmt.Errorf("a JSONPatch expression must build a list of RFC 6902 operations, got %T", constructed)
+		}
+		for _, op := range ops {
+			entry, isMap := op.(map[string]any)
+			if !isMap {
+				return nil, false, fmt.Errorf("a JSONPatch list must hold RFC 6902 operations, got %T", op)
+			}
+			if _, hasOp := entry["op"]; !hasOp {
+				return nil, false, fmt.Errorf("a patch operation names an op, got %v", entry)
+			}
+		}
+
+		return ops, len(ops) == 0, nil
+	default:
+		return nil, false, fmt.Errorf("unknown patch type %q", patchType)
+	}
+}
+
+// applyConstructedPatch applies a checked patch by its declared type. A JSONPatch is
+// applied as RFC 6902 operations - the mechanism a MutatingAdmissionPolicy jsonPatch
+// mutation uses, and the one that can address a list element by index. A MergePatch
+// merges, applyConfiguration style.
+func applyConstructedPatch(live, constructed any, patchType v1alpha1.PatchType) (any, error) {
+	if patchType != v1alpha1.PatchTypeJSONPatch {
 		return mergePatch(live, constructed), nil
 	}
-	for _, op := range ops {
-		entry, isMap := op.(map[string]any)
-		if !isMap {
-			return nil, fmt.Errorf("a patch list must hold RFC 6902 operations, got %T", op)
-		}
-		if _, hasOp := entry["op"]; !hasOp {
-			return nil, fmt.Errorf("a patch operation names an op, got %v", entry)
-		}
+	ops, ok := constructed.([]any)
+	if !ok {
+		return nil, fmt.Errorf("a JSONPatch expression must build a list of RFC 6902 operations, got %T", constructed)
 	}
 	liveJSON, err := json.Marshal(live)
 	if err != nil {

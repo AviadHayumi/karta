@@ -27,12 +27,12 @@ func NIMService() *v1alpha1.Karta {
 					Kind: &v1alpha1.GroupVersionKind{Group: "apps.nvidia.com", Version: "v1alpha1", Kind: "NIMService"},
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, Patch: `{"spec": {"schedulerName": value}}`, Replace: true},
-							Labels:        &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"labels"].orValue(null)`, Patch: `{"spec": {"labels": value}}`, Replace: true},
-							Annotations:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"annotations"].orValue(null)`, Patch: `{"spec": {"annotations": value}}`, Replace: true},
-							Resources:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"resources"].orValue(null)`, Patch: `{"spec": {"resources": value}}`, Replace: true},
-							PodAffinity:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)`, Patch: `{"spec": {"affinity": {"podAffinity": value}}}`, Replace: true},
-							NodeAffinity:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patch: `{"spec": {"affinity": {"nodeAffinity": value}}}`, Replace: true},
+							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"schedulerName": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							Labels:        &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"labels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"labels": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							Annotations:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"annotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"annotations": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							Resources:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"resources": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							PodAffinity:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"affinity": {"podAffinity": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							NodeAffinity:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"affinity": {"nodeAffinity": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 						},
 					},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{

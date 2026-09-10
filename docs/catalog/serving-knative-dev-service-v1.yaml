@@ -41,8 +41,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"template"].orValue(null)
-            patch: '{"spec": {"template": value}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"template": value}}'
+            patchStrategy: Replace
         scaleDefinition:
           minReplicas:
             expression: variables.minScale

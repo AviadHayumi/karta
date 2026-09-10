@@ -15,8 +15,10 @@ spec:
       specDefinition:
         podTemplateSpec:
           expression: object[?"spec"][?"template"].orValue(null)
-          patch: '{"spec": {"template": value}}'
-          replace: true
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"template": value}}'
+          patchStrategy: Replace
       scaleDefinition:
         replicas:
           expression: variables.specParallelism
@@ -60,9 +62,11 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - patch: '{"spec": {"suspend": true}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
         resumeActions:
-          - patch: '{"spec": {"suspend": false}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
   optimizationInstructions:
     gangScheduling:
       podGroups:

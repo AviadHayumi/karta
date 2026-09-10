@@ -160,25 +160,29 @@ are three mutually exclusive patterns; pick exactly one per component.
 - `podSpec` (with optional `metadata`) when it embeds a bare pod spec.
 - `fragmentedPodSpecDefinition` when pod fields are scattered across the spec.
 
-Each of these is an accessor pair: `expression` is the CEL read, and `patch`
-is a CEL expression constructing the write. A Job embeds a full pod template at
+Each of these is an accessor pair: `expression` is the CEL read, and `patches`
+holds the writes. Each entry is a CEL expression constructing the write, with a
+`patchType` naming how it is applied. A Job embeds a full pod template at
 `.spec.template`, so use the first pattern.
 
 ```yaml
       specDefinition:
         podTemplateSpec:
           expression: object[?"spec"][?"template"].orValue(null)
-          patch: '{"spec": {"template": value}}'
-          replace: true
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"template": value}}'
+          patchStrategy: Replace
 ```
 
-In the patch expression, `value` is bound to the new value Karta computed. The
-patch builds either a partial object that merges into the workload (maps merge
-recursively, any other value replaces, and null removes the field) or an RFC
-6902 list of operations. `replace: true` makes the write replace the field
-instead of merging into it: the patch is first applied with `value` bound to
-null (removing the field) and then with the real value. A pod template update
-wants this; an annotations update usually does not.
+In the patch expression, `value` is bound to the new value Karta computed. A
+`MergePatch` entry builds a partial object that merges into the workload (maps
+merge recursively, any other value replaces, and null removes the field); a
+`JSONPatch` entry builds an RFC 6902 list of operations. Setting
+`patchStrategy: Replace` makes the write replace the field instead of merging
+into it: the patch is first applied with `value` bound to null (removing the
+field) and then with the real value. A pod template update wants this; an
+annotations update usually does not.
 
 ## Step 5: Declare scale
 

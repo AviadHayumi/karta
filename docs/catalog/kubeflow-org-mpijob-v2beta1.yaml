@@ -42,9 +42,11 @@ spec:
                   status: "True"
       suspendDefinition:
         suspendActions:
-          - patch: '{"spec": {"runPolicy": {"suspend": true}}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": true}}}'
         resumeActions:
-          - patch: '{"spec": {"runPolicy": {"suspend": false}}}'
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": false}}}'
     childComponents:
       - name: launcher
         kind:
@@ -55,8 +57,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"template"].orValue(null)
-            patch: '{"spec": {"mpiReplicaSpecs": {"Launcher": {"template": value}}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"mpiReplicaSpecs": {"Launcher": {"template": value}}}}'
+            patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: variables.specMpiReplicaSpecsLauncherReplicas
@@ -73,8 +77,10 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"template"].orValue(null)
-            patch: '{"spec": {"mpiReplicaSpecs": {"Worker": {"template": value}}}}'
-            replace: true
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"mpiReplicaSpecs": {"Worker": {"template": value}}}}'
+            patchStrategy: Replace
         scaleDefinition:
           replicas:
             expression: variables.specMpiReplicaSpecsWorkerReplicas

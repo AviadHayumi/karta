@@ -27,7 +27,7 @@ func Deployment() *v1alpha1.Karta {
 						Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specReplicas`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patch: `{"spec": {"template": value}}`, Replace: true},
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
