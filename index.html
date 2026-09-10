@@ -198,8 +198,8 @@ h2{font-size:33px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px}
   <div class="wrap" style="text-align:center">
     <div class="eyebrow">karta engine deep dive</div>
     <h1>jq → cel</h1>
-    <div class="sub" style="margin:14px auto 0">how the expression language changed , what it means for every definition ,<br>and what actually moved inside the engine</div>
-    <div class="meta mono" id="covermeta">branch <b>cel-native</b> · 20 kartas ported · 24 path fields → value accessors · make check <b>green</b></div>
+    <div class="sub" style="margin:14px auto 0">how the expression language changed , what it means for every definition ,<br>and what actually moved inside the engine · now written up as <b>kep-0001</b></div>
+    <div class="meta mono" id="covermeta"><b>kep-0001</b> · run.ai/<b>v1alpha2</b> · 20 kartas ported · 24 path fields → value accessors · make check <b>green</b></div>
   </div>
 </section>
 
@@ -263,7 +263,7 @@ object.status.active > 0
 # convenient - and silent.</pre></div>
       </div>
       <div data-fx>
-        <span class="tag cel">cel · docs/catalog on cel-native</span>
+        <span class="tag cel">cel · v1alpha2 · docs/catalog</span>
         <div class="editor" data-file="batch-cronjob-v1.yaml" data-lang="yaml"><pre class="ecode">specDefinition:
   podTemplateSpec:
     expression: object[?"spec"][?"jobTemplate"][?"spec"][?"template"].orValue(null)
@@ -277,7 +277,7 @@ object.status.active > 0
       <span class="pill" data-fx><span class="k">jq</span> <code>.a.b.c</code> · absence is implicit</span>
       <span class="pill" data-fx><span class="k">cel</span> <code>object[?"a"][?"b"].orValue(null)</code> · absence is explicit</span>
       <span class="pill" data-fx><span class="k">rule</span> every optional hop is spelled out</span>
-      <span class="pill" data-fx><span class="k">smallest one</span> core-pod : <code>expression: object · patch: value</code></span>
+      <span class="pill" data-fx><span class="k">smallest one</span> core-pod : read <code>object</code> · one MergePatch entry : <code>value</code></span>
     </div>
   </div>
 </section>
@@ -299,7 +299,7 @@ object.status.active > 0
 # // cannot tell false from absent.</pre></div>
       </div>
       <div data-fx>
-        <span class="tag cel">cel · same key on cel-native</span>
+        <span class="tag cel">cel · v1alpha2 · same key</span>
         <div class="editor" data-file="leaderworkerset-…-v1.yaml" data-lang="yaml"><pre class="ecode">groupByExpressions:
   - ([dyn(object[?"metadata"][?"labels"]["…/group-index"]
       .orValue(null))]
@@ -330,8 +330,8 @@ object.status.active > 0
 # "master" , "worker" arrive as a stream.</pre></div>
       </div>
       <div data-fx>
-        <span class="tag cel">cel · same on cel-native</span>
-        <div class="editor" data-file="jobset-…-v1alpha2.yaml" data-lang="yaml"><pre class="ecode">instanceIds:
+        <span class="tag cel">cel · v1alpha2 · same read</span>
+        <div class="editor" data-file="jobset-…-v1alpha2.yaml" data-lang="yaml"><pre class="ecode">instanceIDs:
   expression: >-
     …replicatedJobs…[0].map(x,
       x[?"name"].orValue(null))
@@ -389,10 +389,10 @@ object.status.active > 0
   <div class="wrap">
     <div class="eyebrow">part 1 · usage · the big one</div>
     <h2>writes : the read path is no longer the write path</h2>
-    <div class="lead">in jq , the read expression doubled as an l-value : the engine wrote <b>through</b> it. a cel expression is a computation - it has no address. so writes became their own thing : <b>patches</b>.</div>
+    <div class="lead">in jq , the read expression doubled as an l-value : the engine wrote <b>through</b> it. a cel expression is a computation - it has no address. so writes became their own thing : a <b>patches</b> list , the shape MutatingAdmissionPolicy uses for its mutations.</div>
     <div class="cols">
       <div data-fx>
-        <span class="tag jq">jq · main · suspend a cronjob</span>
+        <span class="tag jq">jq · v1alpha1 · suspend a cronjob</span>
         <div class="editor" data-file="batch-cronjob-v1.yaml + runner.go" data-lang="yaml"><pre class="ecode">suspendActions:
   - path: .spec.suspend
     value: "true"
@@ -402,31 +402,76 @@ object.status.active > 0
 # the path IS the location.</pre></div>
       </div>
       <div data-fx>
-        <span class="tag cel">cel · cel-native · same action</span>
+        <span class="tag cel">cel · v1alpha2 · same action</span>
         <div class="editor" data-file="batch-cronjob-v1.yaml" data-lang="yaml"><pre class="ecode">suspendActions:
-  - patch: '{"spec": {"suspend": true}}'
+  - patchType: MergePatch
+    expression: '{"spec": {"suspend": true}}'
 
-# a patch is an expression that BUILDS
-# the change. two shapes are allowed :
-#  a map  -> JSON merge patch (null deletes)
-#  a list -> RFC 6902 operations</pre></div>
+# an entry declares what it builds :
+#  MergePatch -> a map , applied as a
+#    JSON merge patch (null deletes)
+#  JSONPatch  -> a list of RFC 6902 ops
+# one patch = a list with one entry.</pre></div>
       </div>
     </div>
     <div class="cols" style="margin-top:16px">
       <div data-fx>
         <div class="editor" data-file="jobset-…-v1alpha2.yaml · indexed write" data-lang="yaml"><pre class="ecode">podTemplateSpec:
   expression: …map(x, x[?"template"][?"spec"][?"template"]…)
-  patch: '[{"op": "add",
-    "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template",
-    "value": value}]'</pre></div>
+  patches:
+    - patchType: JSONPatch
+      expression: '[{"op": "add",
+        "path": "/spec/replicatedJobs/" + string(index)
+                + "/template/spec/template",
+        "value": value}]'</pre></div>
       </div>
       <div class="kv" data-fx>
-        <h3><span class="ic">◆</span> what a patch can see</h3>
+        <h3><span class="ic">◆</span> what an entry can see</h3>
         <p><code>value</code> - the value karta is writing<br>
            <code>index</code> - list-keyed instances : <code>"/spec/replicatedJobs/" + string(index)</code><br>
            <code>instance</code> - map-keyed instances : <code>{"services": {instance: {…}}}</code> (dynamo)<br>
            <code>variables.&lt;name&gt;</code> - the definition's named expressions<br>
-           <code>replace: true</code> - delete first , then set (two passes)</p>
+           <code>patchStrategy: Replace</code> - clear first , then set (two passes)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6b · conditional writes -->
+<section class="slide" data-fxmode="pop">
+  <div class="wrap">
+    <div class="eyebrow">part 1 · usage</div>
+    <h2>conditional writes : first match wins</h2>
+    <div class="lead">sometimes the right patch depends on the document - a cronjob keeps its template under <code class="mono">spec.jobTemplate</code> , a deployment under <code class="mono">spec</code>. entries take <b>match conditions</b> ; the first entry whose conditions hold supplies the patch.</div>
+    <div class="cols">
+      <div data-fx>
+        <span class="tag cel">kep-0001 · a shape-dependent write</span>
+        <div class="editor" data-file="podTemplateSpec · patches" data-lang="yaml"><pre class="ecode">patches:
+  - matchConditions:
+      - name: has-job-template
+        expression: object.?spec.?jobTemplate.hasValue()
+    patchType: MergePatch
+    expression: '{"spec": {"jobTemplate":
+      {"spec": {"template": value}}}}'
+  - patchType: MergePatch
+    expression: '{"spec": {"template": value}}'
+
+# no conditions = always matches : the
+# else entry. it may only appear last.</pre></div>
+      </div>
+      <div>
+        <div class="kv" data-fx style="margin-bottom:12px">
+          <h3><span class="ic">◆</span> errors never mean false</h3>
+          <p>a condition must return a cel boolean. an error , a null , or a non-boolean is a <b>failed write</b> , not a false. and if nothing matches , the write fails loudly - the definition said nothing about this shape , and guessing is what got removed.</p>
+        </div>
+        <div class="kv" data-fx style="margin-bottom:12px">
+          <h3><span class="ic">◆</span> the upstream vocabulary</h3>
+          <p><code>matchConditions</code> with a required <code>name</code> is how admission policies gate on cel. the name makes failures addressable : "condition has-job-template failed" , not "condition 0 failed".</p>
+        </div>
+        <div class="kv" data-fx>
+          <h3><span class="ic">◆</span> control flow in the api</h3>
+          <p>the same branch as a ternary inside one expression is legal cel - but that smuggles a mini-language into a string. the branching lives in the patches list , where a reviewer and a validator can see it.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -440,7 +485,7 @@ object.status.active > 0
     <div class="lead">jobset's running rule - the whole difference in one screen. same meaning , different honesty about absence and types.</div>
     <div class="cols">
       <div data-fx>
-        <span class="tag jq">git show origin/main:docs/catalog/jobset-…</span>
+        <span class="tag jq">jq · v1alpha1 · docs/catalog/jobset-…</span>
         <div class="editor" data-file="jobset · jq" data-lang="yaml"><pre class="ecode">running:
   - byExpression:
       expression: >-
@@ -450,7 +495,7 @@ object.status.active > 0
       expectedResult: "true"</pre></div>
       </div>
       <div data-fx>
-        <span class="tag cel">docs/catalog/jobset-… on cel-native</span>
+        <span class="tag cel">cel · v1alpha2 · docs/catalog/jobset-…</span>
         <div class="editor" data-file="jobset · cel" data-lang="yaml"><pre class="ecode">running:
   - byExpression:
       expression: >-
@@ -458,12 +503,15 @@ object.status.active > 0
           r.?ready.orValue(0) > 0 &&
           r.?active.orValue(0) > 0)
         && …[0].all(r, r.?failed.orValue(0) == 0)
-      expectedResult: "true"</pre></div>
+
+# no expectedResult. a byExpression is a
+# boolean now , like every k8s cel gate.</pre></div>
       </div>
     </div>
     <div class="pillrow">
       <span class="pill" data-fx>longer ? yes. every <code>.orValue(0)</code> is a decision jq made silently</span>
       <span class="pill" data-fx>and each default is written where a reviewer can see it</span>
+      <span class="pill" data-fx><code>expectedResult</code> is gone - comparing a stringified bool to <code>"true"</code> was a jq leftover</span>
     </div>
   </div>
 </section>
@@ -513,23 +561,24 @@ object.status.active > 0
     <div class="lead">some workloads keep half their spec in another object. a trainjob points at a clustertrainingruntime that holds the base pod template - the definition alone never sees it. the references design fixes that : a named pointer to another resource , declared on the structure , resolved by the consumer.</div>
     <div class="cols">
       <div data-fx>
-        <span class="tag cel">docs/design/references/high-level-design.md</span>
+        <span class="tag cel">references · reserved for its own kep</span>
         <div class="editor" data-file="structureDefinition · references" data-lang="yaml"><pre class="ecode">references:
   # single object: references.trainingRuntime
   - name: trainingRuntime
-    gvk: { group: trainer.kubeflow.org,
-           version: v1alpha1,
-           kind: ClusterTrainingRuntime }
+    apiVersion: trainer.kubeflow.org/v1alpha1
+    kind: ClusterTrainingRuntime
     lookup:
       nameExpression: object.spec.runtimeRef.name
 
   # set of objects: references.pods
   - name: pods
-    gvk: { group: "", version: v1, kind: Pod }
+    apiVersion: v1
+    kind: Pod
     list:
-      matchLabels:
-        training.kubeflow.org/job-name:
-          { expression: object.metadata.name }</pre></div>
+      selector:
+        matchLabelExpressions:
+          - key: training.kubeflow.org/job-name
+            expression: object.metadata.name</pre></div>
       </div>
       <div>
         <div class="kv" data-fx style="margin-bottom:12px">
@@ -575,7 +624,6 @@ object.status.active > 0
       - byExpression:
           expression: references.pods.exists(p,
             p.status.phase == "Running")
-          expectedResult: "true"
 
 # workloads with no usable status of
 # their own : aggregate over their pods.</pre></div>
@@ -694,10 +742,12 @@ program, err := e.env.Program(ast,
       <div>
         <div class="editor" id="demoed" data-file="jobset-…-v1alpha2.yaml" data-lang="yaml"><pre class="ecode">podTemplateSpec:
   expression: …map(x, x[?"template"]…)   # read
-  patch: '[{"op": "add",
-    "path": "/spec/replicatedJobs/"
-            + string(index) + "/…",
-    "value": value}]'                    # write
+  patches:
+    - patchType: JSONPatch
+      expression: '[{"op": "add",
+        "path": "/spec/replicatedJobs/"
+                + string(index) + "/…",
+        "value": value}]'                # write
 # variables resolved once , then frozen
 # every patch built against the PRE-write doc
 # snapshot taken , then apply all-or-nothing</pre></div>
@@ -727,7 +777,7 @@ program, err := e.env.Program(ast,
     <div class="eyebrow">part 2 · internals</div>
     <h2>how we know it reads the same world</h2>
     <div class="lead">every recorded fixture - real operator states captured from a live cluster - replays through the engine offline. and during the port , a differential harness ran every read and write through <b>both</b> engines on every karta until the diff went quiet.</div>
-    <div class="term" data-title="zsh · cel-native" id="proofterm"><pre class="tcode">> make test-replay
+    <div class="term" data-title="zsh" id="proofterm"><pre class="tcode">> make test-replay
 ==> go -C test/e2e test ./replay_tests/...
 ok  github.com/run-ai/karta/test/e2e/replay_tests  0.851s
 > make check
@@ -738,6 +788,24 @@ PASS  exit 0</pre></div>
       <span class="pill" data-fx>56 recorded fixtures · 17 workload types · replayed offline</span>
       <span class="pill" data-fx>every diff the harness found became a regression test before the port landed</span>
     </div>
+  </div>
+</section>
+
+<!-- 13b · v1alpha2 upstream alignment -->
+<section class="slide" data-fxmode="pop">
+  <div class="wrap">
+    <div class="eyebrow">part 3 · the version bump</div>
+    <h2>breaking the crd anyway - so go upstream</h2>
+    <div class="lead">cel breaks the crd , and a breaking version is the one cheap moment to fix names and shapes that drifted from how kubernetes does things. every change in <b>kep-0001</b> stands on a shipping upstream precedent :</div>
+    <div class="cols3" style="margin-top:16px">
+      <div class="kv" data-fx><h3><span class="ic">◆</span> scheduling , not one consumer</h3><p><code>optimizationInstructions</code> → <code>scheduling</code> (the <code>RuntimeClass.spec.scheduling</code> name) , and the singular <code>podGroup</code> with <code>subGroups</code> replaces the already-deprecated plural.</p></div>
+      <div class="kv" data-fx><h3><span class="ic">◆</span> apiVersion + kind</h3><p><code>kind: {group, version, kind}</code> → the two lines every manifest starts with. no user-facing k8s api nests a gvk struct , and <code>kind.kind</code> stops stuttering.</p></div>
+      <div class="kv" data-fx><h3><span class="ic">◆</span> booleans , not strings</h3><p><code>byExpression.expectedResult</code> is gone. every cel gate upstream - validations , matchConditions , crd rules - is a bare boolean.</p></div>
+      <div class="kv" data-fx><h3><span class="ic">◆</span> instanceIDs</h3><p><code>instanceIdPath</code> → <code>instanceIDs</code>. upstream spells <code>machineID</code> , <code>systemUUID</code> , <code>providerIDList</code> - there is no <code>Ids</code> anywhere in its api types.</p></div>
+      <div class="kv" data-fx><h3><span class="ic">◆</span> keys that cannot collide</h3><p><code>additionalChildKinds</code> entries flatten too , and the list key becomes <code>(apiVersion , kind)</code> - <code>kind</code> alone collides across groups.</p></div>
+      <div class="kv" data-fx><h3><span class="ic">◆</span> the admission vocabulary</h3><p><code>patches</code> , <code>matchConditions</code> , <code>variables</code> , <code>expression</code> - byte for byte the words an admission-policy author already knows.</p></div>
+    </div>
+    <div class="note">the whole proposal , with before / after for every field : <b>keps/0001-cel-expressions</b> on the <code class="mono">kep-cel</code> branch</div>
   </div>
 </section>
 
@@ -963,9 +1031,9 @@ function demoPlay(){
   var T = [
     [200,  function(){ hlLine(1); tick("evaluate read : 2 templates found"); step("#1 read"); }],
     [1400, function(){ tick("resolve variables · frozen for this write"); step("#2 freeze vars"); }],
-    [2600, function(){ hlLine(2); tick("construct patch[0] against pre-write doc"); step("#3 build p0"); }],
+    [2600, function(){ hlLine(4); tick("construct patch[0] against pre-write doc"); step("#3 build p0"); }],
     [3600, function(){ tick("construct patch[1] against pre-write doc"); step("#4 build p1"); }],
-    [4600, function(){ q("demogate").className="gate ok"; q("demogate").textContent="gate : all patches constructed ✓ · snapshot taken"; step("#5 snapshot"); hlLine(8); }],
+    [4600, function(){ q("demogate").className="gate ok"; q("demogate").textContent="gate : all patches constructed ✓ · snapshot taken"; step("#5 snapshot"); hlLine(10); }],
     [5700, function(){ flyPatch("add /spec/replicatedJobs/0/…","sq0"); q("sq0").classList.add("creating"); q("sq0s").textContent="index 0 · applying"; }],
     [6900, function(){ q("sq0").className="isq ready"; q("sq0s").textContent="index 0 · patched ✓"; q("democnt").textContent="instances 2 · patched 1"; step("#6 apply p0"); }],
     [7500, function(){ flyPatch("add /spec/replicatedJobs/1/…","sq1"); q("sq1").classList.add("creating"); q("sq1s").textContent="index 1 · applying"; }],
