@@ -178,14 +178,25 @@ func (f *Flow) deleteWorkload(ctx context.Context, workload *unstructured.Unstru
 // observe watches the workload and records every distinct CR until the flow finishes, acting on the
 // journey's action steps as their states are reached. Its failure is set if the terminal state was not met.
 func (f *Flow) observe(ctx context.Context, workload *unstructured.Unstructured) *observation {
-	o := &observation{flow: f, workload: workload, pending: actionSteps(f.journey)}
+	o := &observation{flow: f, workload: workload, lastSeen: workload, pending: actionSteps(f.journey)}
 
 	// A workload whose terminal state is already visible in the create response may never produce a watch
 	// event at all: a suspended CronJob never schedules, so its controller never writes status, and a watch
 	// (which replays only events after the create) would wait for the timeout. Record the create response
-	// directly instead.
+	// directly with a one-shot reference seed; no watcher ever starts, so none is left unconsumed.
 	if hasObservedCurrentGeneration(workload) && o.hasReachedTerminal(classify(workload, f.rec.states)) {
+		if len(f.captures) > 0 {
+			if _, err := o.seedReferences(ctx); err != nil {
+				o.failure = err.Error()
+				return o
+			}
+		}
+		o.workloadSeen = true
 		o.record(ctx, workload)
+		return o
+	}
+	if err := o.startReferenceWatches(ctx); err != nil {
+		o.failure = err.Error()
 		return o
 	}
 	o.watchAndAct(ctx)
@@ -201,13 +212,17 @@ func (f *Flow) buildRecording(obs *observation) *Recording {
 		Want:          string(f.terminalState()),
 	}
 	for _, snap := range obs.snapshots {
-		out.Events = append(out.Events, Event{
+		event := Event{
 			Kind:                    EventState,
 			State:                   string(snap.state),
 			StaleObservedGeneration: snap.staleObservedGeneration,
 			ResourceVersion:         snap.cr.GetResourceVersion(),
 			Object:                  stripVolatileFields(snap.cr),
-		})
+		}
+		for _, ref := range snap.refs {
+			event.References = append(event.References, stripVolatileFields(ref))
+		}
+		out.Events = append(out.Events, event)
 		if snap.action != nil {
 			out.Events = append(out.Events, Event{Kind: EventAction, Action: snap.action})
 		}

@@ -4,7 +4,11 @@
 package recorder
 
 import (
+	"context"
+	"k8s.io/apimachinery/pkg/watch"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -212,3 +216,63 @@ func steps(states ...kartav1alpha1.ResourceStatus) []journeyStep {
 func visits(states ...kartav1alpha1.ResourceStatus) []kartav1alpha1.ResourceStatus {
 	return states
 }
+
+var _ = Describe("reference capture failures", func() {
+	It("fails the run when a reference watch cannot start", func() {
+		// A fake client with no registered kinds fails the scope lookup before any watch begins.
+		flow := &Flow{
+			rec:      &Recorder{config: Config{Cluster: Cluster{Client: fake.NewClientBuilder().Build()}}},
+			captures: []CapturedReference{{GVK: kartav1alpha1.GroupVersionKind{Group: "example.com", Version: "v1", Kind: "Missing"}, Name: "missing"}},
+		}
+		o := &observation{flow: flow}
+		err := o.startReferenceWatches(context.Background())
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("capture reference"))
+	})
+})
+
+var _ = Describe("reference-aware dedup", func() {
+	cr := func() *unstructured.Unstructured { return objWithStatus(map[string]any{"active": int64(1)}) }
+	runtimeV := func(image string) *unstructured.Unstructured {
+		return &unstructured.Unstructured{Object: map[string]any{
+			"apiVersion": "trainer.kubeflow.org/v1alpha1",
+			"kind":       "ClusterTrainingRuntime",
+			"metadata":   map[string]any{"name": "rt"},
+			"spec":       map[string]any{"image": image},
+		}}
+	}
+	capture := CapturedReference{
+		GVK:  kartav1alpha1.GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"},
+		Name: "rt",
+	}
+
+	It("dedups an identical frame but keeps one when only the reference changed", func() {
+		o := &observation{
+			flow:     &Flow{captures: []CapturedReference{capture}},
+			refCache: map[string]*unstructured.Unstructured{capture.key(): runtimeV("v1")},
+		}
+
+		o.keep(cr(), initializing, true)
+		o.keep(cr(), initializing, true)
+		Expect(o.snapshots).To(HaveLen(1), "identical frame dedups")
+
+		o.applyReferenceChange(referenceEvent{key: capture.key(), object: runtimeV("v2")})
+		o.keep(cr(), initializing, true)
+		Expect(o.snapshots).To(HaveLen(2), "a reference change under an unchanged workload cuts a frame")
+		Expect(o.snapshots[1].refs).To(HaveLen(1))
+		image, _, _ := unstructured.NestedString(o.snapshots[1].refs[0].Object, "spec", "image")
+		Expect(image).To(Equal("v2"))
+	})
+
+	It("drops a deleted reference from later frames", func() {
+		o := &observation{
+			flow:     &Flow{captures: []CapturedReference{capture}},
+			refCache: map[string]*unstructured.Unstructured{capture.key(): runtimeV("v1")},
+		}
+		o.keep(cr(), initializing, true)
+		o.applyReferenceChange(referenceEvent{key: capture.key(), typ: watch.Deleted})
+		o.keep(cr(), initializing, true)
+		Expect(o.snapshots).To(HaveLen(2))
+		Expect(o.snapshots[1].refs).To(BeEmpty())
+	})
+})

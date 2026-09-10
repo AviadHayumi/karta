@@ -49,6 +49,8 @@ expression that failed, so search your definition for that string.
 | `compile CEL expression '<expr>': ...` | The expression is not valid CEL, or references an unknown field or function. | Fix the syntax. Common causes: unbalanced brackets or quotes, comparing values of different types, or forgetting the leading `object.`. |
 | `evaluate CEL expression '<expr>': ...` | The expression compiled but failed while running against real data, often a missing field. | Make the read null-safe with optional types. Use `object[?"status"][?"phase"].orValue(null)` instead of `object.status.phase` when the field may be absent. |
 | `the field has no patch and cannot be written` | A write was attempted through an accessor that defines `expression` but no `patch`. | Add a `patch` expression to the accessor. Reads use `expression`; writes use `patch`. |
+| `the definition declares references but the consumer provided no resolved references and no reader` | An expression reads `references.<name>` but the factory got neither `WithReferences` nor `WithReferenceReader`. | Pass resolved values or a reader to the factory, or remove the reference from the definition. |
+| `reference "<name>": the reader may not get ...` | The reader implements the permission check and denied the verb. | Grant the missing RBAC to the reader's identity, or drop the reference. The error names the kind and verb that were denied. |
 
 Evaluation is budgeted: an expression whose cost explodes (for example deeply
 nested comprehensions over a large workload) is stopped with an evaluation

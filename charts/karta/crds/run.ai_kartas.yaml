@@ -1231,6 +1231,144 @@ spec:
                     x-kubernetes-list-map-keys:
                     - name
                     x-kubernetes-list-type: map
+                  references:
+                    description: |-
+                      References declares cluster resources whose values are exposed to the
+                      workload's expressions as references.<name>. Karta fetches nothing itself:
+                      the consumer resolves each reference and passes the values in.
+                    items:
+                      description: "ResourceReference declares another resource (or
+                        set of resources) whose values are\nexposed to every component's
+                        expressions as references.<name>.\nExactly one of Lookup or
+                        List is set:\n\n\tLookup -> references.<name> is a single
+                        object (absent when not found)\n\tList   -> references.<name>
+                        is a list (possibly empty)\n\nA namespaced reference always
+                        resolves in the workload's own namespace; there is\ndeliberately
+                        no namespace field."
+                      properties:
+                        gvk:
+                          description: GVK is the group/version/kind of the referenced
+                            resource(s).
+                          properties:
+                            group:
+                              description: Group is the API group of the resource
+                              type: string
+                            kind:
+                              description: Kind is the API kind of the resource
+                              type: string
+                            version:
+                              description: Version is the API version of the resource
+                              type: string
+                          required:
+                          - group
+                          - kind
+                          - version
+                          type: object
+                        list:
+                          description: List fetches a set of objects by a structured
+                            label selector.
+                          properties:
+                            matchExpressions:
+                              description: MatchExpressions selects resources by label
+                                selector requirements.
+                              items:
+                                description: |-
+                                  LabelSelectorRequirement mirrors the Kubernetes selector requirement, except its
+                                  values may be sourced from the root object.
+                                properties:
+                                  key:
+                                    description: Key is the label key the requirement
+                                      applies to.
+                                    minLength: 1
+                                    type: string
+                                  operator:
+                                    description: Operator is the requirement's relationship
+                                      to its values.
+                                    enum:
+                                    - In
+                                    - NotIn
+                                    - Exists
+                                    - DoesNotExist
+                                    type: string
+                                  values:
+                                    description: Values are required for In/NotIn
+                                      and must be empty for Exists/DoesNotExist.
+                                    items:
+                                      description: |-
+                                        LabelValue is a single label value: either a literal (Value) or a CEL expression
+                                        evaluated against the root object (Expression). Exactly one is set.
+                                      properties:
+                                        expression:
+                                          description: Expression is a CEL expression
+                                            against the root object resolving the
+                                            value.
+                                          type: string
+                                        value:
+                                          description: Value is a literal label value.
+                                          type: string
+                                      type: object
+                                      x-kubernetes-validations:
+                                      - message: exactly one of value or expression
+                                          must be set
+                                        rule: has(self.value) != has(self.expression)
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            matchLabels:
+                              additionalProperties:
+                                description: |-
+                                  LabelValue is a single label value: either a literal (Value) or a CEL expression
+                                  evaluated against the root object (Expression). Exactly one is set.
+                                properties:
+                                  expression:
+                                    description: Expression is a CEL expression against
+                                      the root object resolving the value.
+                                    type: string
+                                  value:
+                                    description: Value is a literal label value.
+                                    type: string
+                                type: object
+                                x-kubernetes-validations:
+                                - message: exactly one of value or expression must
+                                    be set
+                                  rule: has(self.value) != has(self.expression)
+                              description: MatchLabels selects resources whose labels
+                                equal each resolved value.
+                              type: object
+                          type: object
+                        lookup:
+                          description: Lookup fetches a single object by name.
+                          properties:
+                            nameExpression:
+                              description: |-
+                                NameExpression is a CEL expression against the root object resolving the
+                                referenced resource's name.
+                              minLength: 1
+                              type: string
+                          required:
+                          - nameExpression
+                          type: object
+                        name:
+                          description: Name is the variable name the reference is
+                            exposed under, as references.<name>.
+                          minLength: 1
+                          type: string
+                      required:
+                      - gvk
+                      - name
+                      type: object
+                      x-kubernetes-validations:
+                      - message: exactly one of lookup or list must be set
+                        rule: has(self.lookup) != has(self.list)
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                   rootComponent:
                     description: RootComponent defines the top-level component of
                       the workload hierarchy

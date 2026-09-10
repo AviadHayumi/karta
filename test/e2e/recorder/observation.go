@@ -10,11 +10,14 @@ import (
 	"reflect"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 	watchtools "k8s.io/client-go/tools/watch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,14 +36,31 @@ type observation struct {
 	lastSig   map[string]any             // last kept CR minus volatile fields, for dedup
 	lastSeen  *unstructured.Unstructured // most recent CR, shown in triage on timeout
 	failure   string                     // why the flow did not finish, empty if it did
+
+	// References are watched, not polled: refCache holds each captured CR's latest state, fed by
+	// one watcher per capture into refEvents, so a reference that changes under an unchanged
+	// workload still cuts a frame the moment it happens.
+	refCache     map[string]*unstructured.Unstructured
+	refEvents    chan referenceEvent
+	workloadSeen bool // a real workload watch event arrived; before that, reference changes only feed the cache
 }
 
-// snapshot is one recorded CR: the state read from its own fields, the object, and any action performed at it.
+// referenceEvent is one change to a captured reference, or the death of its watcher.
+type referenceEvent struct {
+	key    string
+	typ    watch.EventType
+	object *unstructured.Unstructured
+	err    error
+}
+
+// snapshot is one recorded CR: the state read from its own fields, the object, any action performed at it,
+// and the referenced CRs captured with it.
 type snapshot struct {
 	state                   kartav1alpha1.ResourceStatus
 	cr                      *unstructured.Unstructured
 	action                  *RecordedAction
 	staleObservedGeneration bool // the controller had not observed the spec yet; recorded, but never judged
+	refs                    []*unstructured.Unstructured
 }
 
 // watchAndAct watches the workload until the flow finishes or fails, recording each CR it sees and acting
@@ -60,6 +80,19 @@ func (o *observation) watchAndAct(ctx context.Context) {
 			o.failure = fmt.Sprintf("did not reach %q within %s; observed %v\nlast-seen status:\n%s",
 				o.flow.terminalState(), o.flow.rec.timeout, o.states(), dumpStatus(o.lastSeen))
 			return
+		case change := <-o.refEvents:
+			if change.err != nil {
+				o.failure = fmt.Sprintf("reference watch %s: %v; observed %v; re-record the flow", change.key, change.err, o.states())
+				return
+			}
+			o.applyReferenceChange(change)
+			// The evaluation input changed even though the workload did not: cut a frame from the
+			// last-seen workload. Before the first real workload event there is nothing sound to
+			// pair with, so the change only feeds the cache and rides the first workload frame.
+			// Actions and the terminal check belong to workload events only.
+			if o.workloadSeen {
+				o.keep(o.lastSeen, o.classify(o.lastSeen), hasObservedCurrentGeneration(o.lastSeen))
+			}
 		case event, open := <-watcher.ResultChan():
 			switch {
 			case !open:
@@ -77,12 +110,57 @@ func (o *observation) watchAndAct(ctx context.Context) {
 						event.Object, o.states())
 					return
 				}
+				// Fold every already-delivered reference change first, so a workload update the
+				// controller derived from a reference change pairs with that reference's new
+				// state, not its old one. Independent watches give arrival order, not cluster
+				// order; this narrows the gap to events not yet delivered.
+				if !o.drainReferenceEvents() {
+					return
+				}
+				o.workloadSeen = true
 				if o.record(ctx, cr) {
 					return
 				}
 			}
 		}
 	}
+}
+
+// classify names the workload's state from its own fields, keeping an unrecognisable frame as
+// Undefined so it fails the order check loudly instead of vanishing.
+func (o *observation) classify(cr *unstructured.Unstructured) kartav1alpha1.ResourceStatus {
+	state := classify(cr, o.flow.rec.states)
+	if state == "" {
+		return kartav1alpha1.UndefinedStatus
+	}
+
+	return state
+}
+
+// drainReferenceEvents folds every reference event that is already waiting, without blocking.
+// A dead watcher discovered here fails the run; ok=false means stop.
+func (o *observation) drainReferenceEvents() (ok bool) {
+	for {
+		select {
+		case change := <-o.refEvents:
+			if change.err != nil {
+				o.failure = fmt.Sprintf("reference watch %s: %v; observed %v; re-record the flow", change.key, change.err, o.states())
+				return false
+			}
+			o.applyReferenceChange(change)
+		default:
+			return true
+		}
+	}
+}
+
+// applyReferenceChange folds one watched change into the cache.
+func (o *observation) applyReferenceChange(change referenceEvent) {
+	if change.typ == watch.Deleted {
+		delete(o.refCache, change.key)
+		return
+	}
+	o.refCache[change.key] = change.object
 }
 
 // startWatch starts a resilient watch of the workload by name that resumes after transient drops.
@@ -115,12 +193,7 @@ func (f *Flow) startWatch(ctx context.Context, workload *unstructured.Unstructur
 // terminal state, or an action failed (the failure itself is in o.failure).
 func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured) (stop bool) {
 	o.lastSeen = cr
-	state := classify(cr, o.flow.rec.states)
-	if state == "" {
-		// A CR we cannot classify is a real gap: keep it as Undefined so an observed frame fails the order
-		// check and the run is saved for triage, rather than skipping it silently.
-		state = kartav1alpha1.UndefinedStatus
-	}
+	state := o.classify(cr)
 	observed := hasObservedCurrentGeneration(cr)
 	o.keep(cr, state, observed)
 	if !observed {
@@ -133,15 +206,182 @@ func (o *observation) record(ctx context.Context, cr *unstructured.Unstructured)
 	return o.hasReachedTerminal(state)
 }
 
-// keep appends cr as a new snapshot, unless it duplicates the last kept one (same content once the volatile
-// fields are stripped).
+// keep appends cr as a new snapshot, unless it duplicates the last kept one - same workload and
+// same references once the volatile fields are stripped. References come from the watch-fed
+// cache, so a frame always pairs the workload with the reference state that was current when
+// the change happened, not with a later re-read.
 func (o *observation) keep(cr *unstructured.Unstructured, state kartav1alpha1.ResourceStatus, observed bool) {
-	sig := stripVolatileFields(cr)
-	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, sig) {
+	refs := o.cachedReferences()
+	signature := map[string]any{"workload": stripVolatileFields(cr)}
+	if o.flow != nil {
+		for _, capture := range o.flow.captures {
+			if object, ok := o.refCache[capture.key()]; ok {
+				signature["ref/"+capture.key()] = stripVolatileFields(object)
+			}
+		}
+	}
+	if o.lastSig != nil && reflect.DeepEqual(o.lastSig, signature) {
 		return
 	}
-	o.lastSig = sig
-	o.snapshots = append(o.snapshots, snapshot{state: state, cr: cr.DeepCopy(), staleObservedGeneration: !observed})
+	o.lastSig = signature
+	o.snapshots = append(o.snapshots, snapshot{state: state, cr: cr.DeepCopy(), staleObservedGeneration: !observed, refs: refs})
+}
+
+// cachedReferences returns the captured references' current state in declaration order. An
+// absent reference is skipped: that is exactly the shape a lookup miss replays as.
+func (o *observation) cachedReferences() []*unstructured.Unstructured {
+	if o.flow == nil || len(o.flow.captures) == 0 {
+		return nil
+	}
+	out := make([]*unstructured.Unstructured, 0, len(o.flow.captures))
+	for _, capture := range o.flow.captures {
+		if object, ok := o.refCache[capture.key()]; ok {
+			out = append(out, object.DeepCopy())
+		}
+	}
+
+	return out
+}
+
+// seedReferences fills the cache with each capture's current state and returns each seed's
+// list resourceVersion, the gap-free point a watch may start from.
+func (o *observation) seedReferences(ctx context.Context) (map[string]string, error) {
+	o.refCache = make(map[string]*unstructured.Unstructured, len(o.flow.captures))
+	versions := make(map[string]string, len(o.flow.captures))
+	for _, capture := range o.flow.captures {
+		resource, nameSelector, err := o.flow.referenceResource(capture)
+		if err != nil {
+			return nil, fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
+		}
+		list, err := resource.List(ctx, metav1.ListOptions{FieldSelector: nameSelector})
+		if err != nil {
+			return nil, fmt.Errorf("capture reference %s/%s: seed: %w", capture.GVK.Kind, capture.Name, err)
+		}
+		if len(list.Items) > 0 {
+			o.refCache[capture.key()] = &list.Items[0]
+		}
+		versions[capture.key()] = list.GetResourceVersion()
+	}
+
+	return versions, nil
+}
+
+// startReferenceWatches seeds the cache and starts a resilient watch per capture, all funneled
+// into refEvents. Starting from the seed's resourceVersion means no change is lost between the
+// seed and the watch; a capture that does not exist yet starts from the list's version, so even
+// its creation is caught. The channel is buffered so a slow moment in the main loop (an action
+// PATCH in flight) does not backpressure the watchers.
+func (o *observation) startReferenceWatches(ctx context.Context) error {
+	if len(o.flow.captures) == 0 {
+		return nil
+	}
+	versions, err := o.seedReferences(ctx)
+	if err != nil {
+		return err
+	}
+	o.refEvents = make(chan referenceEvent, 64)
+	for _, capture := range o.flow.captures {
+		if err := o.watchReference(ctx, capture, versions[capture.key()]); err != nil {
+			return fmt.Errorf("capture reference %s/%s: %w", capture.GVK.Kind, capture.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (o *observation) watchReference(ctx context.Context, capture CapturedReference, sinceVersion string) error {
+	resource, nameSelector, err := o.flow.referenceResource(capture)
+	if err != nil {
+		return err
+	}
+	key := capture.key()
+	watcher, err := watchtools.NewRetryWatcherWithContext(ctx, sinceVersion, &cache.ListWatch{
+		WatchFuncWithContext: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			opts.FieldSelector = nameSelector
+			w, err := resource.Watch(ctx, opts)
+			// The RetryWatcher retries a plain HTTP error with the same version forever; an
+			// expired version can never succeed, so surface it as fatal instead of spinning
+			// until the flow times out over silently stale references.
+			if apierrors.IsGone(err) || apierrors.IsResourceExpired(err) {
+				o.sendReferenceEvent(ctx, referenceEvent{key: key, err: fmt.Errorf("watch expired: %w", err)})
+			}
+			return w, err
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("watch %s: %w", capture.Name, err)
+	}
+
+	go o.forwardReferenceEvents(ctx, key, watcher)
+
+	return nil
+}
+
+// referenceResource resolves a capture to the dynamic resource interface it is read and watched
+// through, scoped to the recorder's namespace for namespaced kinds.
+func (f *Flow) referenceResource(capture CapturedReference) (dynamic.ResourceInterface, string, error) {
+	gvk := schema.GroupVersionKind{Group: capture.GVK.Group, Version: capture.GVK.Version, Kind: capture.GVK.Kind}
+	mapping, err := f.client().RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, "", fmt.Errorf("rest mapping for %s: %w", gvk, err)
+	}
+	namespace := ""
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		namespace = f.rec.config.Cluster.Namespace
+	}
+	nameSelector := fields.OneTermEqualSelector("metadata.name", capture.Name).String()
+
+	return f.rec.config.Cluster.Dynamic.Resource(mapping.Resource).Namespace(namespace), nameSelector, nil
+}
+
+// forwardReferenceEvents relays one watcher's events into the shared channel until the watcher
+// dies or the run ends. A watcher that cannot resume is reported as an event, so the main loop
+// fails the run instead of recording with silently stale references.
+func (o *observation) forwardReferenceEvents(ctx context.Context, key string, watcher watch.Interface) {
+	defer watcher.Stop()
+	var lastErr error
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, open := <-watcher.ResultChan():
+			switch {
+			case !open:
+				o.sendReferenceEvent(ctx, referenceEvent{key: key,
+					err: fmt.Errorf("watch lost its position and cannot resume; last watch error: %v", lastErr)})
+				return
+			case event.Type == watch.Error:
+				lastErr = apierrors.FromObject(event.Object)
+			default:
+				object, ok := event.Object.(*unstructured.Unstructured)
+				if !ok {
+					o.sendReferenceEvent(ctx, referenceEvent{key: key,
+						err: fmt.Errorf("watch delivered a %T instead of the reference", event.Object)})
+					return
+				}
+				o.sendReferenceEvent(ctx, referenceEvent{key: key, typ: event.Type, object: object})
+			}
+		}
+	}
+}
+
+func (o *observation) sendReferenceEvent(ctx context.Context, event referenceEvent) {
+	select {
+	case <-ctx.Done():
+	case o.refEvents <- event:
+	}
+}
+
+// isNamespaced asks the cluster for the kind's scope: a capture may name a namespaced or a
+// cluster-scoped resource, and only the RESTMapper knows which.
+func (f *Flow) isNamespaced(object *unstructured.Unstructured) (bool, error) {
+	gvk := object.GroupVersionKind()
+	mapping, err := f.client().RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return false, fmt.Errorf("rest mapping for %s: %w", gvk, err)
+	}
+
+	return mapping.Scope.Name() == meta.RESTScopeNameNamespace, nil
 }
 
 // advanceStep performs the next pending step's action if the workload just reached its state and gate, then
