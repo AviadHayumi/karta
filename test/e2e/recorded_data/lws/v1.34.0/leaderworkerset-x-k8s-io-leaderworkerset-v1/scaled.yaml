@@ -4,11 +4,11 @@ events:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 1
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -51,26 +51,26 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:38Z"
+      - lastTransitionTime: "2026-09-10T18:00:10Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "True"
         type: Progressing
       hpaPodSelector: leaderworkerset.sigs.k8s.io/name=karta-e2e-lws-scaled,leaderworkerset.sigs.k8s.io/worker-index=0
   phases:
-  - Initializing
-  resourceVersion: "342134"
-  state: Initializing
+  - Undefined
+  resourceVersion: "947494"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 1
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -113,7 +113,7 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:38Z"
+      - lastTransitionTime: "2026-09-10T18:00:10Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "True"
@@ -121,19 +121,19 @@ events:
       hpaPodSelector: leaderworkerset.sigs.k8s.io/name=karta-e2e-lws-scaled,leaderworkerset.sigs.k8s.io/worker-index=0
       updatedReplicas: 1
   phases:
-  - Initializing
-  resourceVersion: "342145"
-  state: Initializing
+  - Undefined
+  resourceVersion: "947505"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 1
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -176,7 +176,7 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:38Z"
+      - lastTransitionTime: "2026-09-10T18:00:10Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "True"
@@ -185,19 +185,19 @@ events:
       replicas: 1
       updatedReplicas: 1
   phases:
-  - Initializing
-  resourceVersion: "342153"
-  state: Initializing
+  - Undefined
+  resourceVersion: "947510"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 1
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -240,12 +240,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:38Z"
+      - lastTransitionTime: "2026-09-10T18:00:10Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "False"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "True"
@@ -256,7 +256,7 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "342179"
+  resourceVersion: "947540"
   state: Running
 - action:
     name: Scale
@@ -272,11 +272,11 @@ events:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 2
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -319,12 +319,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:38Z"
+      - lastTransitionTime: "2026-09-10T18:00:10Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "False"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "True"
@@ -335,18 +335,18 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "342180"
+  resourceVersion: "947542"
   state: Running
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 2
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -389,12 +389,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "False"
@@ -404,19 +404,20 @@ events:
       replicas: 1
       updatedReplicas: 1
   phases:
+  - Running
   - Initializing
-  resourceVersion: "342182"
+  resourceVersion: "947546"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 2
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -459,12 +460,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "False"
@@ -475,18 +476,18 @@ events:
       updatedReplicas: 2
   phases:
   - Initializing
-  resourceVersion: "342193"
+  resourceVersion: "947557"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 2
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -529,12 +530,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "False"
@@ -545,18 +546,18 @@ events:
       updatedReplicas: 2
   phases:
   - Initializing
-  resourceVersion: "342204"
+  resourceVersion: "947560"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 2
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -599,12 +600,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "False"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:12Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "True"
@@ -615,7 +616,7 @@ events:
       updatedReplicas: 2
   phases:
   - Running
-  resourceVersion: "342225"
+  resourceVersion: "947588"
   state: Running
 - action:
     name: Scale
@@ -631,11 +632,11 @@ events:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 3
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -678,12 +679,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "False"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:12Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "True"
@@ -694,18 +695,18 @@ events:
       updatedReplicas: 2
   phases:
   - Running
-  resourceVersion: "342226"
+  resourceVersion: "947590"
   state: Running
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 3
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -748,12 +749,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "False"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:12Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "True"
@@ -763,19 +764,19 @@ events:
       replicas: 2
       updatedReplicas: 2
   phases:
-  - Running
-  resourceVersion: "342491"
-  state: Running
+  - Undefined
+  resourceVersion: "947858"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: leaderworkerset.x-k8s.io/v1
     kind: LeaderWorkerSet
     metadata:
-      creationTimestamp: "2026-09-09T15:11:38Z"
+      creationTimestamp: "2026-09-10T18:00:10Z"
       generation: 3
       name: karta-e2e-lws-scaled
-      namespace: test-b4hrq
-      uid: c8202fde-e7eb-42b4-8fa2-ea6ae8392fd5
+      namespace: test-vwcrc
+      uid: da625037-b41e-46dc-a9c4-c8b18076d836
     spec:
       leaderWorkerTemplate:
         leaderTemplate:
@@ -818,12 +819,12 @@ events:
       startupPolicy: LeaderCreated
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:11Z"
         message: Replicas are progressing
         reason: GroupsProgressing
         status: "False"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:11:39Z"
+      - lastTransitionTime: "2026-09-10T18:00:12Z"
         message: All replicas are ready
         reason: AllGroupsReady
         status: "True"
@@ -834,7 +835,7 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "342506"
+  resourceVersion: "947869"
   state: Running
 flow: scaled
 kartaFile: docs/catalog/leaderworkerset-x-k8s-io-leaderworkerset-v1.yaml
@@ -846,14 +847,24 @@ schemaVersion: 1
 summary:
 - amount: 3
   phases:
+  - Undefined
+- amount: 2
+  phases:
+  - Running
+- amount: 1
+  phases:
+  - Running
+  - Initializing
+- amount: 2
+  phases:
   - Initializing
 - amount: 2
   phases:
   - Running
-- amount: 3
+- amount: 1
   phases:
-  - Initializing
-- amount: 4
+  - Undefined
+- amount: 1
   phases:
   - Running
 version: v1.34.0

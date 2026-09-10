@@ -4,16 +4,16 @@ events:
     apiVersion: batch/v1
     kind: Job
     metadata:
-      creationTimestamp: "2026-09-09T15:07:02Z"
+      creationTimestamp: "2026-09-10T18:03:28Z"
       generation: 1
       labels:
-        batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+        batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
         batch.kubernetes.io/job-name: karta-e2e-job-degraded
-        controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+        controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
         job-name: karta-e2e-job-degraded
       name: karta-e2e-job-degraded
-      namespace: test-6ltsx
-      uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+      namespace: test-vwcrc
+      uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
     spec:
       backoffLimit: 0
       completionMode: Indexed
@@ -23,14 +23,14 @@ events:
       podReplacementPolicy: TerminatingOrFailed
       selector:
         matchLabels:
-          batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+          batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
       suspend: false
       template:
         metadata:
           labels:
-            batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+            batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
             batch.kubernetes.io/job-name: karta-e2e-job-degraded
-            controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+            controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
             job-name: karta-e2e-job-degraded
         spec:
           containers:
@@ -56,28 +56,28 @@ events:
     status:
       active: 2
       ready: 0
-      startTime: "2026-09-09T15:07:02Z"
+      startTime: "2026-09-10T18:03:28Z"
       terminating: 0
       uncountedTerminatedPods: {}
   phases:
   - Initializing
-  resourceVersion: "339086"
+  resourceVersion: "949567"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: batch/v1
     kind: Job
     metadata:
-      creationTimestamp: "2026-09-09T15:07:02Z"
+      creationTimestamp: "2026-09-10T18:03:28Z"
       generation: 1
       labels:
-        batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+        batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
         batch.kubernetes.io/job-name: karta-e2e-job-degraded
-        controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+        controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
         job-name: karta-e2e-job-degraded
       name: karta-e2e-job-degraded
-      namespace: test-6ltsx
-      uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+      namespace: test-vwcrc
+      uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
     spec:
       backoffLimit: 0
       completionMode: Indexed
@@ -87,14 +87,14 @@ events:
       podReplacementPolicy: TerminatingOrFailed
       selector:
         matchLabels:
-          batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+          batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
       suspend: false
       template:
         metadata:
           labels:
-            batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+            batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
             batch.kubernetes.io/job-name: karta-e2e-job-degraded
-            controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+            controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
             job-name: karta-e2e-job-degraded
         spec:
           containers:
@@ -120,29 +120,28 @@ events:
     status:
       active: 2
       ready: 1
-      startTime: "2026-09-09T15:07:02Z"
+      startTime: "2026-09-10T18:03:28Z"
       terminating: 0
       uncountedTerminatedPods: {}
   phases:
-  - Initializing
   - Running
-  resourceVersion: "339102"
+  resourceVersion: "949598"
   state: Running
 - kind: STATE
   object:
     apiVersion: batch/v1
     kind: Job
     metadata:
-      creationTimestamp: "2026-09-09T15:07:02Z"
+      creationTimestamp: "2026-09-10T18:03:28Z"
       generation: 1
       labels:
-        batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+        batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
         batch.kubernetes.io/job-name: karta-e2e-job-degraded
-        controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+        controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
         job-name: karta-e2e-job-degraded
       name: karta-e2e-job-degraded
-      namespace: test-6ltsx
-      uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+      namespace: test-vwcrc
+      uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
     spec:
       backoffLimit: 0
       completionMode: Indexed
@@ -152,14 +151,14 @@ events:
       podReplacementPolicy: TerminatingOrFailed
       selector:
         matchLabels:
-          batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+          batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
       suspend: false
       template:
         metadata:
           labels:
-            batch.kubernetes.io/controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+            batch.kubernetes.io/controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
             batch.kubernetes.io/job-name: karta-e2e-job-degraded
-            controller-uid: e775e8c4-e018-43da-8e2e-96a8e7743c7b
+            controller-uid: 2df0a089-8e68-4a84-9367-0418a61f5a40
             job-name: karta-e2e-job-degraded
         spec:
           containers:
@@ -186,15 +185,14 @@ events:
       active: 1
       completedIndexes: "0"
       ready: 1
-      startTime: "2026-09-09T15:07:02Z"
+      startTime: "2026-09-10T18:03:28Z"
       succeeded: 1
       terminating: 0
       uncountedTerminatedPods: {}
   phases:
-  - Initializing
   - Running
   - Degraded
-  resourceVersion: "339119"
+  resourceVersion: "949612"
   state: Degraded
 flow: degraded
 kartaFile: docs/catalog/batch-job-v1.yaml
@@ -209,11 +207,9 @@ summary:
   - Initializing
 - amount: 1
   phases:
-  - Initializing
   - Running
 - amount: 1
   phases:
-  - Initializing
   - Running
   - Degraded
 version: v1.34.0

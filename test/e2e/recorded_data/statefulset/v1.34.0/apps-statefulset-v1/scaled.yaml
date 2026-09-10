@@ -4,11 +4,11 @@ events:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 1
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -57,18 +57,18 @@ events:
       updateRevision: karta-e2e-sts-7775b6b476
   phases:
   - Initializing
-  resourceVersion: "339658"
+  resourceVersion: "950534"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 1
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -119,18 +119,18 @@ events:
       updatedReplicas: 1
   phases:
   - Initializing
-  resourceVersion: "339660"
+  resourceVersion: "950536"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 1
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -182,7 +182,7 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "339677"
+  resourceVersion: "950543"
   state: Running
 - action:
     name: Scale
@@ -198,11 +198,11 @@ events:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 2
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -254,7 +254,7 @@ events:
       updatedReplicas: 1
   phases:
   - Initializing
-  resourceVersion: "339678"
+  resourceVersion: "950544"
   staleObservedGeneration: true
   state: Initializing
 - kind: STATE
@@ -262,11 +262,11 @@ events:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 2
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -318,18 +318,18 @@ events:
       updatedReplicas: 1
   phases:
   - Initializing
-  resourceVersion: "339682"
+  resourceVersion: "950548"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 2
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -381,18 +381,18 @@ events:
       updatedReplicas: 2
   phases:
   - Initializing
-  resourceVersion: "339684"
+  resourceVersion: "950551"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 2
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -444,18 +444,18 @@ events:
       updatedReplicas: 2
   phases:
   - Initializing
-  resourceVersion: "339697"
+  resourceVersion: "950570"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 2
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -507,18 +507,18 @@ events:
       updatedReplicas: 3
   phases:
   - Degraded
-  resourceVersion: "339700"
+  resourceVersion: "950573"
   state: Degraded
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 2
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -570,7 +570,7 @@ events:
       updatedReplicas: 3
   phases:
   - Running
-  resourceVersion: "339772"
+  resourceVersion: "950595"
   state: Running
 - action:
     name: Scale
@@ -586,11 +586,11 @@ events:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -642,7 +642,7 @@ events:
       updatedReplicas: 3
   phases:
   - Initializing
-  resourceVersion: "339775"
+  resourceVersion: "950596"
   staleObservedGeneration: true
   state: Initializing
 - kind: STATE
@@ -650,11 +650,11 @@ events:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -706,18 +706,18 @@ events:
       updatedReplicas: 3
   phases:
   - Initializing
-  resourceVersion: "339778"
+  resourceVersion: "950599"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -769,18 +769,18 @@ events:
       updatedReplicas: 2
   phases:
   - Initializing
-  resourceVersion: "339779"
+  resourceVersion: "950600"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -832,18 +832,18 @@ events:
       updatedReplicas: 2
   phases:
   - Initializing
-  resourceVersion: "340061"
+  resourceVersion: "950862"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -895,18 +895,18 @@ events:
       updatedReplicas: 2
   phases:
   - Initializing
-  resourceVersion: "340067"
+  resourceVersion: "950867"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -957,19 +957,19 @@ events:
       updateRevision: karta-e2e-sts-7775b6b476
       updatedReplicas: 1
   phases:
-  - Initializing
-  resourceVersion: "340069"
-  state: Initializing
+  - Undefined
+  resourceVersion: "950870"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -1021,18 +1021,18 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "340306"
+  resourceVersion: "951107"
   state: Running
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-09T15:07:47Z"
+      creationTimestamp: "2026-09-10T18:04:17Z"
       generation: 3
       name: karta-e2e-sts
-      namespace: test-wpzh8
-      uid: f7fa0ab8-e58e-46dd-944e-d8fc1f5d3c50
+      namespace: test-vwcrc
+      uid: 3ffd48de-bf75-49ea-8408-db9bad21c69b
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -1084,7 +1084,7 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "340320"
+  resourceVersion: "951120"
   state: Running
 flow: scaled
 kartaFile: docs/catalog/apps-statefulset-v1.yaml
@@ -1109,9 +1109,12 @@ summary:
 - amount: 1
   phases:
   - Running
-- amount: 6
+- amount: 5
   phases:
   - Initializing
+- amount: 1
+  phases:
+  - Undefined
 - amount: 2
   phases:
   - Running

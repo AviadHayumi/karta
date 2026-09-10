@@ -4,11 +4,11 @@ events:
     apiVersion: jobset.x-k8s.io/v1alpha2
     kind: JobSet
     metadata:
-      creationTimestamp: "2026-09-10T15:55:39Z"
+      creationTimestamp: "2026-09-10T18:02:25Z"
       generation: 1
       name: karta-e2e-jobset-suspended
-      namespace: test-hqcxc
-      uid: 5806821c-27f6-479c-9bd4-43adc64cb00a
+      namespace: test-vwcrc
+      uid: cb854edd-266b-4b27-a6d1-463198c81d34
     spec:
       network:
         enableDNSHostnames: true
@@ -44,7 +44,7 @@ events:
       suspend: true
     status:
       conditions:
-      - lastTransitionTime: "2026-09-10T15:55:39Z"
+      - lastTransitionTime: "2026-09-10T18:02:25Z"
         message: jobset is suspended
         reason: SuspendedJobs
         status: "True"
@@ -59,7 +59,7 @@ events:
       restarts: 0
   phases:
   - Suspended
-  resourceVersion: "888168"
+  resourceVersion: "948975"
   state: Suspended
 flow: suspended
 kartaFile: docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml

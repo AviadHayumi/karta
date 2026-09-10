@@ -4,13 +4,13 @@ events:
     apiVersion: apps.nvidia.com/v1alpha1
     kind: NIMService
     metadata:
-      creationTimestamp: "2026-09-10T16:13:58Z"
+      creationTimestamp: "2026-09-10T18:01:51Z"
       finalizers:
       - finalizer.nimservice.apps.nvidia.com
       generation: 2
       name: karta-e2e-nim-initializing
-      namespace: test-xhjbx
-      uid: 914fef3b-01dd-4c84-bc38-305614c44ab6
+      namespace: test-vwcrc
+      uid: 95e8062f-7754-4fc3-9d75-8b28e2c39f0a
     spec:
       authSecret: ngc-secret
       env:
@@ -44,21 +44,21 @@ events:
           size: 1Gi
           volumeAccessMode: ReadWriteOnce
   phases:
-  - Initializing
-  resourceVersion: "896738"
-  state: Initializing
+  - Undefined
+  resourceVersion: "948500"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: apps.nvidia.com/v1alpha1
     kind: NIMService
     metadata:
-      creationTimestamp: "2026-09-10T16:13:58Z"
+      creationTimestamp: "2026-09-10T18:01:51Z"
       finalizers:
       - finalizer.nimservice.apps.nvidia.com
       generation: 2
       name: karta-e2e-nim-initializing
-      namespace: test-xhjbx
-      uid: 914fef3b-01dd-4c84-bc38-305614c44ab6
+      namespace: test-vwcrc
+      uid: 95e8062f-7754-4fc3-9d75-8b28e2c39f0a
     spec:
       authSecret: ngc-secret
       env:
@@ -93,28 +93,28 @@ events:
           volumeAccessMode: ReadWriteOnce
     status:
       conditions:
-      - lastTransitionTime: "2026-09-10T16:13:58Z"
+      - lastTransitionTime: "2026-09-10T18:01:51Z"
         message: The PVC has been created for storing NIM
         reason: PVCCreated
         status: "True"
         type: NIM_CACHE_PVC_CREATED
       state: PVC-Created
   phases:
-  - Initializing
-  resourceVersion: "896747"
-  state: Initializing
+  - Undefined
+  resourceVersion: "948510"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: apps.nvidia.com/v1alpha1
     kind: NIMService
     metadata:
-      creationTimestamp: "2026-09-10T16:13:58Z"
+      creationTimestamp: "2026-09-10T18:01:51Z"
       finalizers:
       - finalizer.nimservice.apps.nvidia.com
       generation: 2
       name: karta-e2e-nim-initializing
-      namespace: test-xhjbx
-      uid: 914fef3b-01dd-4c84-bc38-305614c44ab6
+      namespace: test-vwcrc
+      uid: 95e8062f-7754-4fc3-9d75-8b28e2c39f0a
     spec:
       authSecret: ngc-secret
       env:
@@ -149,12 +149,12 @@ events:
           volumeAccessMode: ReadWriteOnce
     status:
       conditions:
-      - lastTransitionTime: "2026-09-10T16:13:58Z"
+      - lastTransitionTime: "2026-09-10T18:01:51Z"
         message: ""
         reason: NotReady
         status: "False"
         type: Ready
-      - lastTransitionTime: "2026-09-10T16:13:58Z"
+      - lastTransitionTime: "2026-09-10T18:01:51Z"
         message: ""
         reason: Ready
         status: "False"
@@ -162,7 +162,7 @@ events:
       state: NotReady
   phases:
   - Initializing
-  resourceVersion: "896750"
+  resourceVersion: "948513"
   state: Initializing
 flow: initializing
 kartaFile: docs/catalog/apps-nvidia-com-nimservice-v1alpha1.yaml
@@ -172,7 +172,10 @@ result:
   succeeded: true
 schemaVersion: 1
 summary:
-- amount: 3
+- amount: 2
+  phases:
+  - Undefined
+- amount: 1
   phases:
   - Initializing
 version: v1.34.0

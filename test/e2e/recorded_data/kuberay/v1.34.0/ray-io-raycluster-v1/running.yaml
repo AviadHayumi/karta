@@ -4,11 +4,11 @@ events:
     apiVersion: ray.io/v1
     kind: RayCluster
     metadata:
-      creationTimestamp: "2026-09-09T15:10:55Z"
+      creationTimestamp: "2026-09-10T17:58:08Z"
       generation: 1
       name: karta-e2e-ray
-      namespace: test-nhcbx
-      uid: 4ee1d96f-da54-41d8-b63e-e4b86bf09ac5
+      namespace: test-vwcrc
+      uid: 4156d5b1-aa02-477b-8fa0-2da31eb88570
     spec:
       headGroupSpec:
         rayStartParams: {}
@@ -57,22 +57,22 @@ events:
                   memory: 512Mi
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
-        message: ""
-        reason: Unknown
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
+        message: Head Pod not found
+        reason: HeadPodNotFound
         status: "False"
         type: HeadPodReady
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: RayCluster Pods are being provisioned for first time
         reason: RayClusterPodsProvisioning
         status: "False"
         type: RayClusterProvisioned
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspended
         status: "False"
         type: RayClusterSuspended
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspending
         status: "False"
@@ -88,25 +88,25 @@ events:
         metrics: "8080"
         serve: "8000"
       head:
-        podName: karta-e2e-ray-head-hvp2s
+        podName: karta-e2e-ray-head-gv5t5
         serviceName: karta-e2e-ray-head-svc
-      lastUpdateTime: "2026-09-09T15:10:55Z"
+      lastUpdateTime: "2026-09-10T17:58:08Z"
       maxWorkerReplicas: 1
       observedGeneration: 1
   phases:
-  - Initializing
-  resourceVersion: "341645"
-  state: Initializing
+  - Undefined
+  resourceVersion: "945804"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: ray.io/v1
     kind: RayCluster
     metadata:
-      creationTimestamp: "2026-09-09T15:10:55Z"
+      creationTimestamp: "2026-09-10T17:58:08Z"
       generation: 1
       name: karta-e2e-ray
-      namespace: test-nhcbx
-      uid: 4ee1d96f-da54-41d8-b63e-e4b86bf09ac5
+      namespace: test-vwcrc
+      uid: 4156d5b1-aa02-477b-8fa0-2da31eb88570
     spec:
       headGroupSpec:
         rayStartParams: {}
@@ -155,22 +155,22 @@ events:
                   memory: 512Mi
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: 'containers with unready status: [ray-head]; ray-head: '
         reason: ContainerCreating
         status: "False"
         type: HeadPodReady
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: RayCluster Pods are being provisioned for first time
         reason: RayClusterPodsProvisioning
         status: "False"
         type: RayClusterProvisioned
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspended
         status: "False"
         type: RayClusterSuspended
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspending
         status: "False"
@@ -186,25 +186,25 @@ events:
         metrics: "8080"
         serve: "8000"
       head:
-        podName: karta-e2e-ray-head-hvp2s
+        podName: karta-e2e-ray-head-gv5t5
         serviceName: karta-e2e-ray-head-svc
-      lastUpdateTime: "2026-09-09T15:10:55Z"
+      lastUpdateTime: "2026-09-10T17:58:08Z"
       maxWorkerReplicas: 1
       observedGeneration: 1
   phases:
-  - Initializing
-  resourceVersion: "341648"
-  state: Initializing
+  - Undefined
+  resourceVersion: "945807"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: ray.io/v1
     kind: RayCluster
     metadata:
-      creationTimestamp: "2026-09-09T15:10:55Z"
+      creationTimestamp: "2026-09-10T17:58:08Z"
       generation: 1
       name: karta-e2e-ray
-      namespace: test-nhcbx
-      uid: 4ee1d96f-da54-41d8-b63e-e4b86bf09ac5
+      namespace: test-vwcrc
+      uid: 4156d5b1-aa02-477b-8fa0-2da31eb88570
     spec:
       headGroupSpec:
         rayStartParams: {}
@@ -253,22 +253,22 @@ events:
                   memory: 512Mi
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: 'containers with unready status: [ray-head]'
         reason: ContainersNotReady
         status: "False"
         type: HeadPodReady
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: RayCluster Pods are being provisioned for first time
         reason: RayClusterPodsProvisioning
         status: "False"
         type: RayClusterProvisioned
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspended
         status: "False"
         type: RayClusterSuspended
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspending
         status: "False"
@@ -284,27 +284,27 @@ events:
         metrics: "8080"
         serve: "8000"
       head:
-        podIP: 10.244.2.45
-        podName: karta-e2e-ray-head-hvp2s
-        serviceIP: 10.244.2.45
+        podIP: 10.244.2.111
+        podName: karta-e2e-ray-head-gv5t5
+        serviceIP: 10.244.2.111
         serviceName: karta-e2e-ray-head-svc
-      lastUpdateTime: "2026-09-09T15:10:56Z"
+      lastUpdateTime: "2026-09-10T17:58:09Z"
       maxWorkerReplicas: 1
       observedGeneration: 1
   phases:
-  - Initializing
-  resourceVersion: "341663"
-  state: Initializing
+  - Undefined
+  resourceVersion: "945840"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: ray.io/v1
     kind: RayCluster
     metadata:
-      creationTimestamp: "2026-09-09T15:10:55Z"
+      creationTimestamp: "2026-09-10T17:58:08Z"
       generation: 1
       name: karta-e2e-ray
-      namespace: test-nhcbx
-      uid: 4ee1d96f-da54-41d8-b63e-e4b86bf09ac5
+      namespace: test-vwcrc
+      uid: 4156d5b1-aa02-477b-8fa0-2da31eb88570
     spec:
       headGroupSpec:
         rayStartParams: {}
@@ -353,22 +353,22 @@ events:
                   memory: 512Mi
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:11:08Z"
+      - lastTransitionTime: "2026-09-10T17:58:21Z"
         message: ""
         reason: HeadPodRunningAndReady
         status: "True"
         type: HeadPodReady
-      - lastTransitionTime: "2026-09-09T15:11:08Z"
+      - lastTransitionTime: "2026-09-10T17:58:21Z"
         message: All Ray Pods are ready for the first time
         reason: AllPodRunningAndReadyFirstTime
         status: "True"
         type: RayClusterProvisioned
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspended
         status: "False"
         type: RayClusterSuspended
-      - lastTransitionTime: "2026-09-09T15:10:55Z"
+      - lastTransitionTime: "2026-09-10T17:58:08Z"
         message: ""
         reason: RayClusterSuspending
         status: "False"
@@ -384,19 +384,19 @@ events:
         metrics: "8080"
         serve: "8000"
       head:
-        podIP: 10.244.2.45
-        podName: karta-e2e-ray-head-hvp2s
-        serviceIP: 10.244.2.45
+        podIP: 10.244.2.111
+        podName: karta-e2e-ray-head-gv5t5
+        serviceIP: 10.244.2.111
         serviceName: karta-e2e-ray-head-svc
-      lastUpdateTime: "2026-09-09T15:11:08Z"
+      lastUpdateTime: "2026-09-10T17:58:21Z"
       maxWorkerReplicas: 1
       observedGeneration: 1
       state: ready
       stateTransitionTimes:
-        ready: "2026-09-09T15:11:08Z"
+        ready: "2026-09-10T17:58:21Z"
   phases:
   - Running
-  resourceVersion: "341762"
+  resourceVersion: "945935"
   state: Running
 flow: running
 kartaFile: docs/catalog/ray-io-raycluster-v1.yaml
@@ -408,7 +408,7 @@ schemaVersion: 1
 summary:
 - amount: 3
   phases:
-  - Initializing
+  - Undefined
 - amount: 1
   phases:
   - Running

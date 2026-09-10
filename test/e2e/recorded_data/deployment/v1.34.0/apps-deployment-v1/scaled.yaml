@@ -6,11 +6,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 1
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 1
@@ -49,16 +49,16 @@ events:
           terminationGracePeriodSeconds: 30
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:26Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:02Z"
         message: Created new replica set "karta-e2e-deploy-fd98c5489"
         reason: NewReplicaSetCreated
         status: "True"
         type: Progressing
   phases:
-  - Initializing
-  resourceVersion: "339369"
-  state: Initializing
+  - Undefined
+  resourceVersion: "950314"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: apps/v1
@@ -66,11 +66,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 1
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 1
@@ -109,14 +109,14 @@ events:
           terminationGracePeriodSeconds: 30
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:26Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:02Z"
         message: Created new replica set "karta-e2e-deploy-fd98c5489"
         reason: NewReplicaSetCreated
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:26Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:02Z"
         message: Deployment does not have minimum availability.
         reason: MinimumReplicasUnavailable
         status: "False"
@@ -125,7 +125,7 @@ events:
       unavailableReplicas: 1
   phases:
   - Initializing
-  resourceVersion: "339374"
+  resourceVersion: "950320"
   state: Initializing
 - kind: STATE
   object:
@@ -134,11 +134,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 1
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 1
@@ -177,14 +177,14 @@ events:
           terminationGracePeriodSeconds: 30
     status:
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:26Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:02Z"
         message: Deployment does not have minimum availability.
         reason: MinimumReplicasUnavailable
         status: "False"
         type: Available
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:26Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:02Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" is progressing.
         reason: ReplicaSetUpdated
         status: "True"
@@ -195,7 +195,7 @@ events:
       updatedReplicas: 1
   phases:
   - Initializing
-  resourceVersion: "339377"
+  resourceVersion: "950322"
   state: Initializing
 - kind: STATE
   object:
@@ -204,11 +204,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 1
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 1
@@ -248,14 +248,14 @@ events:
     status:
       availableReplicas: 1
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:27Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:03Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: Deployment has minimum availability.
         reason: MinimumReplicasAvailable
         status: "True"
         type: Available
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
@@ -266,7 +266,7 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "339389"
+  resourceVersion: "950333"
   state: Running
 - action:
     name: Scale
@@ -284,11 +284,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 2
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 3
@@ -328,14 +328,14 @@ events:
     status:
       availableReplicas: 1
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:27Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:03Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: Deployment has minimum availability.
         reason: MinimumReplicasAvailable
         status: "True"
         type: Available
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
@@ -346,7 +346,7 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "339390"
+  resourceVersion: "950334"
   staleObservedGeneration: true
   state: Running
 - kind: STATE
@@ -356,11 +356,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 2
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 3
@@ -400,14 +400,14 @@ events:
     status:
       availableReplicas: 1
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:27Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:03Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: Deployment does not have minimum availability.
         reason: MinimumReplicasUnavailable
         status: "False"
@@ -417,10 +417,10 @@ events:
       replicas: 1
       updatedReplicas: 1
   phases:
-  - Initializing
   - Running
-  resourceVersion: "339394"
-  state: Running
+  - Initializing
+  resourceVersion: "950336"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
@@ -428,11 +428,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 2
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 3
@@ -472,14 +472,14 @@ events:
     status:
       availableReplicas: 1
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:27Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:03Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: Deployment does not have minimum availability.
         reason: MinimumReplicasUnavailable
         status: "False"
@@ -490,10 +490,10 @@ events:
       unavailableReplicas: 2
       updatedReplicas: 1
   phases:
-  - Initializing
   - Running
-  resourceVersion: "339402"
-  state: Running
+  - Initializing
+  resourceVersion: "950342"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
@@ -501,11 +501,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 2
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 3
@@ -545,14 +545,14 @@ events:
     status:
       availableReplicas: 1
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:27Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:03Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: Deployment does not have minimum availability.
         reason: MinimumReplicasUnavailable
         status: "False"
@@ -563,10 +563,10 @@ events:
       unavailableReplicas: 2
       updatedReplicas: 3
   phases:
-  - Initializing
   - Running
-  resourceVersion: "339406"
-  state: Running
+  - Initializing
+  resourceVersion: "950350"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
@@ -574,11 +574,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 2
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 3
@@ -618,14 +618,14 @@ events:
     status:
       availableReplicas: 2
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:27Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:03Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: Deployment does not have minimum availability.
         reason: MinimumReplicasUnavailable
         status: "False"
@@ -636,10 +636,10 @@ events:
       unavailableReplicas: 1
       updatedReplicas: 3
   phases:
-  - Initializing
   - Running
-  resourceVersion: "339427"
-  state: Running
+  - Initializing
+  resourceVersion: "950368"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
@@ -647,11 +647,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 2
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 3
@@ -691,14 +691,14 @@ events:
     status:
       availableReplicas: 3
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:28Z"
-        lastUpdateTime: "2026-09-09T15:07:28Z"
+      - lastTransitionTime: "2026-09-10T18:04:04Z"
+        lastUpdateTime: "2026-09-10T18:04:04Z"
         message: Deployment has minimum availability.
         reason: MinimumReplicasAvailable
         status: "True"
@@ -709,7 +709,7 @@ events:
       updatedReplicas: 3
   phases:
   - Running
-  resourceVersion: "339430"
+  resourceVersion: "950371"
   state: Running
 - action:
     name: Scale
@@ -727,11 +727,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 3
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 1
@@ -771,14 +771,14 @@ events:
     status:
       availableReplicas: 3
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:28Z"
-        lastUpdateTime: "2026-09-09T15:07:28Z"
+      - lastTransitionTime: "2026-09-10T18:04:04Z"
+        lastUpdateTime: "2026-09-10T18:04:04Z"
         message: Deployment has minimum availability.
         reason: MinimumReplicasAvailable
         status: "True"
@@ -789,7 +789,7 @@ events:
       updatedReplicas: 3
   phases:
   - Running
-  resourceVersion: "339431"
+  resourceVersion: "950372"
   staleObservedGeneration: true
   state: Running
 - kind: STATE
@@ -799,11 +799,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 3
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 1
@@ -843,14 +843,14 @@ events:
     status:
       availableReplicas: 3
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:28Z"
-        lastUpdateTime: "2026-09-09T15:07:28Z"
+      - lastTransitionTime: "2026-09-10T18:04:04Z"
+        lastUpdateTime: "2026-09-10T18:04:04Z"
         message: Deployment has minimum availability.
         reason: MinimumReplicasAvailable
         status: "True"
@@ -861,7 +861,7 @@ events:
       updatedReplicas: 3
   phases:
   - Running
-  resourceVersion: "339436"
+  resourceVersion: "950375"
   state: Running
 - kind: STATE
   object:
@@ -870,11 +870,11 @@ events:
     metadata:
       annotations:
         deployment.kubernetes.io/revision: "1"
-      creationTimestamp: "2026-09-09T15:07:26Z"
+      creationTimestamp: "2026-09-10T18:04:02Z"
       generation: 3
       name: karta-e2e-deploy
-      namespace: test-xxs6p
-      uid: 0ba1c013-7076-46a5-a3a5-a751fa8d814e
+      namespace: test-vwcrc
+      uid: c7835663-7f44-4971-a350-b08e41882ec7
     spec:
       progressDeadlineSeconds: 600
       replicas: 1
@@ -914,14 +914,14 @@ events:
     status:
       availableReplicas: 1
       conditions:
-      - lastTransitionTime: "2026-09-09T15:07:26Z"
-        lastUpdateTime: "2026-09-09T15:07:27Z"
+      - lastTransitionTime: "2026-09-10T18:04:02Z"
+        lastUpdateTime: "2026-09-10T18:04:03Z"
         message: ReplicaSet "karta-e2e-deploy-fd98c5489" has successfully progressed.
         reason: NewReplicaSetAvailable
         status: "True"
         type: Progressing
-      - lastTransitionTime: "2026-09-09T15:07:28Z"
-        lastUpdateTime: "2026-09-09T15:07:28Z"
+      - lastTransitionTime: "2026-09-10T18:04:04Z"
+        lastUpdateTime: "2026-09-10T18:04:04Z"
         message: Deployment has minimum availability.
         reason: MinimumReplicasAvailable
         status: "True"
@@ -932,7 +932,7 @@ events:
       updatedReplicas: 1
   phases:
   - Running
-  resourceVersion: "339443"
+  resourceVersion: "950385"
   state: Running
 flow: scaled
 kartaFile: docs/catalog/apps-deployment-v1.yaml
@@ -942,7 +942,10 @@ result:
   succeeded: true
 schemaVersion: 1
 summary:
-- amount: 3
+- amount: 1
+  phases:
+  - Undefined
+- amount: 2
   phases:
   - Initializing
 - amount: 2
@@ -950,8 +953,8 @@ summary:
   - Running
 - amount: 4
   phases:
-  - Initializing
   - Running
+  - Initializing
 - amount: 4
   phases:
   - Running

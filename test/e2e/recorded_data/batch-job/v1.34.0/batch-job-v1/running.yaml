@@ -4,16 +4,16 @@ events:
     apiVersion: batch/v1
     kind: Job
     metadata:
-      creationTimestamp: "2026-09-09T15:05:59Z"
+      creationTimestamp: "2026-09-10T18:02:27Z"
       generation: 1
       labels:
-        batch.kubernetes.io/controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+        batch.kubernetes.io/controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
         batch.kubernetes.io/job-name: karta-e2e-job-running
-        controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+        controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
         job-name: karta-e2e-job-running
       name: karta-e2e-job-running
-      namespace: test-6ltsx
-      uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+      namespace: test-vwcrc
+      uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
     spec:
       backoffLimit: 0
       completionMode: NonIndexed
@@ -23,14 +23,14 @@ events:
       podReplacementPolicy: TerminatingOrFailed
       selector:
         matchLabels:
-          batch.kubernetes.io/controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+          batch.kubernetes.io/controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
       suspend: false
       template:
         metadata:
           labels:
-            batch.kubernetes.io/controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+            batch.kubernetes.io/controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
             batch.kubernetes.io/job-name: karta-e2e-job-running
-            controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+            controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
             job-name: karta-e2e-job-running
         spec:
           containers:
@@ -64,28 +64,28 @@ events:
     status:
       active: 1
       ready: 0
-      startTime: "2026-09-09T15:05:59Z"
+      startTime: "2026-09-10T18:02:27Z"
       terminating: 0
       uncountedTerminatedPods: {}
   phases:
   - Initializing
-  resourceVersion: "338484"
+  resourceVersion: "949007"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: batch/v1
     kind: Job
     metadata:
-      creationTimestamp: "2026-09-09T15:05:59Z"
+      creationTimestamp: "2026-09-10T18:02:27Z"
       generation: 1
       labels:
-        batch.kubernetes.io/controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+        batch.kubernetes.io/controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
         batch.kubernetes.io/job-name: karta-e2e-job-running
-        controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+        controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
         job-name: karta-e2e-job-running
       name: karta-e2e-job-running
-      namespace: test-6ltsx
-      uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+      namespace: test-vwcrc
+      uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
     spec:
       backoffLimit: 0
       completionMode: NonIndexed
@@ -95,14 +95,14 @@ events:
       podReplacementPolicy: TerminatingOrFailed
       selector:
         matchLabels:
-          batch.kubernetes.io/controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+          batch.kubernetes.io/controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
       suspend: false
       template:
         metadata:
           labels:
-            batch.kubernetes.io/controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+            batch.kubernetes.io/controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
             batch.kubernetes.io/job-name: karta-e2e-job-running
-            controller-uid: 10aee39e-5408-4c52-a47a-e36b14753d74
+            controller-uid: 39c3b480-53b0-4b7a-b2d2-12c483d47324
             job-name: karta-e2e-job-running
         spec:
           containers:
@@ -136,13 +136,12 @@ events:
     status:
       active: 1
       ready: 1
-      startTime: "2026-09-09T15:05:59Z"
+      startTime: "2026-09-10T18:02:27Z"
       terminating: 0
       uncountedTerminatedPods: {}
   phases:
-  - Initializing
   - Running
-  resourceVersion: "338558"
+  resourceVersion: "949075"
   state: Running
 flow: running
 kartaFile: docs/catalog/batch-job-v1.yaml
@@ -157,7 +156,6 @@ summary:
   - Initializing
 - amount: 1
   phases:
-  - Initializing
   - Running
 version: v1.34.0
 want: Running

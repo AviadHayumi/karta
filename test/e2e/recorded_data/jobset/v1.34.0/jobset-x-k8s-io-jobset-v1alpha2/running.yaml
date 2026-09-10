@@ -4,11 +4,11 @@ events:
     apiVersion: jobset.x-k8s.io/v1alpha2
     kind: JobSet
     metadata:
-      creationTimestamp: "2026-09-10T15:55:08Z"
+      creationTimestamp: "2026-09-10T18:01:53Z"
       generation: 1
       name: karta-e2e-jobset-running
-      namespace: test-hqcxc
-      uid: ee7a29c9-f20e-45aa-9b19-6a38bb765eac
+      namespace: test-vwcrc
+      uid: 8b4b85ce-9e4e-4a58-b24e-7bb646dd96c1
     spec:
       network:
         enableDNSHostnames: true
@@ -60,18 +60,18 @@ events:
       restarts: 0
   phases:
   - Initializing
-  resourceVersion: "887785"
+  resourceVersion: "948585"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: jobset.x-k8s.io/v1alpha2
     kind: JobSet
     metadata:
-      creationTimestamp: "2026-09-10T15:55:08Z"
+      creationTimestamp: "2026-09-10T18:01:53Z"
       generation: 1
       name: karta-e2e-jobset-running
-      namespace: test-hqcxc
-      uid: ee7a29c9-f20e-45aa-9b19-6a38bb765eac
+      namespace: test-vwcrc
+      uid: 8b4b85ce-9e4e-4a58-b24e-7bb646dd96c1
     spec:
       network:
         enableDNSHostnames: true
@@ -123,7 +123,7 @@ events:
       restarts: 0
   phases:
   - Running
-  resourceVersion: "887789"
+  resourceVersion: "948590"
   state: Running
 flow: running
 kartaFile: docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml

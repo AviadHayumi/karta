@@ -4,13 +4,13 @@ events:
     apiVersion: serving.kserve.io/v1beta1
     kind: InferenceService
     metadata:
-      creationTimestamp: "2026-09-09T15:12:58Z"
+      creationTimestamp: "2026-09-10T17:58:05Z"
       finalizers:
       - inferenceservice.finalizers
       generation: 1
       name: karta-e2e-kserve-failed
-      namespace: test-4mf6x
-      uid: dcb5e1e9-04fd-497d-879e-c4600bc00bae
+      namespace: test-vwcrc
+      uid: 0c64b4df-ae6c-4c56-9945-48a7e2dd0464
     spec:
       predictor:
         containers:
@@ -24,21 +24,21 @@ events:
               cpu: 100m
               memory: 128Mi
   phases:
-  - Initializing
-  resourceVersion: "343232"
-  state: Initializing
+  - Undefined
+  resourceVersion: "945740"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: serving.kserve.io/v1beta1
     kind: InferenceService
     metadata:
-      creationTimestamp: "2026-09-09T15:12:58Z"
+      creationTimestamp: "2026-09-10T17:58:05Z"
       finalizers:
       - inferenceservice.finalizers
       generation: 1
       name: karta-e2e-kserve-failed
-      namespace: test-4mf6x
-      uid: dcb5e1e9-04fd-497d-879e-c4600bc00bae
+      namespace: test-vwcrc
+      uid: 0c64b4df-ae6c-4c56-9945-48a7e2dd0464
     spec:
       predictor:
         containers:
@@ -55,12 +55,12 @@ events:
       components:
         predictor: {}
       conditions:
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:05Z"
         reason: PredictorConfigurationReady not ready
         severity: Info
         status: Unknown
         type: LatestDeploymentReady
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:05Z"
         reason: PredictorRouteReady not ready
         severity: Info
         status: Unknown
@@ -71,21 +71,21 @@ events:
           targetModelState: Pending
         transitionStatus: InProgress
   phases:
-  - Initializing
-  resourceVersion: "343235"
-  state: Initializing
+  - Undefined
+  resourceVersion: "945742"
+  state: Undefined
 - kind: STATE
   object:
     apiVersion: serving.kserve.io/v1beta1
     kind: InferenceService
     metadata:
-      creationTimestamp: "2026-09-09T15:12:58Z"
+      creationTimestamp: "2026-09-10T17:58:05Z"
       finalizers:
       - inferenceservice.finalizers
       generation: 1
       name: karta-e2e-kserve-failed
-      namespace: test-4mf6x
-      uid: dcb5e1e9-04fd-497d-879e-c4600bc00bae
+      namespace: test-vwcrc
+      uid: 0c64b4df-ae6c-4c56-9945-48a7e2dd0464
     spec:
       predictor:
         containers:
@@ -103,12 +103,12 @@ events:
         predictor:
           latestCreatedRevision: karta-e2e-kserve-failed-predictor-00001
       conditions:
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:06Z"
         reason: PredictorConfigurationReady not ready
         severity: Info
         status: "False"
         type: LatestDeploymentReady
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:06Z"
         message: 'Revision "karta-e2e-kserve-failed-predictor-00001" failed with message:
           Unable to fetch image "karta-e2e-no-such-registry.invalid/nope:latest":
           failed to resolve image to digest: Get "https://karta-e2e-no-such-registry.invalid/v2/":
@@ -118,26 +118,26 @@ events:
         severity: Info
         status: "False"
         type: PredictorConfigurationReady
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:06Z"
         message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
           ready Revision.
         reason: RevisionMissing
         status: "False"
         type: PredictorReady
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:06Z"
         message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
           ready Revision.
         reason: RevisionMissing
         severity: Info
         status: "False"
         type: PredictorRouteReady
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:06Z"
         message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
           ready Revision.
         reason: RevisionMissing
         status: "False"
         type: Ready
-      - lastTransitionTime: "2026-09-09T15:12:58Z"
+      - lastTransitionTime: "2026-09-10T17:58:06Z"
         reason: PredictorRouteReady not ready
         severity: Info
         status: "False"
@@ -150,7 +150,7 @@ events:
       observedGeneration: 1
   phases:
   - Failed
-  resourceVersion: "343263"
+  resourceVersion: "945766"
   state: Failed
 flow: failed
 kartaFile: docs/catalog/serving-kserve-io-inferenceservice-v1beta1.yaml
@@ -162,7 +162,7 @@ schemaVersion: 1
 summary:
 - amount: 2
   phases:
-  - Initializing
+  - Undefined
 - amount: 1
   phases:
   - Failed
