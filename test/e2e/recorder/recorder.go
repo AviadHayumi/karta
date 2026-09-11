@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +19,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	kartav1alpha1 "github.com/run-ai/karta/pkg/api/runai/v1alpha1"
+	"github.com/run-ai/karta/pkg/resource"
 )
 
 // defaultTimeout bounds one flow's Run when Config.Timeout is unset.
@@ -238,6 +240,9 @@ func (r *Recorder) Save(fx Fixture, rec *Recording) (string, error) {
 	rec.Version = fx.Version
 	rec.KartaName = fx.KartaName
 	rec.KartaFile = fx.KartaFile
+	if err := alignStatesToKarta(rec); err != nil {
+		return "", fmt.Errorf("align %s to its Karta definition: %w", rec.Flow, err)
+	}
 	rec.Path = recordingPath(r.config.OutputDir, *rec)
 	if err := writeRecording(rec.Path, *rec); err != nil {
 		return "", fmt.Errorf("write recording %s: %w", rec.Path, err)
@@ -245,6 +250,55 @@ func (r *Recorder) Save(fx Fixture, rec *Recording) (string, error) {
 	fmt.Fprintf(r.config.Log, "recorded %s/%s/%s/%s.yaml (%d events %v)\n",
 		fx.Operator, fx.Version, fx.KartaName, rec.Flow, len(rec.Events), rec.states())
 	return rec.Path, nil
+}
+
+// alignStatesToKarta relabels every state event with what the Karta definition itself reads from the
+// frame, so a recording is the definition's own answer sheet and replay compares Karta only against
+// Karta-at-record-time. The flow predicates still drive the journey, the actions, and the success
+// verdict; they no longer decide the labels that get committed. A replay that goes red therefore means
+// exactly one thing: the definition changed what it reads since the recording was taken.
+func alignStatesToKarta(rec *Recording) error {
+	kartaYAML, err := readRepoFile(rec.KartaFile)
+	if err != nil {
+		return err
+	}
+	karta := &kartav1alpha1.Karta{}
+	if err := yaml.Unmarshal(kartaYAML, karta); err != nil {
+		return err
+	}
+	for i := range rec.Events {
+		e := &rec.Events[i]
+		if e.Kind != EventState {
+			continue
+		}
+		cr := &unstructured.Unstructured{Object: e.Object}
+		root, err := resource.NewComponentFactoryFromObject(karta, cr).GetRootComponent()
+		if err != nil {
+			return fmt.Errorf("parse frame %d: %w", i, err)
+		}
+		status, err := root.GetStatus(context.Background())
+		if err != nil {
+			return fmt.Errorf("read frame %d: %w", i, err)
+		}
+		e.Phases = phaseStrings(status.MatchedStatuses)
+		e.State = string(Strongest(status.MatchedStatuses))
+	}
+	rec.Summary = summarize(rec.Events)
+	return nil
+}
+
+// readRepoFile reads a repo-relative path by walking up from the working directory until it resolves;
+// the recorder runs from a test package directory whose depth below the repo root varies.
+func readRepoFile(rel string) ([]byte, error) {
+	dir := "."
+	for range [6]int{} {
+		b, err := os.ReadFile(filepath.Join(dir, rel))
+		if err == nil {
+			return b, nil
+		}
+		dir = filepath.Join(dir, "..")
+	}
+	return nil, fmt.Errorf("%s not found walking up from the working directory", rel)
 }
 
 // actionSteps filters the journey to the steps the recorder must reach and act on in order: those carrying an
