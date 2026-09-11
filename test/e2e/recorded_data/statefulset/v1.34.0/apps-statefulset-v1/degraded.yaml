@@ -4,11 +4,11 @@ events:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-10T18:05:22Z"
+      creationTimestamp: "2026-09-11T05:18:17Z"
       generation: 1
       name: karta-e2e-sts-degraded
-      namespace: test-vwcrc
-      uid: 2a0b4d28-3788-4c98-b33e-444d3af17fbf
+      namespace: test-pbmrs
+      uid: 6f6b68c9-6022-49e9-a122-498170a34c33
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -64,18 +64,18 @@ events:
       updateRevision: karta-e2e-sts-degraded-5fb8d9544d
   phases:
   - Initializing
-  resourceVersion: "951135"
+  resourceVersion: "1258131"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-10T18:05:22Z"
+      creationTimestamp: "2026-09-11T05:18:17Z"
       generation: 1
       name: karta-e2e-sts-degraded
-      namespace: test-vwcrc
-      uid: 2a0b4d28-3788-4c98-b33e-444d3af17fbf
+      namespace: test-pbmrs
+      uid: 6f6b68c9-6022-49e9-a122-498170a34c33
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -133,18 +133,18 @@ events:
       updatedReplicas: 3
   phases:
   - Initializing
-  resourceVersion: "951143"
+  resourceVersion: "1258140"
   state: Initializing
 - kind: STATE
   object:
     apiVersion: apps/v1
     kind: StatefulSet
     metadata:
-      creationTimestamp: "2026-09-10T18:05:22Z"
+      creationTimestamp: "2026-09-11T05:18:17Z"
       generation: 1
       name: karta-e2e-sts-degraded
-      namespace: test-vwcrc
-      uid: 2a0b4d28-3788-4c98-b33e-444d3af17fbf
+      namespace: test-pbmrs
+      uid: 6f6b68c9-6022-49e9-a122-498170a34c33
     spec:
       persistentVolumeClaimRetentionPolicy:
         whenDeleted: Retain
@@ -203,7 +203,7 @@ events:
       updatedReplicas: 3
   phases:
   - Degraded
-  resourceVersion: "951152"
+  resourceVersion: "1258158"
   state: Degraded
 flow: degraded
 kartaFile: docs/catalog/apps-statefulset-v1.yaml

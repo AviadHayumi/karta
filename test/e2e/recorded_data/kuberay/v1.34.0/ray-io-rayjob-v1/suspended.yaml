@@ -4,13 +4,13 @@ events:
     apiVersion: ray.io/v1
     kind: RayJob
     metadata:
-      creationTimestamp: "2026-09-10T17:59:46Z"
+      creationTimestamp: "2026-09-11T05:16:43Z"
       finalizers:
       - ray.io/rayjob-finalizer
       generation: 2
       name: karta-e2e-rayjob-suspended
-      namespace: test-vwcrc
-      uid: 9a7cc961-5dfa-4a44-9f0a-14b70f15682e
+      namespace: test-pbmrs
+      uid: 27eb0616-fedd-4a51-9604-cd3d77893d50
     spec:
       backoffLimit: 0
       entrypoint: python -c "print(1)"
@@ -55,20 +55,20 @@ events:
       ttlSecondsAfterFinished: 0
   phases:
   - Undefined
-  resourceVersion: "947149"
+  resourceVersion: "1257106"
   state: Undefined
 - kind: STATE
   object:
     apiVersion: ray.io/v1
     kind: RayJob
     metadata:
-      creationTimestamp: "2026-09-10T17:59:46Z"
+      creationTimestamp: "2026-09-11T05:16:43Z"
       finalizers:
       - ray.io/rayjob-finalizer
       generation: 2
       name: karta-e2e-rayjob-suspended
-      namespace: test-vwcrc
-      uid: 9a7cc961-5dfa-4a44-9f0a-14b70f15682e
+      namespace: test-pbmrs
+      uid: 27eb0616-fedd-4a51-9604-cd3d77893d50
     spec:
       backoffLimit: 0
       entrypoint: python -c "print(1)"
@@ -114,8 +114,8 @@ events:
     status:
       failed: 0
       jobDeploymentStatus: Initializing
-      jobId: karta-e2e-rayjob-suspended-qwpcl
-      rayClusterName: karta-e2e-rayjob-suspended-pkwts
+      jobId: karta-e2e-rayjob-suspended-72d6f
+      rayClusterName: karta-e2e-rayjob-suspended-9d4vx
       rayClusterStatus:
         desiredCPU: "0"
         desiredGPU: "0"
@@ -123,24 +123,24 @@ events:
         desiredTPU: "0"
         head: {}
       rayJobInfo: {}
-      startTime: "2026-09-10T17:59:46Z"
+      startTime: "2026-09-11T05:16:43Z"
       succeeded: 0
   phases:
-  - Undefined
-  resourceVersion: "947150"
-  state: Undefined
+  - Initializing
+  resourceVersion: "1257109"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: ray.io/v1
     kind: RayJob
     metadata:
-      creationTimestamp: "2026-09-10T17:59:46Z"
+      creationTimestamp: "2026-09-11T05:16:43Z"
       finalizers:
       - ray.io/rayjob-finalizer
       generation: 2
       name: karta-e2e-rayjob-suspended
-      namespace: test-vwcrc
-      uid: 9a7cc961-5dfa-4a44-9f0a-14b70f15682e
+      namespace: test-pbmrs
+      uid: 27eb0616-fedd-4a51-9604-cd3d77893d50
     spec:
       backoffLimit: 0
       entrypoint: python -c "print(1)"
@@ -186,8 +186,8 @@ events:
     status:
       failed: 0
       jobDeploymentStatus: Suspending
-      jobId: karta-e2e-rayjob-suspended-qwpcl
-      rayClusterName: karta-e2e-rayjob-suspended-pkwts
+      jobId: karta-e2e-rayjob-suspended-72d6f
+      rayClusterName: karta-e2e-rayjob-suspended-9d4vx
       rayClusterStatus:
         desiredCPU: "0"
         desiredGPU: "0"
@@ -195,24 +195,24 @@ events:
         desiredTPU: "0"
         head: {}
       rayJobInfo: {}
-      startTime: "2026-09-10T17:59:46Z"
+      startTime: "2026-09-11T05:16:43Z"
       succeeded: 0
   phases:
   - Undefined
-  resourceVersion: "947151"
+  resourceVersion: "1257110"
   state: Undefined
 - kind: STATE
   object:
     apiVersion: ray.io/v1
     kind: RayJob
     metadata:
-      creationTimestamp: "2026-09-10T17:59:46Z"
+      creationTimestamp: "2026-09-11T05:16:43Z"
       finalizers:
       - ray.io/rayjob-finalizer
       generation: 2
       name: karta-e2e-rayjob-suspended
-      namespace: test-vwcrc
-      uid: 9a7cc961-5dfa-4a44-9f0a-14b70f15682e
+      namespace: test-pbmrs
+      uid: 27eb0616-fedd-4a51-9604-cd3d77893d50
     spec:
       backoffLimit: 0
       entrypoint: python -c "print(1)"
@@ -265,11 +265,11 @@ events:
         desiredTPU: "0"
         head: {}
       rayJobInfo: {}
-      startTime: "2026-09-10T17:59:46Z"
+      startTime: "2026-09-11T05:16:43Z"
       succeeded: 0
   phases:
   - Suspended
-  resourceVersion: "947152"
+  resourceVersion: "1257111"
   state: Suspended
 flow: suspended
 kartaFile: docs/catalog/ray-io-rayjob-v1.yaml
@@ -279,7 +279,13 @@ result:
   succeeded: true
 schemaVersion: 1
 summary:
-- amount: 3
+- amount: 1
+  phases:
+  - Undefined
+- amount: 1
+  phases:
+  - Initializing
+- amount: 1
   phases:
   - Undefined
 - amount: 1

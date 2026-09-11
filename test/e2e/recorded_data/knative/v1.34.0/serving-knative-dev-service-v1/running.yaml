@@ -7,11 +7,11 @@ events:
       annotations:
         serving.knative.dev/creator: kubernetes-admin
         serving.knative.dev/lastModifier: kubernetes-admin
-      creationTimestamp: "2026-09-10T18:03:58Z"
+      creationTimestamp: "2026-09-11T05:17:07Z"
       generation: 1
       name: karta-e2e-knative
-      namespace: test-vwcrc
-      uid: 5a27d0f2-909c-45a1-a569-3f323f1727b9
+      namespace: test-pbmrs
+      uid: 4a936a23-c69e-4d7d-a16b-8f8a4bd378d3
     spec:
       template:
         metadata:
@@ -42,27 +42,27 @@ events:
         percent: 100
     status:
       conditions:
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         message: The Configuration is still working to reflect the latest desired
           specification.
         reason: OutOfDate
         status: Unknown
         type: ConfigurationsReady
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         message: The Route is still working to reflect the latest desired specification.
         reason: OutOfDate
         status: Unknown
         type: Ready
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         message: The Route is still working to reflect the latest desired specification.
         reason: OutOfDate
         status: Unknown
         type: RoutesReady
       observedGeneration: 1
   phases:
-  - Undefined
-  resourceVersion: "950145"
-  state: Undefined
+  - Initializing
+  resourceVersion: "1257410"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: serving.knative.dev/v1
@@ -71,11 +71,11 @@ events:
       annotations:
         serving.knative.dev/creator: kubernetes-admin
         serving.knative.dev/lastModifier: kubernetes-admin
-      creationTimestamp: "2026-09-10T18:03:58Z"
+      creationTimestamp: "2026-09-11T05:17:07Z"
       generation: 1
       name: karta-e2e-knative
-      namespace: test-vwcrc
-      uid: 5a27d0f2-909c-45a1-a569-3f323f1727b9
+      namespace: test-pbmrs
+      uid: 4a936a23-c69e-4d7d-a16b-8f8a4bd378d3
     spec:
       template:
         metadata:
@@ -106,30 +106,25 @@ events:
         percent: 100
     status:
       conditions:
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
-        message: The Configuration is still working to reflect the latest desired
-          specification.
-        reason: OutOfDate
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         status: Unknown
         type: ConfigurationsReady
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
-        message: Configuration "karta-e2e-knative" is waiting for a Revision to become
-          ready.
-        reason: RevisionMissing
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
+        message: The Route is still working to reflect the latest desired specification.
+        reason: OutOfDate
         status: Unknown
         type: Ready
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
-        message: Configuration "karta-e2e-knative" is waiting for a Revision to become
-          ready.
-        reason: RevisionMissing
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
+        message: The Route is still working to reflect the latest desired specification.
+        reason: OutOfDate
         status: Unknown
         type: RoutesReady
+      latestCreatedRevisionName: karta-e2e-knative-00001
       observedGeneration: 1
-      url: http://karta-e2e-knative.test-vwcrc.127.0.0.1.sslip.io
   phases:
-  - Undefined
-  resourceVersion: "950152"
-  state: Undefined
+  - Initializing
+  resourceVersion: "1257413"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: serving.knative.dev/v1
@@ -138,11 +133,11 @@ events:
       annotations:
         serving.knative.dev/creator: kubernetes-admin
         serving.knative.dev/lastModifier: kubernetes-admin
-      creationTimestamp: "2026-09-10T18:03:58Z"
+      creationTimestamp: "2026-09-11T05:17:07Z"
       generation: 1
       name: karta-e2e-knative
-      namespace: test-vwcrc
-      uid: 5a27d0f2-909c-45a1-a569-3f323f1727b9
+      namespace: test-pbmrs
+      uid: 4a936a23-c69e-4d7d-a16b-8f8a4bd378d3
     spec:
       template:
         metadata:
@@ -173,16 +168,16 @@ events:
         percent: 100
     status:
       conditions:
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         status: Unknown
         type: ConfigurationsReady
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         message: Configuration "karta-e2e-knative" is waiting for a Revision to become
           ready.
         reason: RevisionMissing
         status: Unknown
         type: Ready
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         message: Configuration "karta-e2e-knative" is waiting for a Revision to become
           ready.
         reason: RevisionMissing
@@ -190,11 +185,11 @@ events:
         type: RoutesReady
       latestCreatedRevisionName: karta-e2e-knative-00001
       observedGeneration: 1
-      url: http://karta-e2e-knative.test-vwcrc.127.0.0.1.sslip.io
+      url: http://karta-e2e-knative.test-pbmrs.127.0.0.1.sslip.io
   phases:
-  - Undefined
-  resourceVersion: "950153"
-  state: Undefined
+  - Initializing
+  resourceVersion: "1257415"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: serving.knative.dev/v1
@@ -203,11 +198,11 @@ events:
       annotations:
         serving.knative.dev/creator: kubernetes-admin
         serving.knative.dev/lastModifier: kubernetes-admin
-      creationTimestamp: "2026-09-10T18:03:58Z"
+      creationTimestamp: "2026-09-11T05:17:07Z"
       generation: 1
       name: karta-e2e-knative
-      namespace: test-vwcrc
-      uid: 5a27d0f2-909c-45a1-a569-3f323f1727b9
+      namespace: test-pbmrs
+      uid: 4a936a23-c69e-4d7d-a16b-8f8a4bd378d3
     spec:
       template:
         metadata:
@@ -238,16 +233,16 @@ events:
         percent: 100
     status:
       conditions:
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         status: "True"
         type: ConfigurationsReady
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         message: Configuration "karta-e2e-knative" is waiting for a Revision to become
           ready.
         reason: RevisionMissing
         status: Unknown
         type: Ready
-      - lastTransitionTime: "2026-09-10T18:03:58Z"
+      - lastTransitionTime: "2026-09-11T05:17:08Z"
         message: Configuration "karta-e2e-knative" is waiting for a Revision to become
           ready.
         reason: RevisionMissing
@@ -256,11 +251,11 @@ events:
       latestCreatedRevisionName: karta-e2e-knative-00001
       latestReadyRevisionName: karta-e2e-knative-00001
       observedGeneration: 1
-      url: http://karta-e2e-knative.test-vwcrc.127.0.0.1.sslip.io
+      url: http://karta-e2e-knative.test-pbmrs.127.0.0.1.sslip.io
   phases:
-  - Undefined
-  resourceVersion: "950239"
-  state: Undefined
+  - Initializing
+  resourceVersion: "1257479"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: serving.knative.dev/v1
@@ -269,11 +264,11 @@ events:
       annotations:
         serving.knative.dev/creator: kubernetes-admin
         serving.knative.dev/lastModifier: kubernetes-admin
-      creationTimestamp: "2026-09-10T18:03:58Z"
+      creationTimestamp: "2026-09-11T05:17:07Z"
       generation: 1
       name: karta-e2e-knative
-      namespace: test-vwcrc
-      uid: 5a27d0f2-909c-45a1-a569-3f323f1727b9
+      namespace: test-pbmrs
+      uid: 4a936a23-c69e-4d7d-a16b-8f8a4bd378d3
     spec:
       template:
         metadata:
@@ -304,17 +299,17 @@ events:
         percent: 100
     status:
       address:
-        url: http://karta-e2e-knative.test-vwcrc.svc.cluster.local
+        url: http://karta-e2e-knative.test-pbmrs.svc.cluster.local
       conditions:
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         status: "True"
         type: ConfigurationsReady
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         message: Ingress has not yet been reconciled.
         reason: IngressNotConfigured
         status: Unknown
         type: Ready
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         message: Ingress has not yet been reconciled.
         reason: IngressNotConfigured
         status: Unknown
@@ -326,11 +321,11 @@ events:
       - latestRevision: true
         percent: 100
         revisionName: karta-e2e-knative-00001
-      url: http://karta-e2e-knative.test-vwcrc.127.0.0.1.sslip.io
+      url: http://karta-e2e-knative.test-pbmrs.127.0.0.1.sslip.io
   phases:
-  - Undefined
-  resourceVersion: "950247"
-  state: Undefined
+  - Initializing
+  resourceVersion: "1257485"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: serving.knative.dev/v1
@@ -339,11 +334,11 @@ events:
       annotations:
         serving.knative.dev/creator: kubernetes-admin
         serving.knative.dev/lastModifier: kubernetes-admin
-      creationTimestamp: "2026-09-10T18:03:58Z"
+      creationTimestamp: "2026-09-11T05:17:07Z"
       generation: 1
       name: karta-e2e-knative
-      namespace: test-vwcrc
-      uid: 5a27d0f2-909c-45a1-a569-3f323f1727b9
+      namespace: test-pbmrs
+      uid: 4a936a23-c69e-4d7d-a16b-8f8a4bd378d3
     spec:
       template:
         metadata:
@@ -374,17 +369,17 @@ events:
         percent: 100
     status:
       address:
-        url: http://karta-e2e-knative.test-vwcrc.svc.cluster.local
+        url: http://karta-e2e-knative.test-pbmrs.svc.cluster.local
       conditions:
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         status: "True"
         type: ConfigurationsReady
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         message: Waiting for load balancer to be ready
         reason: Uninitialized
         status: Unknown
         type: Ready
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         message: Waiting for load balancer to be ready
         reason: Uninitialized
         status: Unknown
@@ -396,11 +391,11 @@ events:
       - latestRevision: true
         percent: 100
         revisionName: karta-e2e-knative-00001
-      url: http://karta-e2e-knative.test-vwcrc.127.0.0.1.sslip.io
+      url: http://karta-e2e-knative.test-pbmrs.127.0.0.1.sslip.io
   phases:
-  - Undefined
-  resourceVersion: "950255"
-  state: Undefined
+  - Initializing
+  resourceVersion: "1257494"
+  state: Initializing
 - kind: STATE
   object:
     apiVersion: serving.knative.dev/v1
@@ -409,11 +404,11 @@ events:
       annotations:
         serving.knative.dev/creator: kubernetes-admin
         serving.knative.dev/lastModifier: kubernetes-admin
-      creationTimestamp: "2026-09-10T18:03:58Z"
+      creationTimestamp: "2026-09-11T05:17:07Z"
       generation: 1
       name: karta-e2e-knative
-      namespace: test-vwcrc
-      uid: 5a27d0f2-909c-45a1-a569-3f323f1727b9
+      namespace: test-pbmrs
+      uid: 4a936a23-c69e-4d7d-a16b-8f8a4bd378d3
     spec:
       template:
         metadata:
@@ -444,15 +439,15 @@ events:
         percent: 100
     status:
       address:
-        url: http://karta-e2e-knative.test-vwcrc.svc.cluster.local
+        url: http://karta-e2e-knative.test-pbmrs.svc.cluster.local
       conditions:
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         status: "True"
         type: ConfigurationsReady
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         status: "True"
         type: Ready
-      - lastTransitionTime: "2026-09-10T18:04:00Z"
+      - lastTransitionTime: "2026-09-11T05:17:09Z"
         status: "True"
         type: RoutesReady
       latestCreatedRevisionName: karta-e2e-knative-00001
@@ -462,10 +457,10 @@ events:
       - latestRevision: true
         percent: 100
         revisionName: karta-e2e-knative-00001
-      url: http://karta-e2e-knative.test-vwcrc.127.0.0.1.sslip.io
+      url: http://karta-e2e-knative.test-pbmrs.127.0.0.1.sslip.io
   phases:
   - Running
-  resourceVersion: "950259"
+  resourceVersion: "1257508"
   state: Running
 flow: running
 kartaFile: docs/catalog/serving-knative-dev-service-v1.yaml
@@ -477,7 +472,7 @@ schemaVersion: 1
 summary:
 - amount: 6
   phases:
-  - Undefined
+  - Initializing
 - amount: 1
   phases:
   - Running
