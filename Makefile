@@ -369,7 +369,7 @@ E2E_TIMEOUT ?= 30m
 # Select cases by operator with the same WORKLOADS list as e2e-up: record-e2e WORKLOADS="batch-job"
 # records just the batch-job case (a comma is OR in ginkgo label filters). E2E_LABELS overrides it
 # with a raw ginkgo label expression.
-E2E_LABELS ?= $(subst $(space),$(comma),$(strip $(filter-out all none,$(WORKLOADS))))
+E2E_LABELS ?= $(subst $(space),$(comma),$(strip $(filter-out all,$(WORKLOADS))))
 
 # FLOW="scaled" narrows a record to one flow by name (focuses the spec with that title);
 # without WORKLOADS it matches that flow name across all workload types.
@@ -405,6 +405,8 @@ e2e-down: ## Tear down the e2e cluster (set CLUSTER_NAME for a named one)
 # should fail here rather than minutes into a live cluster run.
 .PHONY: record-e2e
 record-e2e: ## Record the fixtures against the current cluster - kind from e2e-up or your own (WORKLOADS="pod" a subset, FLOW="running" one flow, CLUSTER_NAME for a named kind cluster)
+	@if [ "$(strip $(WORKLOADS))" = "none" ]; then \
+		echo "record-e2e: WORKLOADS=none selects no cases"; exit 2; fi
 	cd test/e2e && go test -count=1 ./recorder
 	cd test/e2e && CLUSTER_NAME=$(CLUSTER_NAME) $(E2E_KUBECONFIG) go test -count=1 -v -timeout $(E2E_TIMEOUT) ./flows $(if $(E2E_FOCUS)$(E2E_LABELS),-args $(if $(E2E_FOCUS),-ginkgo.focus="$(E2E_FOCUS)") $(if $(E2E_LABELS),-ginkgo.label-filter="$(E2E_LABELS)"))
 
@@ -417,7 +419,7 @@ verify-recordings: ## Fail if any recorded fixture ended with succeeded false (r
 
 # The e2e shell scripts to shellcheck: the provisioner, teardown, the Karta install,
 # the shared helpers, and every per-operator install.sh/verify.sh.
-E2E_SHELL := hack/e2e/up.sh hack/e2e/down.sh hack/e2e/install.sh \
+E2E_SHELL := hack/e2e/up.sh hack/e2e/down.sh hack/e2e/install.sh hack/e2e/verify.sh \
 	hack/e2e/operators/_common.sh \
 	$(wildcard hack/e2e/operators/*/install.sh) \
 	$(wildcard hack/e2e/operators/*/verify.sh)

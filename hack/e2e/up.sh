@@ -193,20 +193,19 @@ main() {
     esac
   done
 
-  # "all" is an alias for every workload (same as passing no args), "none" for the
-  # base only. Guard the expansion so bare "up.sh" does not trip set -u on the empty
-  # array (bash 3.2).
+  # "all" is an alias for every workload (same as passing no args). Guard the
+  # expansion so bare "up.sh" does not trip set -u on the empty array (bash 3.2).
   local base_only=false
   if [ "${#requested[@]}" -gt 0 ]; then
-    for w in "${requested[@]}"; do
-      [ "$w" = "all" ] && { requested=("${ALL_WORKLOADS[@]}"); break; }
-    done
     for w in "${requested[@]}"; do
       if [ "$w" = "none" ]; then
         [ "${#requested[@]}" -eq 1 ] ||
           { echo "error: \"none\" cannot be combined with other workloads" >&2; usage; exit 2; }
         base_only=true
       fi
+    done
+    for w in "${requested[@]}"; do
+      [ "$w" = "all" ] && { requested=("${ALL_WORKLOADS[@]}"); break; }
     done
   fi
 
@@ -234,7 +233,6 @@ main() {
     done
   fi
 
-  # Validated here as well as in install.sh, so --list rejects a typo for free.
   case "${KARTA_WEBHOOK_MODE}" in
     auto | cert-manager | disabled) ;;
     *)
@@ -243,11 +241,8 @@ main() {
       ;;
   esac
 
-  # Derived from the plan rather than left to the caller: a silent skip would surface
-  # much later as an unrelated webhook timeout, so a contradictory false fails here.
   local cert_manager_needed_by=""
   [ "${KARTA_WEBHOOK_MODE}" = "cert-manager" ] && cert_manager_needed_by="KARTA_WEBHOOK_MODE=cert-manager"
-  # kserve alone, because its bundled manifest ships cert-manager Certificates.
   for w in ${plan[@]+"${plan[@]}"}; do
     if [ "$w" = "kserve" ]; then
       cert_manager_needed_by="${cert_manager_needed_by:+${cert_manager_needed_by}, }operator ${w}"
@@ -282,6 +277,9 @@ main() {
 
   require_tools
   group "build image + kind cluster"; setup_cluster; endgroup
+  if [ "${install_cm}" = false ] && kubectl get namespace cert-manager >/dev/null 2>&1; then
+    warn "cert-manager is already on ${CLUSTER_NAME}; not installing it does not remove it"
+  fi
   if [ "${install_cm}" = true ]; then
     group "cert-manager ${CERT_MANAGER_VERSION}"; install_cert_manager; endgroup
   fi
@@ -295,9 +293,9 @@ main() {
     summary "|---|---|---|---|---|"
     for w in "${plan[@]}"; do run_operator "$w"; done
   fi
-  # Standalone script like the workload operators, same exit-code contract.
-  group "karta operator (webhook: ${KARTA_WEBHOOK_MODE})"
+  group "karta operator"
   bash "${REPO_ROOT}/hack/e2e/install.sh" || { endgroup; fail "karta install failed"; exit 1; }
+  bash "${REPO_ROOT}/hack/e2e/verify.sh" || { endgroup; fail "karta smoke failed"; exit 1; }
   endgroup
 
   echo "==> environment ready (cluster: ${CLUSTER_NAME}, webhook: ${KARTA_WEBHOOK_MODE})."

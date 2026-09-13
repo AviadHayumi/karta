@@ -27,7 +27,9 @@ KARTA_WEBHOOK_CERT="karta-webhook-cert"
 # without the Secret crashloops instead of waiting for it.
 install_certificate() {
   kubectl create namespace "${KARTA_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
-  kubectl apply -f - >/dev/null <<EOF
+  local manifest
+  manifest="$(mktemp)"
+  cat >"${manifest}" <<EOF
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -50,6 +52,8 @@ spec:
     - ${KARTA_WEBHOOK_SERVICE}.${KARTA_NAMESPACE}.svc
     - ${KARTA_WEBHOOK_SERVICE}.${KARTA_NAMESPACE}.svc.cluster.local
 EOF
+  apply_with_retry "${manifest}" >/dev/null
+  rm -f "${manifest}"
   kubectl wait --for=condition=Ready "certificate/${KARTA_WEBHOOK_CERT}" \
     -n "${KARTA_NAMESPACE}" --timeout=120s
 }
@@ -59,26 +63,51 @@ EOF
 # before the operator reports ready, but in manual mode cainjector is asynchronous, so
 # without this the first admission call can fail x509 against an empty caBundle.
 wait_for_ca_injection() {
-  local target ca
+  local target ca want
+  want="$(kubectl get secret "${KARTA_WEBHOOK_SECRET}" -n "${KARTA_NAMESPACE}" \
+    -o jsonpath='{.data.ca\.crt}')"
+  [ -n "${want}" ] || { fail "no ca.crt in ${KARTA_WEBHOOK_SECRET}"; exit 1; }
   for target in ${KARTA_WEBHOOK_CONFIGS}; do
+    kubectl get "${target}" -o name >/dev/null
     ca=""
     for _ in $(seq 1 60); do
-      ca="$(kubectl get "${target}" -o jsonpath='{.webhooks[0].clientConfig.caBundle}' 2>/dev/null || true)"
-      [ -n "${ca}" ] && break
+      ca="$(kubectl get "${target}" -o jsonpath='{.webhooks[0].clientConfig.caBundle}')"
+      [ "${ca}" = "${want}" ] && break
       sleep 2
     done
-    if [ -z "${ca}" ]; then
-      fail "cainjector did not populate caBundle on ${target} within 120s"
+    if [ "${ca}" != "${want}" ]; then
+      fail "cainjector did not put the issued CA on ${target} within 120s"
       exit 1
     fi
   done
 }
 
+# The mode the deployed release runs, from the args the chart renders per mode, or
+# nothing when Karta is not installed.
+installed_webhook_mode() {
+  local args
+  args="$(kubectl get deploy karta-operator -n "${KARTA_NAMESPACE}" \
+    -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null)" || return 0
+  [ -n "${args}" ] || return 0
+  case "${args}" in
+    *webhook-cert-mode=auto*) echo auto ;;
+    *webhook-cert-mode=manual*) echo cert-manager ;;
+    *) echo disabled ;;
+  esac
+}
+
 main() {
   echo "==> Karta operator (webhook: ${KARTA_WEBHOOK_MODE})"
+
+  local installed
+  installed="$(installed_webhook_mode)"
+  if [ -n "${installed}" ] && [ "${installed}" != "${KARTA_WEBHOOK_MODE}" ]; then
+    fail "webhook mode changed on an existing cluster (${installed} -> ${KARTA_WEBHOOK_MODE}); run make e2e-down first"
+    exit 1
+  fi
+
   kubectl apply --server-side -f "${REPO_ROOT}/charts/karta/crds/"
 
-  # One --set list per route, so the rest of the install cannot drift between them.
   local webhook_values=()
   case "${KARTA_WEBHOOK_MODE}" in
     auto)
@@ -89,7 +118,6 @@ main() {
       webhook_values=(
         --set webhook.enabled=true
         --set webhook.cert.provisionMode=manual
-        # cainjector reads this and writes the issuing CA into both caBundles.
         --set-string "webhook.cert.annotations.cert-manager\.io/inject-ca-from=${KARTA_NAMESPACE}/${KARTA_WEBHOOK_CERT}"
       )
       ;;
@@ -97,7 +125,6 @@ main() {
       webhook_values=(--set webhook.enabled=false)
       ;;
     *)
-      # up.sh validates this too, so --list catches a typo without provisioning.
       echo "error: unknown KARTA_WEBHOOK_MODE '${KARTA_WEBHOOK_MODE}' (want: auto, cert-manager, disabled)" >&2
       exit 2
       ;;
@@ -109,7 +136,6 @@ main() {
     "${webhook_values[@]}" >/dev/null
   rollout_wait "${KARTA_NAMESPACE}" deploy/karta-operator 120s
   [ "${KARTA_WEBHOOK_MODE}" = "cert-manager" ] && wait_for_ca_injection
-  # Explicit, or the test above returns 1 on the other two routes and set -e aborts.
   return 0
 }
 
