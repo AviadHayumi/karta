@@ -18,7 +18,6 @@ spec:
           patches:
             - patchType: MergePatch
               expression: value
-          patchStrategy: Replace
       scaleDefinition:
         replicas:
           expression: "1"

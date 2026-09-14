@@ -24,7 +24,7 @@ func Pod() *v1alpha1.Karta {
 						Replicas: &v1alpha1.ValueAccessor{Expression: `1`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `value`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `value`}}},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						PhaseDefinition: &v1alpha1.PhaseDefinition{
