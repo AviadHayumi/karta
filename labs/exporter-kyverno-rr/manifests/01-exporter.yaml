@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# karta-exporter lab deployment: flat RBAC (chart uses aggregation; the lab
+# inlines the same read rules for the kinds present on this cluster).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: karta-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: karta-exporter
+  namespace: karta-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: karta-exporter-lab
+rules:
+  - apiGroups: ["run.ai"]
+    resources: ["kartas"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: karta-exporter-lab
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: karta-exporter-lab
+subjects:
+  - kind: ServiceAccount
+    name: karta-exporter
+    namespace: karta-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karta-exporter
+  namespace: karta-system
+  labels: {app: karta-exporter}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: karta-exporter}}
+  template:
+    metadata:
+      labels: {app: karta-exporter}
+    spec:
+      serviceAccountName: karta-exporter
+      containers:
+        - name: exporter
+          image: karta-exporter:lab
+          imagePullPolicy: Never
+          args:
+            - --metrics-bind-address=:8080
+            - --use-catalog
+          ports:
+            - name: metrics
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /readyz, port: metrics}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: karta-exporter
+  namespace: karta-system
+  labels: {app: karta-exporter}
+spec:
+  selector: {app: karta-exporter}
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: metrics

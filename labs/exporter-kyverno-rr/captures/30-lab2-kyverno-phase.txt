@@ -1,0 +1,8 @@
+[18:20:47.211 UTC] LAB2 (k8s v1.34.3, Job wedge FIXED upstream). Applying the http metric policy.
+mutatingpolicy.policies.kyverno.io/metric-suspend-running created
+[18:20:50.608 UTC] K1 DONE: both trainers suspended by the metric rule (3.2s after policy apply; includes 2m Running window)
+[18:21:10.609 UTC] trainer-a status after settle: startTime='2026-09-14T18:19:43Z' conditions=Suspended
+[18:21:10.688 UTC] K2: USER RESUMES trainer-a
+[18:21:10.783 UTC] healthy resume on v1.34.3: active=1 after 0.0s (startTime reset to 2026-09-14T18:21:10Z)
+[18:23:14.635 UTC] K2 DONE - TRAP EXECUTED: engine re-suspended trainer-a 123.9s after the user resume. No new human intent.
+[18:23:14.635 UTC] K-phase complete. trainer-a suspend=true trainer-b suspend=true

@@ -1,0 +1,38 @@
+{
+    "status": "success",
+    "data": {
+        "resultType": "vector",
+        "result": [
+            {
+                "metric": {
+                    "instance": "karta-exporter.karta-system.svc:8080",
+                    "job": "karta-exporter",
+                    "namespace": "ai-team",
+                    "phase": "Running",
+                    "workload": "trainer-a",
+                    "workload_group": "batch",
+                    "workload_kind": "Job"
+                },
+                "value": [
+                    1789407002.745,
+                    "1"
+                ]
+            },
+            {
+                "metric": {
+                    "instance": "karta-exporter.karta-system.svc:8080",
+                    "job": "karta-exporter",
+                    "namespace": "ai-team",
+                    "phase": "Running",
+                    "workload": "trainer-b",
+                    "workload_group": "batch",
+                    "workload_kind": "Job"
+                },
+                "value": [
+                    1789407002.745,
+                    "1"
+                ]
+            }
+        ]
+    }
+}

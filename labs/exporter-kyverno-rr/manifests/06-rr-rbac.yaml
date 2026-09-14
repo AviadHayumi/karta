@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# rr-poc identity: patch rights on ai-team jobs/cronjobs only. The deliberate
+# absence of deployment patch rights feeds the SkippedNotReady scenario.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rr-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rr-poc
+  namespace: rr-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rr-poc-actions
+  namespace: ai-team
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rr-poc-actions
+  namespace: ai-team
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rr-poc-actions
+subjects:
+  - kind: ServiceAccount
+    name: rr-poc
+    namespace: rr-system

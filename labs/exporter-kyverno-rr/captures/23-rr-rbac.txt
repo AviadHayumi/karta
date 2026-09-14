@@ -1,0 +1,15 @@
+===== R4: RBAC revoked mid-flight =====
+rolebinding.rbac.authorization.k8s.io "rr-poc-actions" deleted from ai-team namespace
+[2026-09-14T18:36:14.539+00:00] rr-poc r2 start rule=suspend-running-2m mode=Enforce reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:36:14.849+00:00] receipt SkippedNotReady: rr-84dc8eac-e0-rbac1-1 (trainer-g)
+[2026-09-14T18:36:14.955+00:00] max loops reached (1), exiting
+--- rolebinding restored ---
+namespace/rr-system unchanged
+serviceaccount/rr-poc unchanged
+role.rbac.authorization.k8s.io/rr-poc-actions unchanged
+rolebinding.rbac.authorization.k8s.io/rr-poc-actions created
+[2026-09-14T18:36:15.279+00:00] rr-poc r2 start rule=suspend-running-2m mode=Enforce reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:36:15.553+00:00] receipt Intended: rr-84dc8eac-e0-rbac2-1 (trainer-g)
+[2026-09-14T18:36:15.769+00:00] receipt Executed: rr-84dc8eac-e0-rbac2-2 (trainer-g)
+[2026-09-14T18:36:15.881+00:00] max loops reached (1), exiting
+trainer-g suspend=true

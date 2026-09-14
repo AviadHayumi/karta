@@ -1,0 +1,3 @@
+[18:16:00.677 UTC] trainer-gce pre-state: suspend=true startTime='2026-09-14T18:07:28Z' (settled: startTime cleared while suspended)
+[18:16:00.755 UTC] USER RESUME (no automation involved in this decision)
+[18:23:01.339 UTC] no re-suspension in 7m: suspend=false active=

@@ -1,0 +1,27 @@
+=== BEFORE deletion (trainer-a, suspended by the engine) ===
+--- policyreports in ai-team scoped to trainer-a ---
+b199429f-16a8-4f1b-a060-d71417de5128 | metric-suspend-running | pass | success
+--- events on trainer-a ---
+3m42s   Normal    SuccessfulCreate   job/trainer-a   Created pod: trainer-a-r6pzh
+2m38s   Normal    SuccessfulDelete   job/trainer-a   Deleted pod: trainer-a-r6pzh
+12s     Normal    Suspended          job/trainer-a   Job suspended
+2m15s   Normal    SuccessfulCreate   job/trainer-a   Created pod: trainer-a-d2fc4
+2m15s   Normal    Resumed            job/trainer-a   Job resumed
+2m7s    Warning   PolicyViolation    job/trainer-a   policy metric-suspend-running/ fail: mutation is not applied
+12s     Normal    SuccessfulDelete   job/trainer-a   Deleted pod: trainer-a-d2fc4
+--- updaterequests ---
+No resources found in kyverno namespace.
+--- mpol status ---
+{"autogen":{},"conditionStatus":{"conditions":[{"lastTransitionTime":"2026-09-14T18:20:47Z","message":"Policy is ready for reporting.","reason":"Succeeded","status":"True","type":"RBACPermissionsGranted"}],"message":"","ready":true},"generated":false}
+=== DELETING trainer-a ===
+deleted at 2026-09-14T18:23:25+00:00
+job.batch "trainer-a" deleted from ai-team namespace
+=== AFTER deletion ===
+--- policyreports scoped to trainer-a ---
+0 report(s) remain for trainer-a
+--- events on trainer-a (TTL-bound, not action-coupled) ---
+       7
+--- updaterequests ---
+No resources found in kyverno namespace.
+--- durable per-action record of the engine's actions on trainer-a: ---
+(no surviving surface records WHAT was done WHEN by WHICH evaluation)

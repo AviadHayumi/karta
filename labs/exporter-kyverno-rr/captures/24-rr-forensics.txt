@@ -1,0 +1,32 @@
+===== R5: deletion forensics =====
+job.batch "trainer-e" deleted from ai-team namespace
+--- receipts for trainer-e after deletion ---
+NAME                   PHASE
+rr-33e597e6-e0-enf-1   Intended
+rr-33e597e6-e0-enf-2   Executed
+rr-33e597e6-e0-obs-1   WouldAct
+rr-33e597e6-e0-obs-4   WouldAct
+--- one full receipt body ---
+{
+ "rule": "suspend-running-2m",
+ "phase": "Executed",
+ "workload": {
+  "namespace": "ai-team",
+  "name": "trainer-e",
+  "kind": "Job",
+  "uid": "33e597e6-6f23-41ae-be7e-1a6ae0e67770"
+ },
+ "targetResourceVersion": "1908",
+ "time": "2026-09-14T18:26:34.432+00:00",
+ "epoch": 0,
+ "evidence": {
+  "promql": "min_over_time(karta_workload_status{namespace=\"ai-team\",phase=\"Running\"}[2m]) == 1",
+  "value": "1",
+  "sampleTime": 1789410393.863
+ },
+ "karta": "batch-job-v1",
+ "patchPointer": "/spec/suspend",
+ "patchValue": true,
+ "operation": "suspend-running-2m/33e597e6-6f23-41ae-be7e-1a6ae0e67770/e0/suspend",
+ "supersedes": "rr-33e597e6-e0-enf-1"
+}

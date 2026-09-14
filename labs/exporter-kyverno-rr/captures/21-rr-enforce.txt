@@ -1,0 +1,11 @@
+===== R2: ENFORCE (suspends with receipts) =====
+18:26:33.669 UTC
+[2026-09-14T18:26:33.826+00:00] rr-poc r2 start rule=suspend-running-2m mode=Enforce reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:26:34.226+00:00] receipt Intended: rr-33e597e6-e0-enf-1 (trainer-e)
+[2026-09-14T18:26:34.539+00:00] receipt Executed: rr-33e597e6-e0-enf-2 (trainer-e)
+[2026-09-14T18:26:34.670+00:00] receipt Intended: rr-048f7fd5-e0-enf-3 (trainer-f)
+[2026-09-14T18:26:34.880+00:00] receipt Executed: rr-048f7fd5-e0-enf-4 (trainer-f)
+[2026-09-14T18:26:40.261+00:00] max loops reached (2), exiting
+trainer-b suspend=true
+trainer-e suspend=true
+trainer-f suspend=true

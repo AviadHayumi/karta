@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# The Kyverno side of the comparison: suspend ai-team Jobs that the karta
+# exporter reports as Running for 2+ minutes. All predicates sit in
+# targetMatchConditions because admission matchConditions do not scope the
+# background path (executed Experiment E).
+apiVersion: policies.kyverno.io/v1beta1
+kind: MutatingPolicy
+metadata:
+  name: metric-suspend-running
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  evaluation:
+    admission:
+      enabled: false
+    mutateExisting:
+      enabled: true
+  targetMatchConditions:
+    - name: in-ai-team
+      expression: "object.metadata.namespace == 'ai-team'"
+    - name: not-already-suspended
+      expression: "!object.spec.?suspend.orValue(false)"
+    - name: exporter-says-running-2m
+      expression: >-
+        object.metadata.name in
+        globalContext.Get('running-2m', 'data.result[].metric.workload')
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          [JSONPatch{op: 'add', path: '/spec/suspend', value: true}]

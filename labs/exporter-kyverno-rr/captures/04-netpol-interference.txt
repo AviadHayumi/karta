@@ -1,0 +1,5 @@
+NAMESPACE      NAME           POD-SELECTOR   AGE
+ai-team        default-deny   <none>         86s
+karta-system   default-deny   <none>         86s
+monitoring     default-deny   <none>         86s
+team-alpha     default-deny   <none>         51m

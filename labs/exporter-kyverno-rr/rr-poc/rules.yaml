@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# RuntimeRule prototype shape: filter / condition / action, plus the
+# execution-protocol knobs the comparison is about.
+apiVersion: rules.karta.run.ai/v1alpha1
+kind: RuntimeRule
+metadata:
+  name: suspend-running-2m
+spec:
+  filter:
+    namespaces: [ai-team]
+    workloadKinds: [Job, CronJob, Deployment]
+  condition:
+    # same fact family the kyverno policy consumed
+    promql: min_over_time(karta_workload_status{namespace="ai-team",phase="Running"}[2m]) == 1
+  action:
+    type: Suspend            # resolved per kind via its Karta suspendDefinition
+  mode: Enforce               # Observe writes WouldAct receipts and never patches
+  allowance:
+    actionsPerEpoch: 1        # act once per allowance epoch
+    reArmOnResume: false      # a user resume does NOT re-arm; escalate instead
+  budget:
+    maxActionsPerLoop: 2

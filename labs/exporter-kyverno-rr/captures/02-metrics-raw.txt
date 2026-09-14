@@ -1,0 +1,471 @@
+# HELP go_gc_duration_seconds A summary of the wall-time pause (stop-the-world) duration in garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 5.5834e-05
+go_gc_duration_seconds{quantile="0.25"} 0.000518667
+go_gc_duration_seconds{quantile="0.5"} 0.000956001
+go_gc_duration_seconds{quantile="0.75"} 0.002269125
+go_gc_duration_seconds{quantile="1"} 0.008691542
+go_gc_duration_seconds_sum 0.019425128
+go_gc_duration_seconds_count 12
+# HELP go_gc_gogc_percent Heap size target percentage configured by the user, otherwise 100. This value is set by the GOGC environment variable, and the runtime/debug.SetGCPercent function. Sourced from /gc/gogc:percent.
+# TYPE go_gc_gogc_percent gauge
+go_gc_gogc_percent 100
+# HELP go_gc_gomemlimit_bytes Go runtime memory limit configured by the user, otherwise math.MaxInt64. This value is set by the GOMEMLIMIT environment variable, and the runtime/debug.SetMemoryLimit function. Sourced from /gc/gomemlimit:bytes.
+# TYPE go_gc_gomemlimit_bytes gauge
+go_gc_gomemlimit_bytes 9.223372036854776e+18
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 81
+# HELP go_info Information about the Go environment.
+# TYPE go_info gauge
+go_info{version="go1.26.3"} 1
+# HELP go_memstats_alloc_bytes Number of bytes allocated in heap and currently in use. Equals to /memory/classes/heap/objects:bytes.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes 4.063912e+06
+# HELP go_memstats_alloc_bytes_total Total number of bytes allocated in heap until now, even if released already. Equals to /gc/heap/allocs:bytes.
+# TYPE go_memstats_alloc_bytes_total counter
+go_memstats_alloc_bytes_total 2.79694e+07
+# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table. Equals to /memory/classes/profiling/buckets:bytes.
+# TYPE go_memstats_buck_hash_sys_bytes gauge
+go_memstats_buck_hash_sys_bytes 1.445496e+06
+# HELP go_memstats_frees_total Total number of heap objects frees. Equals to /gc/heap/frees:objects + /gc/heap/tiny/allocs:objects.
+# TYPE go_memstats_frees_total counter
+go_memstats_frees_total 167595
+# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata. Equals to /memory/classes/metadata/other:bytes.
+# TYPE go_memstats_gc_sys_bytes gauge
+go_memstats_gc_sys_bytes 3.882752e+06
+# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and currently in use, same as go_memstats_alloc_bytes. Equals to /memory/classes/heap/objects:bytes.
+# TYPE go_memstats_heap_alloc_bytes gauge
+go_memstats_heap_alloc_bytes 4.063912e+06
+# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used. Equals to /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
+# TYPE go_memstats_heap_idle_bytes gauge
+go_memstats_heap_idle_bytes 4.374528e+06
+# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes
+# TYPE go_memstats_heap_inuse_bytes gauge
+go_memstats_heap_inuse_bytes 6.79936e+06
+# HELP go_memstats_heap_objects Number of currently allocated objects. Equals to /gc/heap/objects:objects.
+# TYPE go_memstats_heap_objects gauge
+go_memstats_heap_objects 30119
+# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS. Equals to /memory/classes/heap/released:bytes.
+# TYPE go_memstats_heap_released_bytes gauge
+go_memstats_heap_released_bytes 3.35872e+06
+# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes + /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
+# TYPE go_memstats_heap_sys_bytes gauge
+go_memstats_heap_sys_bytes 1.1173888e+07
+# HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
+# TYPE go_memstats_last_gc_time_seconds gauge
+go_memstats_last_gc_time_seconds 1.7894066531353705e+09
+# HELP go_memstats_mallocs_total Total number of heap objects allocated, both live and gc-ed. Semantically a counter version for go_memstats_heap_objects gauge. Equals to /gc/heap/allocs:objects + /gc/heap/tiny/allocs:objects.
+# TYPE go_memstats_mallocs_total counter
+go_memstats_mallocs_total 197714
+# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures. Equals to /memory/classes/metadata/mcache/inuse:bytes.
+# TYPE go_memstats_mcache_inuse_bytes gauge
+go_memstats_mcache_inuse_bytes 32144
+# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system. Equals to /memory/classes/metadata/mcache/inuse:bytes + /memory/classes/metadata/mcache/free:bytes.
+# TYPE go_memstats_mcache_sys_bytes gauge
+go_memstats_mcache_sys_bytes 32144
+# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures. Equals to /memory/classes/metadata/mspan/inuse:bytes.
+# TYPE go_memstats_mspan_inuse_bytes gauge
+go_memstats_mspan_inuse_bytes 209600
+# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system. Equals to /memory/classes/metadata/mspan/inuse:bytes + /memory/classes/metadata/mspan/free:bytes.
+# TYPE go_memstats_mspan_sys_bytes gauge
+go_memstats_mspan_sys_bytes 228480
+# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place. Equals to /gc/heap/goal:bytes.
+# TYPE go_memstats_next_gc_bytes gauge
+go_memstats_next_gc_bytes 8.208746e+06
+# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations. Equals to /memory/classes/other:bytes.
+# TYPE go_memstats_other_sys_bytes gauge
+go_memstats_other_sys_bytes 1.458576e+06
+# HELP go_memstats_stack_inuse_bytes Number of bytes obtained from system for stack allocator in non-CGO environments. Equals to /memory/classes/heap/stacks:bytes.
+# TYPE go_memstats_stack_inuse_bytes gauge
+go_memstats_stack_inuse_bytes 1.409024e+06
+# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator. Equals to /memory/classes/heap/stacks:bytes + /memory/classes/os-stacks:bytes.
+# TYPE go_memstats_stack_sys_bytes gauge
+go_memstats_stack_sys_bytes 1.409024e+06
+# HELP go_memstats_sys_bytes Number of bytes obtained from system. Equals to /memory/classes/total:byte.
+# TYPE go_memstats_sys_bytes gauge
+go_memstats_sys_bytes 1.963036e+07
+# HELP go_sched_gomaxprocs_threads The current runtime.GOMAXPROCS setting, or the number of operating system threads that can execute user-level Go code simultaneously. Sourced from /sched/gomaxprocs:threads.
+# TYPE go_sched_gomaxprocs_threads gauge
+go_sched_gomaxprocs_threads 14
+# HELP go_threads Number of OS threads created.
+# TYPE go_threads gauge
+go_threads 15
+# HELP karta_exporter_kartas Karta definitions known to the exporter, by validity and reason.
+# TYPE karta_exporter_kartas gauge
+karta_exporter_kartas{reason="",valid="true"} 18
+karta_exporter_kartas{reason="invalid",valid="false"} 0
+karta_exporter_kartas{reason="shadowed",valid="false"} 0
+# HELP karta_exporter_last_event_timestamp_seconds Unix timestamp of the last processed watch event. A freshness witness.
+# TYPE karta_exporter_last_event_timestamp_seconds gauge
+karta_exporter_last_event_timestamp_seconds 1.7894066551482046e+09
+# HELP karta_exporter_unattributed_pods Pods the exporter could not fully attribute, by reason.
+# TYPE karta_exporter_unattributed_pods gauge
+karta_exporter_unattributed_pods{reason="jq_error"} 0
+karta_exporter_unattributed_pods{reason="no_owner"} 6
+karta_exporter_unattributed_pods{reason="unknown_instance"} 0
+# HELP karta_exporter_workloads Number of Karta-described workloads currently tracked.
+# TYPE karta_exporter_workloads gauge
+karta_exporter_workloads 18
+# HELP karta_pod_workload_info Pod to workload, component, and component instance attribution derived from the Karta definition. Value is always 1.
+# TYPE karta_pod_workload_info gauge
+karta_pod_workload_info{component="deployment",component_instance="",namespace="default",pod="dev-tools-68fb467f4c-58z79",replica="",uid="b59a1286-b50f-4b24-9517-9707c4dea002",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="default",pod="no-team-848c74d8fb-pl2sl",replica="",uid="2aded3c8-0b2b-4e95-914a-d0b321d32d49",workload="no-team",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="default",pod="plain-app-664b4b94f4-ttsqg",replica="",uid="47f19b2d-fcfa-4a9d-b0dc-9ad37561b8f9",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="default",pod="sloppy-api-5d7fd44bb8-bvwgh",replica="",uid="80bd5b7d-76a1-4626-8c91-459eb5f1abe4",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="karta-system",pod="karta-exporter-5f77747cdf-g9l76",replica="",uid="5587ceb6-14c3-47ca-91be-471fc7f37125",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="kube-system",pod="coredns-66bc5c9577-7k6st",replica="",uid="4832fb9e-68f6-48ec-bfcf-978e099237ab",workload="coredns",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="kube-system",pod="coredns-66bc5c9577-mm9sg",replica="",uid="ecab1d96-9640-44ff-9d90-a77b1deaaa66",workload="coredns",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="kyverno",pod="kyverno-admission-controller-7748c9cd66-qmqvx",replica="",uid="1e29ccc7-e88b-43f9-8aa7-c9d59d5d0821",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="kyverno",pod="kyverno-background-controller-5f7b6cf75f-7t4pl",replica="",uid="365e92de-f30d-4947-beee-7472302b964a",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="kyverno",pod="kyverno-cleanup-controller-846dc99dfb-qxq8k",replica="",uid="f18cb247-a6e2-4875-b6a6-3014c8cec214",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="kyverno",pod="kyverno-reports-controller-7c68d84f5-llv58",replica="",uid="fc881cbf-8bb8-4701-8bfd-a2355e24118a",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="local-path-storage",pod="local-path-provisioner-7b8c8ddbd6-2mjxg",replica="",uid="5af1e7e7-f2c1-40c4-952f-c6d2f12c0aa3",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="deployment",component_instance="",namespace="monitoring",pod="prometheus-6d64c657fd-57j88",replica="",uid="c1af7f34-c269-4023-8dad-cbebde89671d",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 1
+karta_pod_workload_info{component="job",component_instance="",namespace="ai-team",pod="trainer-a-blb28",replica="",uid="63f8d1b6-d7d2-4201-84fd-6ebd50e56685",workload="trainer-a",workload_group="batch",workload_kind="Job"} 1
+karta_pod_workload_info{component="job",component_instance="",namespace="ai-team",pod="trainer-b-xszfp",replica="",uid="70836fc0-acfc-470f-a5f2-6a1f6ee0fd0c",workload="trainer-b",workload_group="batch",workload_kind="Job"} 1
+karta_pod_workload_info{component="job",component_instance="",namespace="default",pod="quick-train-4xw8d",replica="",uid="8840e15b-feeb-4cab-b70d-9c383e9ab296",workload="quick-train",workload_group="batch",workload_kind="Job"} 1
+karta_pod_workload_info{component="job",component_instance="",namespace="kyverno",pod="kyverno-migrate-resources-8nnx7",replica="",uid="846ddc25-dd84-47fe-a565-0af7f73bbeca",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 1
+# HELP karta_workload_component_pods Observed pod count per component instance, broken down by pod phase.
+# TYPE karta_workload_component_pods gauge
+karta_workload_component_pods{component="cronjob",component_instance="",namespace="ai-team",phase="Failed",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_component_pods{component="cronjob",component_instance="",namespace="ai-team",phase="Pending",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_component_pods{component="cronjob",component_instance="",namespace="ai-team",phase="Running",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_component_pods{component="cronjob",component_instance="",namespace="ai-team",phase="Succeeded",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_component_pods{component="cronjob",component_instance="",namespace="ai-team",phase="Unknown",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Failed",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Failed",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Failed",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Failed",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Pending",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Pending",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Pending",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Pending",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Running",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Running",workload="no-team",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Running",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Running",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Succeeded",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Succeeded",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Succeeded",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Succeeded",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Unknown",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Unknown",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Unknown",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Unknown",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="karta-system",phase="Failed",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="karta-system",phase="Pending",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="karta-system",phase="Running",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="karta-system",phase="Succeeded",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="karta-system",phase="Unknown",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kube-system",phase="Failed",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kube-system",phase="Pending",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kube-system",phase="Running",workload="coredns",workload_group="apps",workload_kind="Deployment"} 2
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kube-system",phase="Succeeded",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kube-system",phase="Unknown",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Failed",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Failed",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Failed",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Failed",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Pending",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Pending",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Pending",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Pending",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Running",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Running",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Running",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Running",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Succeeded",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Succeeded",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Succeeded",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Succeeded",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Unknown",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Unknown",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Unknown",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="kyverno",phase="Unknown",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="local-path-storage",phase="Failed",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="local-path-storage",phase="Pending",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="local-path-storage",phase="Running",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="local-path-storage",phase="Succeeded",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="local-path-storage",phase="Unknown",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="monitoring",phase="Failed",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="monitoring",phase="Pending",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="monitoring",phase="Running",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_pods{component="deployment",component_instance="",namespace="monitoring",phase="Succeeded",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="monitoring",phase="Unknown",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Failed",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Failed",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Pending",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Pending",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Running",workload="trainer-a",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Running",workload="trainer-b",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Succeeded",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Succeeded",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Unknown",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Unknown",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Failed",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Failed",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Pending",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Pending",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Running",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Running",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Succeeded",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Succeeded",workload="quick-train",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Unknown",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="default",phase="Unknown",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="kyverno",phase="Failed",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="kyverno",phase="Pending",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="kyverno",phase="Running",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_component_pods{component="job",component_instance="",namespace="kyverno",phase="Succeeded",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_pods{component="job",component_instance="",namespace="kyverno",phase="Unknown",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+# HELP karta_workload_component_replicas Desired replicas per component instance, from the workload spec.
+# TYPE karta_workload_component_replicas gauge
+karta_workload_component_replicas{component="cronjob",component_instance="",namespace="ai-team",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="default",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="default",workload="no-team",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="default",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="default",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="karta-system",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="kube-system",workload="coredns",workload_group="apps",workload_kind="Deployment"} 2
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="kyverno",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="kyverno",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="kyverno",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="kyverno",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="local-path-storage",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="monitoring",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="job",component_instance="",namespace="ai-team",workload="trainer-a",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_replicas{component="job",component_instance="",namespace="ai-team",workload="trainer-b",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_replicas{component="job",component_instance="",namespace="default",workload="lab-training",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_replicas{component="job",component_instance="",namespace="default",workload="quick-train",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_replicas{component="job",component_instance="",namespace="kyverno",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 1
+# HELP karta_workload_generation The workload's metadata.generation. A step change marks a spec change.
+# TYPE karta_workload_generation gauge
+karta_workload_generation{namespace="ai-team",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 1
+karta_workload_generation{namespace="ai-team",workload="trainer-a",workload_group="batch",workload_kind="Job"} 1
+karta_workload_generation{namespace="ai-team",workload="trainer-b",workload_group="batch",workload_kind="Job"} 1
+karta_workload_generation{namespace="default",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="default",workload="lab-training",workload_group="batch",workload_kind="Job"} 8
+karta_workload_generation{namespace="default",workload="no-team",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="default",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="default",workload="quick-train",workload_group="batch",workload_kind="Job"} 1
+karta_workload_generation{namespace="default",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="karta-system",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="kube-system",workload="coredns",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="kyverno",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 2
+karta_workload_generation{namespace="kyverno",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 2
+karta_workload_generation{namespace="kyverno",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="kyverno",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 1
+karta_workload_generation{namespace="kyverno",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 2
+karta_workload_generation{namespace="local-path-storage",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="monitoring",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 1
+# HELP karta_workload_info Identity and provenance of a Karta-described workload. Value is always 1.
+# TYPE karta_workload_info gauge
+karta_workload_info{karta="apps-deployment-v1",namespace="default",workload="dev-tools",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="default",workload="no-team",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="default",workload="plain-app",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="default",workload="sloppy-api",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="karta-system",workload="karta-exporter",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="kube-system",workload="coredns",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="kyverno",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="kyverno",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="kyverno",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="kyverno",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="local-path-storage",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="monitoring",workload="prometheus",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="batch-cronjob-v1",namespace="ai-team",workload="nightly-report",workload_group="batch",workload_kind="CronJob",workload_version="v1"} 1
+karta_workload_info{karta="batch-job-v1",namespace="ai-team",workload="trainer-a",workload_group="batch",workload_kind="Job",workload_version="v1"} 1
+karta_workload_info{karta="batch-job-v1",namespace="ai-team",workload="trainer-b",workload_group="batch",workload_kind="Job",workload_version="v1"} 1
+karta_workload_info{karta="batch-job-v1",namespace="default",workload="lab-training",workload_group="batch",workload_kind="Job",workload_version="v1"} 1
+karta_workload_info{karta="batch-job-v1",namespace="default",workload="quick-train",workload_group="batch",workload_kind="Job",workload_version="v1"} 1
+karta_workload_info{karta="batch-job-v1",namespace="kyverno",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job",workload_version="v1"} 1
+# HELP karta_workload_status Normalized workload status. One series per phase; several phases can be 1 at the same time.
+# TYPE karta_workload_status gauge
+karta_workload_status{namespace="ai-team",phase="Completed",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Completed",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Completed",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Degraded",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Degraded",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Degraded",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Failed",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Failed",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Failed",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Initializing",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 1
+karta_workload_status{namespace="ai-team",phase="Initializing",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Initializing",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Resuming",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Resuming",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Resuming",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Running",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Running",workload="trainer-a",workload_group="batch",workload_kind="Job"} 1
+karta_workload_status{namespace="ai-team",phase="Running",workload="trainer-b",workload_group="batch",workload_kind="Job"} 1
+karta_workload_status{namespace="ai-team",phase="Suspended",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Suspended",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Suspended",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Suspending",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Suspending",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Suspending",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Undefined",workload="nightly-report",workload_group="batch",workload_kind="CronJob"} 0
+karta_workload_status{namespace="ai-team",phase="Undefined",workload="trainer-a",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="ai-team",phase="Undefined",workload="trainer-b",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Completed",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Completed",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Completed",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Completed",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Completed",workload="quick-train",workload_group="batch",workload_kind="Job"} 1
+karta_workload_status{namespace="default",phase="Completed",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Running",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="default",phase="Running",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Running",workload="no-team",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="default",phase="Running",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="default",phase="Running",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Running",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="default",phase="Suspended",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspended",workload="lab-training",workload_group="batch",workload_kind="Job"} 1
+karta_workload_status{namespace="default",phase="Suspended",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspended",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspended",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Suspended",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="dev-tools",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="lab-training",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="no-team",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="plain-app",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="quick-train",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="sloppy-api",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Completed",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Degraded",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Failed",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Initializing",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Resuming",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Running",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="karta-system",phase="Suspended",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Suspending",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="karta-system",phase="Undefined",workload="karta-exporter",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Completed",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Degraded",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Failed",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Initializing",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Resuming",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Running",workload="coredns",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="kube-system",phase="Suspended",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Suspending",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kube-system",phase="Undefined",workload="coredns",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Completed",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Completed",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Completed",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Completed",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 1
+karta_workload_status{namespace="kyverno",phase="Completed",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Degraded",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Degraded",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Degraded",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Degraded",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Degraded",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Failed",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Failed",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Failed",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Failed",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Failed",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Initializing",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Initializing",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Initializing",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Initializing",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Initializing",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Resuming",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Resuming",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Resuming",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Resuming",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Resuming",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Running",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="kyverno",phase="Running",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="kyverno",phase="Running",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="kyverno",phase="Running",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Running",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="kyverno",phase="Suspended",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Suspended",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Suspended",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Suspended",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Suspended",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Suspending",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Suspending",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Suspending",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Suspending",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Suspending",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Undefined",workload="kyverno-admission-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Undefined",workload="kyverno-background-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Undefined",workload="kyverno-cleanup-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="kyverno",phase="Undefined",workload="kyverno-migrate-resources",workload_group="batch",workload_kind="Job"} 0
+karta_workload_status{namespace="kyverno",phase="Undefined",workload="kyverno-reports-controller",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Completed",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Degraded",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Failed",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Initializing",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Resuming",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Running",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="local-path-storage",phase="Suspended",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Suspending",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="local-path-storage",phase="Undefined",workload="local-path-provisioner",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Completed",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Degraded",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Failed",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Initializing",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Resuming",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Running",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="monitoring",phase="Suspended",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Suspending",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="monitoring",phase="Undefined",workload="prometheus",workload_group="apps",workload_kind="Deployment"} 0
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 0.07
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 1.048576e+06
+# HELP process_network_receive_bytes_total Number of bytes received by the process over the network.
+# TYPE process_network_receive_bytes_total counter
+process_network_receive_bytes_total 1.259443e+06
+# HELP process_network_transmit_bytes_total Number of bytes sent by the process over the network.
+# TYPE process_network_transmit_bytes_total counter
+process_network_transmit_bytes_total 38831
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 9
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 3.26656e+07
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.78940664637e+09
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 1.387450368e+09
+# HELP process_virtual_memory_max_bytes Maximum amount of virtual memory available in bytes.
+# TYPE process_virtual_memory_max_bytes gauge
+process_virtual_memory_max_bytes 1.8446744073709552e+19

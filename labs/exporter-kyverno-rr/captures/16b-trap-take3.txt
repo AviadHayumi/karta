@@ -1,0 +1,5 @@
+[18:09:09.335 UTC] TAKE 3. current: suspend=false startTime='2026-09-14T17:59:23Z'
+[18:09:09.408 UTC] step 1: suspend again to let the wedged transition complete
+[18:12:11.306 UTC] startTime never cleared; giving controller 60s more anyway
+[18:13:11.316 UTC] step 2: USER RESUME (safe, after settle)
+[18:15:11.955 UTC] job did not go active - wedged again, aborting take 3

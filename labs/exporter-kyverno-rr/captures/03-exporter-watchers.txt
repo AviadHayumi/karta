@@ -1,0 +1,25 @@
+time=2026-09-14T17:24:06.783Z level=INFO msg="karta exporter started" metricsAddr=:8080 fullPodCache=false useCatalog=true
+time=2026-09-14T17:24:07.888Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="nvidia.com/v1beta1, Kind=DynamoGraphDeployment" error="no matches for kind \"DynamoGraphDeployment\" in version \"nvidia.com/v1beta1\""
+time=2026-09-14T17:24:07.891Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="apps.nvidia.com/v1alpha1, Kind=NIMCache" error="no matches for kind \"NIMCache\" in version \"apps.nvidia.com/v1alpha1\""
+time=2026-09-14T17:24:07.892Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="kubeflow.org/v1, Kind=PyTorchJob" error="no matches for kind \"PyTorchJob\" in version \"kubeflow.org/v1\""
+time=2026-09-14T17:24:07.892Z level=INFO msg="started watcher" gvk="apps/v1, Kind=Deployment" resource="apps/v1, Resource=deployments" root=true
+time=2026-09-14T17:24:07.895Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="jobset.x-k8s.io/v1alpha2, Kind=JobSet" error="no matches for kind \"JobSet\" in version \"jobset.x-k8s.io/v1alpha2\""
+time=2026-09-14T17:24:07.900Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="ray.io/v1, Kind=RayCluster" error="no matches for kind \"RayCluster\" in version \"ray.io/v1\""
+time=2026-09-14T17:24:07.903Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="serving.kserve.io/v1beta1, Kind=InferenceService" error="no matches for kind \"InferenceService\" in version \"serving.kserve.io/v1beta1\""
+time=2026-09-14T17:24:07.906Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="serving.knative.dev/v1, Kind=Service" error="no matches for kind \"Service\" in version \"serving.knative.dev/v1\""
+time=2026-09-14T17:24:07.909Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="ray.io/v1, Kind=RayService" error="no matches for kind \"RayService\" in version \"ray.io/v1\""
+time=2026-09-14T17:24:07.910Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="apps.nvidia.com/v1alpha1, Kind=NIMService" error="no matches for kind \"NIMService\" in version \"apps.nvidia.com/v1alpha1\""
+time=2026-09-14T17:24:07.913Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="ray.io/v1, Kind=RayJob" error="no matches for kind \"RayJob\" in version \"ray.io/v1\""
+time=2026-09-14T17:24:07.915Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="leaderworkerset.x-k8s.io/v1, Kind=LeaderWorkerSet" error="no matches for kind \"LeaderWorkerSet\" in version \"leaderworkerset.x-k8s.io/v1\""
+time=2026-09-14T17:24:07.915Z level=INFO msg="started watcher" gvk="batch/v1, Kind=Job" resource="batch/v1, Resource=jobs" root=true
+time=2026-09-14T17:24:07.916Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="milvus.io/v1beta1, Kind=Milvus" error="no matches for kind \"Milvus\" in version \"milvus.io/v1beta1\""
+time=2026-09-14T17:24:07.916Z level=INFO msg="started watcher" gvk="apps/v1, Kind=StatefulSet" resource="apps/v1, Resource=statefulsets" root=true
+time=2026-09-14T17:24:07.920Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="kubeflow.org/v2beta1, Kind=MPIJob" error="no matches for kind \"MPIJob\" in version \"kubeflow.org/v2beta1\""
+time=2026-09-14T17:24:07.920Z level=INFO msg="started watcher" gvk="batch/v1, Kind=CronJob" resource="batch/v1, Resource=cronjobs" root=true
+time=2026-09-14T17:24:07.922Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="grove.io/v1alpha1, Kind=PodCliqueSet" error="no matches for kind \"PodCliqueSet\" in version \"grove.io/v1alpha1\""
+time=2026-09-14T17:24:07.923Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="serving.knative.dev/v1, Kind=Revision" error="no matches for kind \"Revision\" in version \"serving.knative.dev/v1\""
+time=2026-09-14T17:24:07.926Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="scheduler.grove.io/v1alpha1, Kind=PodGang" error="no matches for kind \"PodGang\" in version \"scheduler.grove.io/v1alpha1\""
+time=2026-09-14T17:24:07.927Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="nvidia.com/v1beta1, Kind=DynamoComponentDeployment" error="no matches for kind \"DynamoComponentDeployment\" in version \"nvidia.com/v1beta1\""
+time=2026-09-14T17:24:07.928Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="grove.io/v1alpha1, Kind=PodClique" error="no matches for kind \"PodClique\" in version \"grove.io/v1alpha1\""
+time=2026-09-14T17:24:07.930Z level=ERROR msg="cannot map kind to a resource, skipping watcher" gvk="grove.io/v1alpha1, Kind=PodCliqueScalingGroup" error="no matches for kind \"PodCliqueScalingGroup\" in version \"grove.io/v1alpha1\""
+time=2026-09-14T17:24:07.931Z level=INFO msg="started watcher" gvk="apps/v1, Kind=ReplicaSet" resource="apps/v1, Resource=replicasets" root=false

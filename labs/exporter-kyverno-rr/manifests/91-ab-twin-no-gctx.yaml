@@ -1,0 +1,25 @@
+apiVersion: policies.kyverno.io/v1beta1
+kind: MutatingPolicy
+metadata:
+  name: ab-suspend-no-gctx
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  evaluation:
+    admission:
+      enabled: false
+    mutateExisting:
+      enabled: true
+  targetMatchConditions:
+    - name: only-trainer-b
+      expression: "object.metadata.namespace == 'ai-team' && object.metadata.name == 'trainer-b'"
+    - name: not-already-suspended
+      expression: "!object.spec.?suspend.orValue(false)"
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: "[JSONPatch{op: 'add', path: '/spec/suspend', value: true}]"

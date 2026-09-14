@@ -1,0 +1,40 @@
+repro start 2026-09-14T18:24:47+00:00
+namespace/rr-cel-error created
+job.batch/cel-error-job created
+--- metrics BEFORE (error counts for rr-cel-runtime-error) ---
+(none expected)
+mutatingpolicy.policies.kyverno.io/rr-cel-runtime-error created
+--- UR watch during 150s (policy event + 2 scan ticks) ---
+EVENT      NAME       POLICY                 RULETYPE     RESOURCEKIND   RESOURCENAME   RESOURCENAMESPACE   STATUS   AGE
+ADDED      ur-97xsp   rr-cel-runtime-error   cel-mutate                                                              0s
+MODIFIED   ur-97xsp   rr-cel-runtime-error   cel-mutate                                                     Pending   0s
+MODIFIED   ur-97xsp   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+DELETED    ur-97xsp   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+ADDED      ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                                 0s
+MODIFIED   ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                     Pending     0s
+MODIFIED   ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+DELETED    ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+ADDED      ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                                 0s
+MODIFIED   ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                     Pending     0s
+MODIFIED   ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                     Completed   1s
+DELETED    ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                     Completed   1s
+ADDED      ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                                 0s
+MODIFIED   ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                     Pending     0s
+MODIFIED   ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+DELETED    ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+--- job after ---
+suspend=false
+--- policy status ---
+{"conditions":[{"lastTransitionTime":"2026-09-14T18:24:48Z","message":"Policy is ready for reporting.","reason":"Succeeded","status":"True","type":"RBACPermissionsGranted"}],"message":"","ready":true}
+--- events in rr-cel-error ---
+2m31s   Normal    Scheduled          pod/cel-error-job-jgjcd   Successfully assigned rr-cel-error/cel-error-job-jgjcd to kyverno-lab2-control-plane
+2m30s   Normal    Pulled             pod/cel-error-job-jgjcd   Container image "busybox:1.36" already present on machine
+2m30s   Normal    Created            pod/cel-error-job-jgjcd   Created container: worker
+2m30s   Normal    Started            pod/cel-error-job-jgjcd   Started container worker
+2m31s   Normal    SuccessfulCreate   job/cel-error-job         Created pod: cel-error-job-jgjcd
+2m30s   Warning   PolicyViolation    job/cel-error-job         policy rr-cel-runtime-error/ fail: mutation is not applied
+2m      Warning   PolicyViolation    job/cel-error-job         policy rr-cel-runtime-error/ fail: mutation is not applied
+--- bg controller log lines mentioning the policy ---
+(above: empty means no error logged)
+--- metrics AFTER ---
+kyverno_mutating_policy_execution_duration_seconds_count{execution_cause="background_scan",otel_scope_name="kyverno",otel_scope_schema_url="",otel_scope_version="",policy_background_mode="true",policy_name="rr-cel-runtime-error",policy_namespace="",resource_kind="Job",result="error"} 4

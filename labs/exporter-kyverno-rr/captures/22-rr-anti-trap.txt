@@ -1,0 +1,10 @@
+===== R3: user resumes trainer-f; RR must NOT re-suspend =====
+18:28:43.906 UTC
+job.batch/trainer-f patched
+running RR loop for 300s across the window refill...
+[2026-09-14T18:28:44.208+00:00] rr-poc r2 start rule=suspend-running-2m mode=Enforce reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:28:44.598+00:00] receipt ResumeDetected: rr-048f7fd5-e1-trap-1 (trainer-f)
+[2026-09-14T18:30:48.432+00:00] receipt EscalatedNeedsHuman: rr-048f7fd5-e1-trap-2 (trainer-f)
+[2026-09-14T18:33:43.568+00:00] max loops reached (30), exiting
+18:33:44.053 UTC
+trainer-f suspend=false active=1

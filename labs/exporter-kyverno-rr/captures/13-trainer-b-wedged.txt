@@ -1,0 +1,106 @@
+Name:             trainer-b
+Namespace:        ai-team
+Selector:         batch.kubernetes.io/controller-uid=5a47ad1f-6468-4a8e-916f-28e5f2c48d6d
+Labels:           team=fox
+Annotations:      <none>
+Parallelism:      1
+Completions:      1
+Completion Mode:  NonIndexed
+Suspend:          false
+Backoff Limit:    0
+Start Time:       Mon, 14 Sep 2026 20:24:06 +0300
+Pods Statuses:    0 Active (0 Ready) / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  batch.kubernetes.io/controller-uid=5a47ad1f-6468-4a8e-916f-28e5f2c48d6d
+           batch.kubernetes.io/job-name=trainer-b
+           controller-uid=5a47ad1f-6468-4a8e-916f-28e5f2c48d6d
+           job-name=trainer-b
+  Containers:
+   train:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      sleep 86400
+    Environment:   <none>
+    Mounts:        <none>
+  Volumes:         <none>
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Events:
+  Type     Reason            Age                   From            Message
+  ----     ------            ----                  ----            -------
+  Warning  PolicyViolation   22m                   kyverno-scan    policy metric-suspend-running/ fail: mutation is not applied
+  Warning  PolicyViolation   21m                   kyverno-scan    policy metric-suspend-running/ fail: mutation is not applied
+  Warning  PolicyViolation   14m                   kyverno-scan    policy dbg-gctx/evaluation error: failed to evaluate policy: failed to get global reference: no data available
+  Warning  PolicyViolation   9m55s                 kyverno-scan    policy metric-suspend-running/ fail: mutation is not applied
+  Warning  PolicyViolation   9m25s                 kyverno-scan    policy metric-suspend-running/ fail: mutation is not applied
+  Warning  PolicyViolation   8m5s                  kyverno-scan    policy metric-suspend-running/ fail: mutation is not applied
+  Normal   SuccessfulCreate  29m                   job-controller  Created pod: trainer-b-xszfp
+  Normal   SuccessfulDelete  16m                   job-controller  Deleted pod: trainer-b-xszfp
+  Normal   Suspended         16m                   job-controller  Job suspended
+  Normal   SuccessfulCreate  9m56s                 job-controller  Created pod: trainer-b-2lkbp
+  Normal   Resumed           53s (x15 over 9m56s)  job-controller  Job resumed
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"batch/v1","kind":"Job","metadata":{"annotations":{},"labels":{"team":"fox"},"name":"trainer-b","namespace":"ai-team"},"spec":{"backoffLimit":0,"suspend":false,"template":{"spec":{"containers":[{"command":["sh","-c","sleep 86400"],"image":"busybox:1.36","name":"train"}],"restartPolicy":"Never"}}}}
+  creationTimestamp: "2026-09-14T17:24:06Z"
+  generation: 3
+  labels:
+    team: fox
+  name: trainer-b
+  namespace: ai-team
+  resourceVersion: "18554"
+  uid: 5a47ad1f-6468-4a8e-916f-28e5f2c48d6d
+spec:
+  backoffLimit: 0
+  completionMode: NonIndexed
+  completions: 1
+  manualSelector: false
+  parallelism: 1
+  podReplacementPolicy: TerminatingOrFailed
+  selector:
+    matchLabels:
+      batch.kubernetes.io/controller-uid: 5a47ad1f-6468-4a8e-916f-28e5f2c48d6d
+  suspend: false
+  template:
+    metadata:
+      labels:
+        batch.kubernetes.io/controller-uid: 5a47ad1f-6468-4a8e-916f-28e5f2c48d6d
+        batch.kubernetes.io/job-name: trainer-b
+        controller-uid: 5a47ad1f-6468-4a8e-916f-28e5f2c48d6d
+        job-name: trainer-b
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - sleep 86400
+        image: busybox:1.36
+        imagePullPolicy: IfNotPresent
+        name: train
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  conditions:
+  - lastProbeTime: "2026-09-14T17:36:45Z"
+    lastTransitionTime: "2026-09-14T17:36:45Z"
+    message: Job suspended
+    reason: JobSuspended
+    status: "True"
+    type: Suspended
+  ready: 0
+  startTime: "2026-09-14T17:24:06Z"
+  terminating: 0
+  uncountedTerminatedPods: {}

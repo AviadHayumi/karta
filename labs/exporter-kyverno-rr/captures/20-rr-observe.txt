@@ -1,0 +1,11 @@
+===== R1: OBSERVE mode (2 loops) =====
+[2026-09-14T18:26:27.143+00:00] rr-poc r2 start rule=suspend-running-2m mode=Observe reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:26:27.539+00:00] receipt WouldAct: rr-33e597e6-e0-obs-1 (trainer-e)
+[2026-09-14T18:26:27.698+00:00] receipt WouldAct: rr-048f7fd5-e0-obs-2 (trainer-f)
+[2026-09-14T18:26:27.807+00:00] receipt SkippedNoHandle: rr-526dee83-e0-obs-3 (web-app)
+[2026-09-14T18:26:33.264+00:00] receipt WouldAct: rr-33e597e6-e0-obs-4 (trainer-e)
+[2026-09-14T18:26:33.458+00:00] receipt WouldAct: rr-048f7fd5-e0-obs-5 (trainer-f)
+[2026-09-14T18:26:33.556+00:00] max loops reached (2), exiting
+trainer-b suspend=true
+trainer-e suspend=false
+trainer-f suspend=false

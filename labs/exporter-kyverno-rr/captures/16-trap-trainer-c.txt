@@ -1,0 +1,7 @@
+[17:59:22.963 UTC] PHASE 1: create trainer-c (fresh job, backoffLimit 6)
+job.batch/trainer-c created
+[18:01:58.517 UTC] PHASE 1 DONE: engine suspended trainer-c (metric rule: Running 2m)
+[18:02:01.517 UTC] PHASE 2: USER RESUMES trainer-c (spec.suspend=false)
+job.batch/trainer-c patched
+[18:09:02.789 UTC] no re-suspension within 7m (job may be wedged; check status)
+[18:09:02.828 UTC] final: suspend=false active= ready=0

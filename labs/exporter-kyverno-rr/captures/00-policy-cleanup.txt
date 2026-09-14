@@ -1,0 +1,2 @@
+mutatingpolicy.policies.kyverno.io "default-job-deadline" deleted
+mutatingpolicy.policies.kyverno.io "lab-suspend-idle" deleted

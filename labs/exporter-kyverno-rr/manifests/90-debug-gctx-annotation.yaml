@@ -1,0 +1,25 @@
+apiVersion: policies.kyverno.io/v1beta1
+kind: MutatingPolicy
+metadata:
+  name: dbg-gctx
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  evaluation:
+    admission:
+      enabled: false
+    mutateExisting:
+      enabled: true
+  targetMatchConditions:
+    - name: only-trainer-a
+      expression: "object.metadata.namespace == 'ai-team' && object.metadata.name == 'trainer-a'"
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          [JSONPatch{op: 'add', path: '/metadata/annotations/rr-debug', value:
+          globalContext.Get('running-2m', 'data.result[].metric.workload').map(w, string(w)).join(',')}]
