@@ -14,11 +14,13 @@ source "${MODULE_DIR}/operators/_common.sh"
 # REPO_ROOT is exported by up.sh; derive it when this script is run on its own.
 REPO_ROOT="${REPO_ROOT:-$(cd "${MODULE_DIR}/../.." && pwd)}"
 
-# Names the chart renders (charts/karta/templates/_helpers.tpl). The service name is
-# also the serving-cert SAN, so the Certificate below has to match it.
-KARTA_WEBHOOK_SERVICE="karta-operator-webhook"
-KARTA_WEBHOOK_SECRET="karta-operator-webhook-cert"
-KARTA_WEBHOOK_CONFIGS="mutatingwebhookconfiguration/karta-operator-mutating validatingwebhookconfiguration/karta-operator-validating"
+# Suffixes the chart puts on karta.fullname (charts/karta/templates/_helpers.tpl). The
+# service name is also the serving-cert SAN, so the Certificate below has to match it.
+KARTA_WEBHOOK_SERVICE="${KARTA_FULLNAME}-webhook"
+KARTA_WEBHOOK_SECRET="${KARTA_FULLNAME}-webhook-cert"
+KARTA_WEBHOOK_CONFIGS="mutatingwebhookconfiguration/${KARTA_FULLNAME}-mutating validatingwebhookconfiguration/${KARTA_FULLNAME}-validating"
+# Not chart-rendered: this is the Certificate this script creates, so it does not follow
+# the fullname.
 KARTA_WEBHOOK_CERT="karta-webhook-cert"
 
 # The chart ships no Issuer or Certificate, so provisionMode=manual is only installable
@@ -86,7 +88,7 @@ wait_for_ca_injection() {
 # nothing when Karta is not installed.
 installed_webhook_mode() {
   local args
-  args="$(kubectl get deploy karta-operator -n "${KARTA_NAMESPACE}" \
+  args="$(kubectl get "deploy/${KARTA_FULLNAME}" -n "${KARTA_NAMESPACE}" \
     -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null)" || return 0
   [ -n "${args}" ] || return 0
   case "${args}" in
@@ -134,7 +136,7 @@ main() {
     --set image.repository="${IMAGE%:*}" --set image.tag="${IMAGE##*:}" \
     --set resources.limits.memory="${KARTA_OPERATOR_MEMORY}" \
     "${webhook_values[@]}" >/dev/null
-  rollout_wait "${KARTA_NAMESPACE}" deploy/karta-operator 120s
+  rollout_wait "${KARTA_NAMESPACE}" "deploy/${KARTA_FULLNAME}" 120s
   [ "${KARTA_WEBHOOK_MODE}" = "cert-manager" ] && wait_for_ca_injection
   return 0
 }
