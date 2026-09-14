@@ -1,0 +1,364 @@
+apiVersion: milvus.io/v1beta1
+kind: Milvus
+metadata:
+  annotations:
+    milvus.io/dependency-values-merged: "true"
+    milvus.io/pod-service-label-added: "true"
+  creationTimestamp: "2026-08-18T12:31:01Z"
+  finalizers:
+  - milvus.milvus.io/finalizer
+  generation: 3
+  labels:
+    milvus.io/operator-version: 1.3.7
+  name: karta-e2e-milvus
+  namespace: test-8m4bc
+  uid: 5203ee08-7610-4519-8646-3345e466cae0
+spec:
+  components:
+    cdc:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    dataCoord:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    dataNode:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    disableMetric: false
+    enableRollingUpdate: true
+    image: milvusdb/milvus:v2.6.11
+    imageUpdateMode: rollingUpgrade
+    indexCoord:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    indexNode:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    metricInterval: ""
+    mixCoord:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    paused: false
+    probes: null
+    proxy:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    queryCoord:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    queryNode:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    rollingMode: 2
+    rootCoord:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    securityContext: null
+    standalone:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      paused: false
+      probes: null
+      replicas: 1
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1Gi
+      schedulerName: karta-golden-scheduler
+      securityContext: null
+      serviceType: ClusterIP
+    streamingNode:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta.golden/pool
+                operator: In
+                values:
+                - trains
+      schedulerName: karta-golden-scheduler
+    targetPortType: string
+    updateConfigMapOnly: true
+  config:
+    dataCoord:
+      enableActiveStandby: true
+    indexCoord:
+      enableActiveStandby: true
+    queryCoord:
+      enableActiveStandby: true
+    rootCoord:
+      enableActiveStandby: true
+  dependencies:
+    customMsgStream: null
+    etcd:
+      endpoints:
+      - karta-e2e-milvus-etcd-0.karta-e2e-milvus-etcd-headless.test-8m4bc:2379
+      external: false
+      inCluster:
+        chartVersion: etcd-v8
+        deletionPolicy: Retain
+        values:
+          auth:
+            rbac:
+              create: false
+              enabled: false
+            token:
+              enabled: false
+          autoCompactionMode: revision
+          autoCompactionRetention: "1000"
+          enabled: true
+          extraEnvVars:
+          - name: ETCD_QUOTA_BACKEND_BYTES
+            value: "4294967296"
+          - name: ETCD_HEARTBEAT_INTERVAL
+            value: "500"
+          - name: ETCD_ELECTION_TIMEOUT
+            value: "2500"
+          image:
+            pullPolicy: IfNotPresent
+            repository: milvusdb/etcd
+            tag: 3.5.25-r1
+          livenessProbe:
+            enabled: true
+            timeoutSeconds: 10
+          name: etcd
+          pdb:
+            create: false
+          persistence:
+            accessMode: ReadWriteOnce
+            enabled: true
+            size: 10Gi
+            storageClass: null
+          readinessProbe:
+            enabled: true
+            periodSeconds: 20
+            timeoutSeconds: 10
+          replicaCount: 1
+          service:
+            peerPort: 2380
+            port: 2379
+            type: ClusterIP
+    kafka:
+      external: false
+    msgStreamType: woodpecker
+    natsmq:
+      persistence:
+        persistentVolumeClaim:
+          spec: null
+    pulsar:
+      endpoint: ""
+      external: false
+    rocksmq:
+      persistence:
+        persistentVolumeClaim:
+          spec: null
+    storage:
+      endpoint: karta-e2e-milvus-minio.test-8m4bc:9000
+      external: false
+      inCluster:
+        deletionPolicy: Retain
+        values:
+          accessKey: minioadmin
+          bucketName: milvus-bucket
+          enabled: true
+          existingSecret: ""
+          iamEndpoint: ""
+          image:
+            pullPolicy: IfNotPresent
+            tag: RELEASE.2024-12-18T13-15-44Z
+          livenessProbe:
+            enabled: true
+            failureThreshold: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          mode: standalone
+          name: minio
+          persistence:
+            accessMode: ReadWriteOnce
+            enabled: true
+            existingClaim: ""
+            size: 500Gi
+            storageClass: null
+          podDisruptionBudget:
+            enabled: false
+          readinessProbe:
+            enabled: true
+            failureThreshold: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
+          region: ""
+          resources:
+            requests:
+              memory: 256Mi
+          rootPath: file
+          secretKey: minioadmin
+          service:
+            port: 9000
+            type: ClusterIP
+          startupProbe:
+            enabled: true
+            failureThreshold: 60
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          useIAM: false
+          useVirtualHost: false
+      secretRef: karta-e2e-milvus-minio
+      type: MinIO
+    tei:
+      enabled: false
+    woodpecker:
+      persistence:
+        persistentVolumeClaim:
+          spec: null
+  hookConfig: null
+  mode: standalone
+status:
+  componentsDeployStatus:
+    standalone:
+      generation: 1
+      image: milvusdb/milvus:v2.6.11
+      status:
+        availableReplicas: 1
+        conditions:
+        - lastTransitionTime: "2026-08-18T12:32:20Z"
+          lastUpdateTime: "2026-08-18T12:32:20Z"
+          message: Deployment has minimum availability.
+          reason: MinimumReplicasAvailable
+          status: "True"
+          type: Available
+        - lastTransitionTime: "2026-08-18T12:31:39Z"
+          lastUpdateTime: "2026-08-18T12:32:20Z"
+          message: ReplicaSet "karta-e2e-milvus-milvus-standalone-5bb7989f65" has
+            successfully progressed.
+          reason: NewReplicaSetAvailable
+          status: "True"
+          type: Progressing
+        observedGeneration: 1
+        readyReplicas: 1
+        replicas: 1
+        updatedReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-08-18T12:32:39Z"
+    message: All Milvus components are healthy
+    reason: ReasonMilvusHealthy
+    status: "True"
+    type: MilvusReady
+  - lastTransitionTime: "2026-08-18T12:32:39Z"
+    message: Milvus components are all updated
+    reason: MilvusComponentsUpdated
+    status: "True"
+    type: MilvusUpdated
+  - lastTransitionTime: "2026-08-18T12:31:12Z"
+    message: Etcd endpoints is healthy
+    reason: EtcdReady
+    status: "True"
+    type: EtcdReady
+  - lastTransitionTime: "2026-08-18T12:31:39Z"
+    reason: StorageReady
+    status: "True"
+    type: StorageReady
+  - lastTransitionTime: "2026-08-18T12:31:12Z"
+    reason: MsgStreamReady
+    status: "True"
+    type: MsgStreamReady
+  currentImage: milvusdb/milvus:v2.6.11
+  endpoint: karta-e2e-milvus-milvus.test-8m4bc:19530
+  ingress:
+    loadBalancer: {}
+  observedGeneration: 3
+  rollingModeVersion: 2
+  status: Healthy

@@ -1,0 +1,70 @@
+apiVersion: apps.nvidia.com/v1alpha1
+kind: NIMService
+metadata:
+  creationTimestamp: "2026-08-18T12:38:23Z"
+  finalizers:
+  - finalizer.nimservice.apps.nvidia.com
+  generation: 2
+  name: karta-e2e-nim
+  namespace: test-8m4bc
+  uid: b0ac246a-0539-4707-af84-26c2617802ad
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: karta.golden/pool
+            operator: In
+            values:
+            - trains
+  authSecret: ngc-secret
+  env:
+  - name: NIM_REQUEST_LATENCY
+    value: "2"
+  expose:
+    ingress:
+      spec: {}
+    service:
+      port: 8000
+      type: ClusterIP
+  image:
+    pullPolicy: IfNotPresent
+    repository: nim-cpu
+    tag: e2e
+  inferencePlatform: standalone
+  livenessProbe: {}
+  metrics:
+    serviceMonitor: {}
+  readinessProbe: {}
+  replicas: 1
+  scale:
+    hpa:
+      maxReplicas: 0
+      minReplicas: 1
+  schedulerName: karta-golden-scheduler
+  startupProbe: {}
+  storage:
+    nimCache: {}
+    pvc:
+      create: true
+      size: 1Gi
+      volumeAccessMode: ReadWriteOnce
+status:
+  conditions:
+  - lastTransitionTime: "2026-08-18T12:39:12Z"
+    message: |
+      deployment "karta-e2e-nim" successfully rolled out
+    reason: Ready
+    status: "True"
+    type: Ready
+  - lastTransitionTime: "2026-08-18T12:38:23Z"
+    message: ""
+    reason: Ready
+    status: "False"
+    type: Failed
+  model:
+    clusterEndpoint: 10.96.95.35:8000
+    externalEndpoint: ""
+    name: meta/llama-3.2-1b-instruct
+  state: Ready
