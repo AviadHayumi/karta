@@ -25,7 +25,7 @@ var _ = Describe("DynamoGraphDeployment", Ordered, Label("dynamo"), func() {
 		fx = recorder.Fixture{Operator: "dynamo", Version: operatorVersion("dynamo"), KartaName: "nvidia-com-dynamographdeployment-v1alpha1", KartaFile: "docs/catalog/nvidia-com-dynamographdeployment-v1alpha1.yaml"}
 		rec = recorder.New(cfg).
 			SetTimeout(8*time.Minute).
-			AddState(kartav1alpha1.InitializingStatus, PhaseAny([]string{"initializing", "pending", ""}, "status", "state")).
+			AddState(kartav1alpha1.InitializingStatus, PhaseAny([]string{"initializing", "pending"}, "status", "state")).
 			AddState(kartav1alpha1.RunningStatus, PhaseEq("successful", "status", "state"))
 	})
 
@@ -40,9 +40,7 @@ var _ = Describe("DynamoGraphDeployment", Ordered, Label("dynamo"), func() {
 
 	It("initializing", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "initializing", "testdata/dynamo/initializing.yaml").Through(
-			// Gate on a named operator phase so the fixture ends on a state the definition reads;
-			// the just-created empty-state frame stays recorded as a non-terminal.
-			recorder.Reaches(kartav1alpha1.InitializingStatus).With(PhaseAny([]string{"initializing", "pending"}, "status", "state"))).Run(ctx)
+			recorder.Reaches(kartav1alpha1.InitializingStatus)).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
 	})

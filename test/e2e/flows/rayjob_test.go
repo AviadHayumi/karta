@@ -26,7 +26,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 			AddState(kartav1alpha1.RunningStatus, PhaseEq("RUNNING", "status", "jobStatus")).
 			AddState(kartav1alpha1.CompletedStatus, PhaseEq("SUCCEEDED", "status", "jobStatus")).
 			AddState(kartav1alpha1.FailedStatus, PhaseEq("FAILED", "status", "jobStatus")).
-			AddState(kartav1alpha1.SuspendedStatus, PhaseAny([]string{"Suspended", "Suspending"}, "status", "jobDeploymentStatus"))
+			AddState(kartav1alpha1.SuspendedStatus, PhaseEq("Suspended", "status", "jobDeploymentStatus"))
 	})
 
 	// jobStatus jumps between PENDING/RUNNING/SUCCEEDED/FAILED; a fast job can skip intermediates, so
@@ -63,9 +63,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 	It("suspended", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "suspended", "testdata/rayjob/suspended.yaml").Through(
 			recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
-			// Gate on the settled Suspended: the operator reports Suspending while tearing the
-			// cluster down, and the fixture must not end on that transient.
-			recorder.Reaches(kartav1alpha1.SuspendedStatus).With(PhaseEq("Suspended", "status", "jobDeploymentStatus")),
+			recorder.Reaches(kartav1alpha1.SuspendedStatus),
 		).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
@@ -74,9 +72,7 @@ var _ = Describe("RayJob", Ordered, Label("kuberay", "rayjob"), func() {
 	It("resumed", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "resumed", "testdata/rayjob/resumed.yaml").Through(
 			recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
-			// Resume only from the settled Suspended, never mid-Suspending, so the re-record
-			// cannot race the teardown.
-			recorder.Reaches(kartav1alpha1.SuspendedStatus).With(PhaseEq("Suspended", "status", "jobDeploymentStatus")).Do(Resume()),
+			recorder.Reaches(kartav1alpha1.SuspendedStatus).Do(Resume()),
 			recorder.Reaches(kartav1alpha1.InitializingStatus).Optional(),
 			recorder.Reaches(kartav1alpha1.RunningStatus),
 		).Run(ctx)

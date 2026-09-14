@@ -25,7 +25,7 @@ var _ = Describe("NIMService", Ordered, Label("nim"), func() {
 		fx = recorder.Fixture{Operator: "nim", Version: operatorVersion("nim"), KartaName: "apps-nvidia-com-nimservice-v1alpha1", KartaFile: "docs/catalog/apps-nvidia-com-nimservice-v1alpha1.yaml"}
 		rec = recorder.New(cfg).
 			SetTimeout(5*time.Minute).
-			AddState(kartav1alpha1.InitializingStatus, PhaseNot([]string{"Ready", "Failed"}, "status", "state")).
+			AddState(kartav1alpha1.InitializingStatus, PhaseAny([]string{"NotReady", "Pending"}, "status", "state")).
 			AddState(kartav1alpha1.RunningStatus, PhaseEq("Ready", "status", "state"))
 	})
 
@@ -40,9 +40,7 @@ var _ = Describe("NIMService", Ordered, Label("nim"), func() {
 
 	It("initializing", func(ctx SpecContext) {
 		out, err := recorder.NewFlow(rec, "initializing", "testdata/nim/initializing.yaml").Through(
-			// Gate on a named operator phase so the fixture ends on a state the definition reads;
-			// the just-created empty-state frame stays recorded as a non-terminal.
-			recorder.Reaches(kartav1alpha1.InitializingStatus).With(PhaseAny([]string{"NotReady", "Pending"}, "status", "state"))).Run(ctx)
+			recorder.Reaches(kartav1alpha1.InitializingStatus)).Run(ctx)
 		Expect(rec.Save(fx, out)).Error().NotTo(HaveOccurred())
 		Expect(err).To(Succeed())
 	})
