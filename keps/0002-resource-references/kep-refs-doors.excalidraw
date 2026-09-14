@@ -7,7 +7,7 @@
       "id": "e377401600",
       "type": "rectangle",
       "x": 60,
-      "y": 300,
+      "y": 320,
       "width": 420,
       "height": 300,
       "angle": 0,
@@ -35,9 +35,9 @@
     {
       "id": "e1995203584",
       "type": "rectangle",
-      "x": 1560,
-      "y": 330,
-      "width": 380,
+      "x": 1600,
+      "y": 350,
+      "width": 360,
       "height": 240,
       "angle": 0,
       "strokeColor": "#4263eb",
@@ -64,9 +64,9 @@
     {
       "id": "e295447552",
       "type": "text",
-      "x": 1568,
-      "y": 396.875,
-      "width": 364,
+      "x": 1608,
+      "y": 416.875,
+      "width": 344,
       "height": 106.25,
       "angle": 0,
       "strokeColor": "#1e1e1e",
@@ -100,10 +100,10 @@
     {
       "id": "e877851648",
       "type": "rectangle",
-      "x": 800,
+      "x": 810,
       "y": 120,
       "width": 500,
-      "height": 130,
+      "height": 120,
       "angle": 0,
       "strokeColor": "#7048e8",
       "backgroundColor": "#f3f0ff",
@@ -129,8 +129,8 @@
     {
       "id": "e964613120",
       "type": "text",
-      "x": 808,
-      "y": 156.875,
+      "x": 818,
+      "y": 151.875,
       "width": 484,
       "height": 56.25,
       "angle": 0,
@@ -152,21 +152,21 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "text": "door 1 - a client , adapted\nWithReferenceReader(\n  ctrlreader.FromReader(mgr.GetClient()))",
+      "text": "door 1 - a client\nWithReferenceReader(\n  ctrlreader.FromReader(mgr.GetAPIReader()))",
       "fontSize": 15,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "door 1 - a client , adapted\nWithReferenceReader(\n  ctrlreader.FromReader(mgr.GetClient()))",
+      "originalText": "door 1 - a client\nWithReferenceReader(\n  ctrlreader.FromReader(mgr.GetAPIReader()))",
       "lineHeight": 1.25,
       "baseline": 15
     },
     {
       "id": "e716526336",
       "type": "rectangle",
-      "x": 800,
-      "y": 320,
+      "x": 810,
+      "y": 330,
       "width": 500,
       "height": 110,
       "angle": 0,
@@ -194,8 +194,8 @@
     {
       "id": "e231735040",
       "type": "text",
-      "x": 808,
-      "y": 346.875,
+      "x": 818,
+      "y": 356.875,
       "width": 484,
       "height": 56.25,
       "angle": 0,
@@ -217,23 +217,23 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "text": "door 2 - the objects , no cluster\nWithReferenceReader(\n  NewObjectsReader(objects...))",
+      "text": "door 2 - the objects\nWithReferenceReader(\n  NewObjectsReader(objects...))",
       "fontSize": 15,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "door 2 - the objects , no cluster\nWithReferenceReader(\n  NewObjectsReader(objects...))",
+      "originalText": "door 2 - the objects\nWithReferenceReader(\n  NewObjectsReader(objects...))",
       "lineHeight": 1.25,
       "baseline": 15
     },
     {
       "id": "e1243857408",
       "type": "rectangle",
-      "x": 800,
-      "y": 500,
+      "x": 810,
+      "y": 520,
       "width": 500,
-      "height": 130,
+      "height": 120,
       "angle": 0,
       "strokeColor": "#f08c00",
       "backgroundColor": "#fff9db",
@@ -259,8 +259,8 @@
     {
       "id": "e1992925696",
       "type": "text",
-      "x": 808,
-      "y": 536.875,
+      "x": 818,
+      "y": 551.875,
       "width": 484,
       "height": 56.25,
       "angle": 0,
@@ -282,21 +282,21 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "text": "door 3 - the plan , any client\nPlan -> you fetch -> Fulfill ->\nWithReferences(resolved)",
+      "text": "door 3 - the plan\nPlan -> you fetch , your way\n-> Fulfill checks the answers",
       "fontSize": 15,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "door 3 - the plan , any client\nPlan -> you fetch -> Fulfill ->\nWithReferences(resolved)",
+      "originalText": "door 3 - the plan\nPlan -> you fetch , your way\n-> Fulfill checks the answers",
       "lineHeight": 1.25,
       "baseline": 15
     },
     {
       "id": "e1976304128",
       "type": "rectangle",
-      "x": 800,
-      "y": 700,
+      "x": 810,
+      "y": 730,
       "width": 500,
       "height": 110,
       "angle": 0,
@@ -324,8 +324,8 @@
     {
       "id": "e1079884288",
       "type": "text",
-      "x": 808,
-      "y": 726.875,
+      "x": 818,
+      "y": 756.875,
       "width": 484,
       "height": 56.25,
       "angle": 0,
@@ -347,13 +347,13 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "text": "door 4 - finished values , trusted\nWithReferences(resolved)\nno checks , no fetches",
+      "text": "door 4 - finished values\nWithReferences(resolved)\ntrusted : no checks , no fetches",
       "fontSize": 15,
       "fontFamily": 5,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "door 4 - finished values , trusted\nWithReferences(resolved)\nno checks , no fetches",
+      "originalText": "door 4 - finished values\nWithReferences(resolved)\ntrusted : no checks , no fetches",
       "lineHeight": 1.25,
       "baseline": 15
     },
@@ -361,9 +361,9 @@
       "id": "e29936128",
       "type": "arrow",
       "x": 480,
-      "y": 185,
-      "width": 320,
-      "height": 215,
+      "y": 180,
+      "width": 330,
+      "height": 240,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -389,8 +389,8 @@
           0
         ],
         [
-          320,
-          -215
+          330,
+          -240
         ]
       ],
       "lastCommittedPoint": null,
@@ -403,9 +403,9 @@
       "id": "e27722304",
       "type": "arrow",
       "x": 480,
-      "y": 375,
-      "width": 320,
-      "height": 55,
+      "y": 385,
+      "width": 330,
+      "height": 65,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -431,8 +431,8 @@
           0
         ],
         [
-          320,
-          -55
+          330,
+          -65
         ]
       ],
       "lastCommittedPoint": null,
@@ -445,8 +445,8 @@
       "id": "e1568295680",
       "type": "arrow",
       "x": 480,
-      "y": 470,
-      "width": 320,
+      "y": 490,
+      "width": 330,
       "height": 90,
       "angle": 0,
       "strokeColor": "#1e1e1e",
@@ -473,7 +473,7 @@
           0
         ],
         [
-          320,
+          330,
           90
         ]
       ],
@@ -487,9 +487,9 @@
       "id": "e1640009280",
       "type": "arrow",
       "x": 480,
-      "y": 510,
-      "width": 320,
-      "height": 240,
+      "y": 530,
+      "width": 330,
+      "height": 255,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -515,8 +515,8 @@
           0
         ],
         [
-          320,
-          240
+          330,
+          255
         ]
       ],
       "lastCommittedPoint": null,
@@ -528,10 +528,10 @@
     {
       "id": "e837387328",
       "type": "arrow",
-      "x": 1300,
-      "y": 185,
-      "width": 260,
-      "height": 195,
+      "x": 1310,
+      "y": 180,
+      "width": 290,
+      "height": 220,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -557,8 +557,8 @@
           0
         ],
         [
-          260,
-          195
+          290,
+          220
         ]
       ],
       "lastCommittedPoint": null,
@@ -570,10 +570,10 @@
     {
       "id": "e455750400",
       "type": "arrow",
-      "x": 1300,
-      "y": 375,
-      "width": 260,
-      "height": 55,
+      "x": 1310,
+      "y": 385,
+      "width": 290,
+      "height": 65,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -599,8 +599,8 @@
           0
         ],
         [
-          260,
-          55
+          290,
+          65
         ]
       ],
       "lastCommittedPoint": null,
@@ -612,10 +612,10 @@
     {
       "id": "e846972416",
       "type": "arrow",
-      "x": 1300,
-      "y": 480,
-      "width": 260,
-      "height": 85,
+      "x": 1310,
+      "y": 500,
+      "width": 290,
+      "height": 80,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -641,8 +641,8 @@
           0
         ],
         [
-          260,
-          -85
+          290,
+          -80
         ]
       ],
       "lastCommittedPoint": null,
@@ -654,10 +654,10 @@
     {
       "id": "e118912512",
       "type": "arrow",
-      "x": 1300,
-      "y": 530,
-      "width": 260,
-      "height": 220,
+      "x": 1310,
+      "y": 550,
+      "width": 290,
+      "height": 235,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -683,8 +683,8 @@
           0
         ],
         [
-          260,
-          -220
+          290,
+          -235
         ]
       ],
       "lastCommittedPoint": null,
