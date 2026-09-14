@@ -20,10 +20,10 @@ collect() {
   local rc=$?
   mkdir -p "${ARTIFACTS}"
   group "diagnostics"
-  kubectl -n "${KARTA_NAMESPACE}" logs deploy/karta-operator --all-containers --tail=-1 \
-    >"${ARTIFACTS}/karta-operator.log" 2>&1 || true
-  kubectl -n "${KARTA_NAMESPACE}" describe deploy/karta-operator \
-    >"${ARTIFACTS}/karta-operator.describe" 2>&1 || true
+  kubectl -n "${KARTA_NAMESPACE}" logs "deploy/${KARTA_FULLNAME}" --all-containers --tail=-1 \
+    >"${ARTIFACTS}/${KARTA_FULLNAME}.log" 2>&1 || true
+  kubectl -n "${KARTA_NAMESPACE}" describe "deploy/${KARTA_FULLNAME}" \
+    >"${ARTIFACTS}/${KARTA_FULLNAME}.describe" 2>&1 || true
   kubectl get kartas -o yaml >"${ARTIFACTS}/kartas.yaml" 2>&1 || true
   kubectl get events -A --sort-by=.lastTimestamp >"${ARTIFACTS}/events.txt" 2>&1 || true
   kubectl get mutatingwebhookconfigurations,validatingwebhookconfigurations -o yaml \
