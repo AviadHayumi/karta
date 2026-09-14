@@ -15,6 +15,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -26,14 +28,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -46,6 +65,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -60,13 +85,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       state: ""
@@ -76,7 +110,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty
@@ -202,6 +247,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -213,14 +260,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -233,6 +297,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -247,13 +317,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       state: ""
@@ -263,7 +342,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty
@@ -389,6 +479,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -400,14 +492,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -420,6 +529,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -434,13 +549,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       conditions:
@@ -459,7 +583,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty
@@ -585,6 +720,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -596,14 +733,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -616,6 +770,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -630,13 +790,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       conditions:
@@ -665,7 +834,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty
@@ -791,6 +971,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -802,14 +984,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -822,6 +1021,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -836,13 +1041,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       conditions:
@@ -871,7 +1085,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty
@@ -997,6 +1222,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -1008,14 +1235,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -1028,6 +1272,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -1042,13 +1292,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       conditions:
@@ -1086,7 +1345,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty
@@ -1212,6 +1482,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -1223,14 +1495,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -1243,6 +1532,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -1257,13 +1552,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       conditions:
@@ -1300,7 +1604,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty
@@ -1426,6 +1741,8 @@ steps:
     spec:
       services:
         Frontend:
+          annotations:
+            karta-parity: "true"
           componentType: frontend
           extraPodSpec:
             affinity:
@@ -1437,14 +1754,31 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
         decode:
+          annotations:
+            karta-parity: "true"
           componentType: worker
           envFromSecret: hf-token-secret
           extraPodSpec:
@@ -1457,6 +1791,12 @@ steps:
                       operator: In
                       values:
                       - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
             mainContainer:
               args:
               - --model-path
@@ -1471,13 +1811,22 @@ steps:
               - python3
               - -m
               - dynamo.mocker
-              image: nvcr.io/nvidia/ai-dynamo/dynamo-planner:1.2.1
+              image: ghcr.io/example/karta-parity:v1
               imagePullPolicy: IfNotPresent
               name: ""
               resources: {}
               workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
             schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
           replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           subComponentType: decode
     status:
       conditions:
@@ -1513,7 +1862,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
     name: service
     podMetadata: empty
     podSpec: empty

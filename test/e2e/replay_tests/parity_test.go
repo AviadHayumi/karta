@@ -13,6 +13,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
@@ -26,6 +28,7 @@ const (
 	parityScheduler    = "karta-parity-scheduler"
 	parityLabelKey     = "karta-parity"
 	parityLabelValue   = "true"
+	parityImage        = "ghcr.io/example/karta-parity:v1"
 	readErrorMarker    = "<read-error>"
 )
 
@@ -353,13 +356,77 @@ func mutateForParity(ctx context.Context, comp *resource.Component) map[string]a
 	} else if len(fragmented) == 0 {
 		result["fragmentedPodSpec"] = "empty"
 	} else {
-		update := make(map[string]resource.FragmentedPodSpec, len(fragmented))
-		for id := range fragmented {
-			update[id] = resource.FragmentedPodSpec{SchedulerName: parityScheduler, NodeAffinity: parityNodeAffinity}
-		}
-		result["fragmentedPodSpec"] = outcome(comp.UpdateFragmentedPodSpec(ctx, update))
+		result["fragmentedPodSpec"] = fragmentWrites(ctx, comp, fragmented)
 	}
 	return result
+}
+
+// fragmentWrites drives every fragment field through its own update call, so
+// every declared write path is exercised with a deterministic marker and a
+// read-only field fails on its own without masking the writable ones. Both
+// engines refuse a write to a field that has no write definition, so the
+// per-field outcomes are comparable. Container shaped fields start from the
+// values just read, so components that declare them get realistic payloads.
+func fragmentWrites(ctx context.Context, comp *resource.Component, current map[string]resource.FragmentedPodSpec) map[string]any {
+	fields := map[string]any{}
+	apply := func(name string, fragment resource.FragmentedPodSpec) {
+		update := make(map[string]resource.FragmentedPodSpec, len(current))
+		for id := range current {
+			update[id] = fragment
+		}
+		fields[name] = outcome(comp.UpdateFragmentedPodSpec(ctx, update))
+	}
+	apply("schedulerName", resource.FragmentedPodSpec{SchedulerName: parityScheduler})
+	apply("priorityClassName", resource.FragmentedPodSpec{PriorityClassName: "karta-parity-priority"})
+	apply("image", resource.FragmentedPodSpec{Image: parityImage})
+	apply("labels", resource.FragmentedPodSpec{Labels: map[string]string{parityLabelKey: parityLabelValue}})
+	apply("annotations", resource.FragmentedPodSpec{Annotations: map[string]string{parityLabelKey: parityLabelValue}})
+	apply("nodeAffinity", resource.FragmentedPodSpec{NodeAffinity: parityNodeAffinity})
+	apply("podAffinity", resource.FragmentedPodSpec{PodAffinity: &corev1.PodAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
+			TopologyKey:   "kubernetes.io/hostname",
+			LabelSelector: &metav1.LabelSelector{MatchLabels: map[string]string{parityLabelKey: parityLabelValue}},
+		}},
+	}})
+	apply("resources", resource.FragmentedPodSpec{Resources: &corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    apiresource.MustParse("150m"),
+			corev1.ResourceMemory: apiresource.MustParse("96Mi"),
+		},
+	}})
+	apply("resourceClaims", resource.FragmentedPodSpec{ResourceClaims: []corev1.PodResourceClaim{{Name: "karta-parity-claim"}}})
+
+	containers := make(map[string]resource.FragmentedPodSpec, len(current))
+	singles := make(map[string]resource.FragmentedPodSpec, len(current))
+	haveContainers, haveSingle := false, false
+	for id, fragment := range current {
+		list := resource.FragmentedPodSpec{}
+		for _, container := range fragment.Containers {
+			container.Image = parityImage
+			list.Containers = append(list.Containers, container)
+		}
+		haveContainers = haveContainers || len(list.Containers) > 0
+		containers[id] = list
+		single := resource.FragmentedPodSpec{}
+		if fragment.Container != nil {
+			container := *fragment.Container
+			container.Image = parityImage
+			single.Container = &container
+		}
+		haveSingle = haveSingle || single.Container != nil
+		singles[id] = single
+	}
+	if haveContainers {
+		fields["containers"] = outcome(comp.UpdateFragmentedPodSpec(ctx, containers))
+	} else {
+		fields["containers"] = "empty"
+	}
+	if haveSingle {
+		fields["container"] = outcome(comp.UpdateFragmentedPodSpec(ctx, singles))
+	} else {
+		fields["container"] = "empty"
+	}
+	return fields
 }
 
 func outcome(err error) string {

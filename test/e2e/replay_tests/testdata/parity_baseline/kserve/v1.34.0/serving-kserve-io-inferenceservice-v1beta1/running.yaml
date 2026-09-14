@@ -21,15 +21,24 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
+        labels:
+          karta-parity: "true"
         model:
-          modelFormat:
-            name: sklearn
+          image: ghcr.io/example/karta-parity:v1
           name: ""
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
-          storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -40,7 +49,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -154,15 +174,24 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
+        labels:
+          karta-parity: "true"
         model:
-          modelFormat:
-            name: sklearn
+          image: ghcr.io/example/karta-parity:v1
           name: ""
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
-          storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -192,7 +221,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -313,15 +353,24 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
+        labels:
+          karta-parity: "true"
         model:
-          modelFormat:
-            name: sklearn
+          image: ghcr.io/example/karta-parity:v1
           name: ""
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
-          storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -375,7 +424,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -513,15 +573,24 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
+        labels:
+          karta-parity: "true"
         model:
-          modelFormat:
-            name: sklearn
+          image: ghcr.io/example/karta-parity:v1
           name: ""
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
-          storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -576,7 +645,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -715,15 +795,24 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
+        labels:
+          karta-parity: "true"
         model:
-          modelFormat:
-            name: sklearn
+          image: ghcr.io/example/karta-parity:v1
           name: ""
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
-          storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -780,7 +869,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -916,15 +1016,24 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
+        labels:
+          karta-parity: "true"
         model:
-          modelFormat:
-            name: sklearn
+          image: ghcr.io/example/karta-parity:v1
           name: ""
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
-          storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -981,7 +1090,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -1117,15 +1237,24 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
+        labels:
+          karta-parity: "true"
         model:
-          modelFormat:
-            name: sklearn
+          image: ghcr.io/example/karta-parity:v1
           name: ""
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
-          storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -1184,7 +1313,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty

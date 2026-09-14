@@ -22,6 +22,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -33,6 +48,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -44,6 +74,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         imageUpdateMode: rollingUpgrade
@@ -57,6 +102,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -68,6 +128,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -80,6 +155,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -93,6 +183,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -104,6 +209,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -115,6 +235,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rootCoord:
           affinity:
@@ -126,6 +261,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -138,13 +288,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -158,6 +319,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
       dependencies:
@@ -168,6 +344,10 @@ steps:
             deletionPolicy: Retain
             values:
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
         kafka:
           external: false
         natsmq:
@@ -177,6 +357,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -190,7 +392,8 @@ steps:
               mode: standalone
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
           secretRef: ""
           type: MinIO
         tei:
@@ -207,92 +410,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -760,6 +1161,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -771,6 +1187,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -782,6 +1213,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -797,6 +1243,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -808,6 +1269,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -820,6 +1296,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -833,6 +1324,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -844,6 +1350,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -855,6 +1376,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -867,6 +1403,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -879,13 +1430,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -899,6 +1461,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -957,6 +1534,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -971,6 +1552,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -1016,7 +1619,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -1047,92 +1651,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -1600,6 +2402,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -1611,6 +2428,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -1622,6 +2454,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -1637,6 +2484,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -1648,6 +2510,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -1660,6 +2537,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -1673,6 +2565,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -1684,6 +2591,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -1695,6 +2617,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -1707,6 +2644,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -1719,13 +2671,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -1739,6 +2702,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -1797,6 +2775,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -1811,6 +2793,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -1856,7 +2860,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -1893,92 +2898,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -2446,6 +3649,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -2457,6 +3675,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -2468,6 +3701,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -2483,6 +3731,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -2494,6 +3757,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -2506,6 +3784,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -2519,6 +3812,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -2530,6 +3838,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -2541,6 +3864,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -2553,6 +3891,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -2565,13 +3918,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -2585,6 +3949,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -2643,6 +4022,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -2657,6 +4040,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -2702,7 +4107,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -2753,92 +4159,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -3313,6 +4917,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -3324,6 +4943,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -3335,6 +4969,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -3350,6 +4999,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -3361,6 +5025,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -3373,6 +5052,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -3386,6 +5080,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -3397,6 +5106,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -3408,6 +5132,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -3420,6 +5159,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -3432,13 +5186,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -3452,6 +5217,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -3510,6 +5290,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -3524,6 +5308,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -3569,7 +5375,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -3635,92 +5442,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -4204,6 +6209,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -4215,6 +6235,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -4226,6 +6261,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -4241,6 +6291,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -4252,6 +6317,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -4264,6 +6344,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -4277,6 +6372,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -4288,6 +6398,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -4299,6 +6424,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -4311,6 +6451,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -4323,13 +6478,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -4343,6 +6509,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -4401,6 +6582,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -4415,6 +6600,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -4460,7 +6667,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -4524,92 +6732,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -5093,6 +7499,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -5104,6 +7525,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -5115,6 +7551,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -5130,6 +7581,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -5141,6 +7607,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -5153,6 +7634,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -5166,6 +7662,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -5177,6 +7688,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -5188,6 +7714,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -5200,6 +7741,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -5212,13 +7768,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -5232,6 +7799,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -5290,6 +7872,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -5304,6 +7890,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -5349,7 +7957,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -5436,92 +8045,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -6005,6 +8812,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -6016,6 +8838,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -6027,6 +8864,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -6042,6 +8894,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -6053,6 +8920,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -6065,6 +8947,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -6078,6 +8975,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -6089,6 +9001,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -6100,6 +9027,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -6112,6 +9054,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -6124,13 +9081,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -6144,6 +9112,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -6202,6 +9185,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -6216,6 +9203,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -6261,7 +9270,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -6350,92 +9360,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty
@@ -6919,6 +10127,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataCoord:
           affinity:
@@ -6930,6 +10153,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         dataNode:
           affinity:
@@ -6941,6 +10179,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         disableMetric: false
         enableRollingUpdate: true
@@ -6956,6 +10209,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         indexNode:
           affinity:
@@ -6967,6 +10235,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         metricInterval: ""
         mixCoord:
@@ -6979,6 +10262,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         paused: false
         probes: null
@@ -6992,6 +10290,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryCoord:
           affinity:
@@ -7003,6 +10316,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         queryNode:
           affinity:
@@ -7014,6 +10342,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         rollingMode: 2
         rootCoord:
@@ -7026,6 +10369,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         securityContext: null
         standalone:
@@ -7038,13 +10396,24 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
           paused: false
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
           probes: null
           replicas: 1
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
           securityContext: null
           serviceType: ClusterIP
@@ -7058,6 +10427,21 @@ steps:
                     operator: In
                     values:
                     - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
           schedulerName: karta-parity-scheduler
         targetPortType: string
         updateConfigMapOnly: true
@@ -7116,6 +10500,10 @@ steps:
                 periodSeconds: 20
                 timeoutSeconds: 10
               replicaCount: 1
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
               service:
                 peerPort: 2380
                 port: 2379
@@ -7130,6 +10518,28 @@ steps:
         pulsar:
           endpoint: ""
           external: false
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
         rocksmq:
           persistence:
             persistentVolumeClaim:
@@ -7175,7 +10585,8 @@ steps:
               region: ""
               resources:
                 requests:
-                  memory: 256Mi
+                  cpu: 150m
+                  memory: 96Mi
               rootPath: file
               secretKey: minioadmin
               service:
@@ -7262,92 +10673,290 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: standalone
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: proxy
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: mixcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datanode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querynode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: streamingnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexnode
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: rootcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: datacoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: querycoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: indexcoord
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: cdc
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: etcd
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: minio
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-zookeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-bookkeeper
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-broker
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: write-error
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
     name: pulsar-proxy
     podMetadata: empty
     podSpec: empty

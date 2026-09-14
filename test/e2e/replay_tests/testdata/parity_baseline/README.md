@@ -8,10 +8,14 @@ Copyright (c) 2026 NVIDIA Corporation
 These fixtures are the raw output of the jq engine, captured at commit
 `a0166142`, the last commit before the CEL adoption. For every recorded
 object under `test/e2e/recorded_data`, the generator ran every read the
-component API offers and applied one deterministic write per writable
-field family, then serialized the results: per-component reads, write
-outcomes, and the full document after writes, after suspend, and after
-resume.
+component API offers and applied one deterministic write per write path:
+the pod template, the pod spec, the pod metadata, and every fragmented
+field in its own update call, so each declared fragment accessor is
+exercised separately and a read-only field fails on its own. It then
+serialized the results: per-component reads, per-field write outcomes,
+and the full document after writes, after suspend, and after resume.
+Both engines refuse a write to a field that has no write definition, so
+those outcomes agree too.
 
 `jq_parity_test.go` replays the identical operations through the CEL
 engine and compares against these files. The snapshot logic in the test

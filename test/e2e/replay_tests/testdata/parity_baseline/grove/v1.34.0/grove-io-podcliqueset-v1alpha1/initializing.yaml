@@ -13,7 +13,11 @@ steps:
       template:
         cliqueStartupType: CliqueStartupTypeAnyOrder
         cliques:
-        - name: worker
+        - annotations:
+            karta-parity: "true"
+          labels:
+            karta-parity: "true"
+          name: worker
           spec:
             minAvailable: 2
             podSpec:
@@ -26,17 +30,26 @@ steps:
                         operator: In
                         values:
                         - parity
+                podAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchLabels:
+                        karta-parity: "true"
+                    topologyKey: kubernetes.io/hostname
               containers:
               - command:
                 - /bin/sh
                 - -c
                 - echo karta-e2e-grove && sleep infinity
-                image: busybox:99.99.99
+                image: ghcr.io/example/karta-parity:v1
                 name: worker
                 resources:
                   requests:
                     cpu: 20m
                     memory: 32Mi
+              priorityClassName: karta-parity-priority
+              resourceClaims:
+              - name: karta-parity-claim
               restartPolicy: Always
               schedulerName: karta-parity-scheduler
               terminationGracePeriodSeconds: 30
@@ -51,7 +64,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: applied
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: write-error
+      schedulerName: applied
     name: clique
     podMetadata: empty
     podSpec: empty

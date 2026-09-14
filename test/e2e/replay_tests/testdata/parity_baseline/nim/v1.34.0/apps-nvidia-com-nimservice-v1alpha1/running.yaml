@@ -20,6 +20,14 @@ steps:
                 operator: In
                 values:
                 - parity
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                karta-parity: "true"
+            topologyKey: kubernetes.io/hostname
+      annotations:
+        karta-parity: "true"
       authSecret: ngc-secret
       env:
       - name: NIM_REQUEST_LATENCY
@@ -35,11 +43,17 @@ steps:
         repository: nim-cpu
         tag: e2e
       inferencePlatform: standalone
+      labels:
+        karta-parity: "true"
       livenessProbe: {}
       metrics:
         serviceMonitor: {}
       readinessProbe: {}
       replicas: 1
+      resources:
+        requests:
+          cpu: 150m
+          memory: 96Mi
       scale:
         hpa:
           maxReplicas: 0
@@ -53,7 +67,18 @@ steps:
           size: 1Gi
           volumeAccessMode: ReadWriteOnce
   mutations:
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: nimservice
     podMetadata: empty
     podSpec: empty
@@ -108,6 +133,14 @@ steps:
                 operator: In
                 values:
                 - parity
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                karta-parity: "true"
+            topologyKey: kubernetes.io/hostname
+      annotations:
+        karta-parity: "true"
       authSecret: ngc-secret
       env:
       - name: NIM_REQUEST_LATENCY
@@ -123,11 +156,17 @@ steps:
         repository: nim-cpu
         tag: e2e
       inferencePlatform: standalone
+      labels:
+        karta-parity: "true"
       livenessProbe: {}
       metrics:
         serviceMonitor: {}
       readinessProbe: {}
       replicas: 1
+      resources:
+        requests:
+          cpu: 150m
+          memory: 96Mi
       scale:
         hpa:
           maxReplicas: 0
@@ -149,7 +188,18 @@ steps:
         type: NIM_CACHE_PVC_CREATED
       state: PVC-Created
   mutations:
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: nimservice
     podMetadata: empty
     podSpec: empty
@@ -209,6 +259,14 @@ steps:
                 operator: In
                 values:
                 - parity
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                karta-parity: "true"
+            topologyKey: kubernetes.io/hostname
+      annotations:
+        karta-parity: "true"
       authSecret: ngc-secret
       env:
       - name: NIM_REQUEST_LATENCY
@@ -224,11 +282,17 @@ steps:
         repository: nim-cpu
         tag: e2e
       inferencePlatform: standalone
+      labels:
+        karta-parity: "true"
       livenessProbe: {}
       metrics:
         serviceMonitor: {}
       readinessProbe: {}
       replicas: 1
+      resources:
+        requests:
+          cpu: 150m
+          memory: 96Mi
       scale:
         hpa:
           maxReplicas: 0
@@ -257,7 +321,18 @@ steps:
         type: Failed
       state: NotReady
   mutations:
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: nimservice
     podMetadata: empty
     podSpec: empty
@@ -323,6 +398,14 @@ steps:
                 operator: In
                 values:
                 - parity
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                karta-parity: "true"
+            topologyKey: kubernetes.io/hostname
+      annotations:
+        karta-parity: "true"
       authSecret: ngc-secret
       env:
       - name: NIM_REQUEST_LATENCY
@@ -338,11 +421,17 @@ steps:
         repository: nim-cpu
         tag: e2e
       inferencePlatform: standalone
+      labels:
+        karta-parity: "true"
       livenessProbe: {}
       metrics:
         serviceMonitor: {}
       readinessProbe: {}
       replicas: 1
+      resources:
+        requests:
+          cpu: 150m
+          memory: 96Mi
       scale:
         hpa:
           maxReplicas: 0
@@ -371,7 +460,18 @@ steps:
         type: Failed
       state: NotReady
   mutations:
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: nimservice
     podMetadata: empty
     podSpec: empty
@@ -437,6 +537,14 @@ steps:
                 operator: In
                 values:
                 - parity
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                karta-parity: "true"
+            topologyKey: kubernetes.io/hostname
+      annotations:
+        karta-parity: "true"
       authSecret: ngc-secret
       env:
       - name: NIM_REQUEST_LATENCY
@@ -452,11 +560,17 @@ steps:
         repository: nim-cpu
         tag: e2e
       inferencePlatform: standalone
+      labels:
+        karta-parity: "true"
       livenessProbe: {}
       metrics:
         serviceMonitor: {}
       readinessProbe: {}
       replicas: 1
+      resources:
+        requests:
+          cpu: 150m
+          memory: 96Mi
       scale:
         hpa:
           maxReplicas: 0
@@ -488,7 +602,18 @@ steps:
         name: meta/llama-3.2-1b-instruct
       state: Ready
   mutations:
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
     name: nimservice
     podMetadata: empty
     podSpec: empty

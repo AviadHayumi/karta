@@ -21,8 +21,16 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
         containers:
-        - image: karta-e2e-no-such-registry.invalid/nope:latest
+        - image: ghcr.io/example/karta-parity:v1
           name: kserve-container
           resources:
             limits:
@@ -31,6 +39,9 @@ steps:
             requests:
               cpu: 100m
               memory: 128Mi
+        labels:
+          karta-parity: "true"
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -41,7 +52,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: applied
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -163,8 +185,16 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
         containers:
-        - image: karta-e2e-no-such-registry.invalid/nope:latest
+        - image: ghcr.io/example/karta-parity:v1
           name: kserve-container
           resources:
             limits:
@@ -173,6 +203,9 @@ steps:
             requests:
               cpu: 100m
               memory: 128Mi
+        labels:
+          karta-parity: "true"
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -202,7 +235,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: applied
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
@@ -331,8 +375,16 @@ steps:
                   operator: In
                   values:
                   - parity
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  karta-parity: "true"
+              topologyKey: kubernetes.io/hostname
+        annotations:
+          karta-parity: "true"
         containers:
-        - image: karta-e2e-no-such-registry.invalid/nope:latest
+        - image: ghcr.io/example/karta-parity:v1
           name: kserve-container
           resources:
             limits:
@@ -341,6 +393,9 @@ steps:
             requests:
               cpu: 100m
               memory: 128Mi
+        labels:
+          karta-parity: "true"
+        priorityClassName: karta-parity-priority
         schedulerName: karta-parity-scheduler
       transformer:
         labels:
@@ -401,7 +456,18 @@ steps:
     podMetadata: empty
     podSpec: empty
     podTemplateSpec: empty
-  - fragmentedPodSpec: applied
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: applied
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: write-error
+      schedulerName: applied
     name: predictor
     podMetadata: empty
     podSpec: empty
