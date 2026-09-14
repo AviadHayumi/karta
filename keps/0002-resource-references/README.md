@@ -8,96 +8,70 @@ Copyright (c) 2026 NVIDIA Corporation
 - Status: implementable
 - Authors: @AviadHayumi
 - Created: 2026-09-14
-- Depends on: [KEP-0001](../0001-cel-expressions/README.md) (CEL expressions)
+- Depends on: [KEP-0001](../0001-cel-expressions/README.md)
 - Tracking issue: to be opened before this KEP merges
 
 ## Summary
 
-Some workloads keep half their spec in another object. A Kubeflow Trainer v2
-TrainJob holds only overrides; the base pod template lives in the
-ClusterTrainingRuntime that its `runtimeRef` names. A definition that only
-sees the workload cannot answer "what is the image" for such a kind.
+A Trainer v2 TrainJob holds only overrides. Its image lives in the
+ClusterTrainingRuntime that `spec.runtimeRef` names. A definition that only
+sees the workload cannot answer "what is the image" for a kind like that.
 
-This KEP lets a definition declare references: named pointers to other
-cluster objects. A reference is found by name or by label selector, and
-expressions read it as `references.<name>`. The definition only declares
-what it needs. It never fetches. The consumer brings the data, through one
-of four doors:
-
-1. a Kubernetes client, wrapped by a shipped one-line adapter
-2. a set of plain objects, no cluster at all
-3. a query plan: karta says what it needs, the consumer fetches it with any
-   client, karta checks the answers
-4. fully pre-resolved values
-
-All four end in the same bindings.
+So a definition can declare references: named pointers to other cluster
+objects, found by name or by label selector, read by expressions as
+`references.<name>`. The definition declares what it needs and never fetches.
+The consumer brings the data, and there are four ways to do that:
 
 ![one definition, four doors](kep-refs-doors.png)
 
-Diagram sources sit next to this file as `.excalidraw`; open them at
-excalidraw.com to edit.
+Every door ends in the same bindings. Diagram sources sit next to this file
+as `.excalidraw`; open them at excalidraw.com to edit.
 
 ## Motivation
 
-The catalog's TrainJob definition needs three values that are not in the
-TrainJob: the trainer image, the per-node resources, and the node count
-default. All three live in the runtime object. Without references the
-definition has two bad options. It can return null and push the join onto
-every consumer. Or consumer code can hardcode runtime conventions, which is
-exactly the per-CRD adapter this project exists to remove.
+Without references, the TrainJob definition returns null for image, resources
+and node count, and every consumer writes the runtime join by hand. That join
+is a per-CRD adapter, the exact thing this project exists to remove.
 
-The shape is common across the ecosystem: admission policies join their
-params objects, composition functions join required resources, policy
-engines join the objects their rules mention. These systems declare the
-data they need and let the host fetch it. This KEP does the same:
-declarations stay in the document, fetching stays with the host.
+The pattern is not new. Admission policies declare their params and the
+plugin fetches them. Composition functions return required resources and the
+host fetches them. The declaration lives in the document, the fetching lives
+in the host, and this KEP keeps that split.
 
 ### Goals
 
-- A definition declares its references in the CRD: which kind, which one
-  (a name recipe) or which ones (a selector), nothing else.
-- Expressions read a reference like any other data, with explicit absence
-  semantics.
-- Karta core gains no Kubernetes client. The module adds no dependency on
-  client-go or controller-runtime, and keeps compiling to wasm.
-- A consumer with a controller-runtime client wires in with one line.
-- A consumer with no cluster (CLI verify, recorded replay, a wasm host)
-  feeds the same definitions without importing a client.
-- A consumer that wants to fetch personally gets the definition's needs as
-  data: concrete queries out, checked answers in.
-- Reads that do not use references stay free: a status-only pass makes zero
-  fetches.
+- Declare references in the definition: kind, name recipe or selector,
+  nothing else.
+- Read them in expressions like any other data, with explicit absence.
+- Keep the core client-free: no client-go, no controller-runtime, wasm still
+  builds.
+- One line of wiring for a controller-runtime consumer; no client at all for
+  replay, CLI, or a wasm host.
+- A status-only read keeps making zero fetches.
 
 ### Non-goals
 
-- Writing through a reference. Patches target the workload document only; a
-  referenced object is read-only input.
-- Reference chains: a recipe that reads another reference's content. Ruled
-  out by construction. If ever needed, it arrives as its own protocol.
-- Watching references, retry policy, cache lifecycle. Those belong to the
-  consumer process, not to a library call.
-- Cross-namespace reads. A reference resolves in the workload's own
-  namespace, always.
+- Writing through a reference. Patches target the workload only.
+- Reference chains (a recipe reading another reference). Ruled out by
+  validation; revisit only with a real definition that needs it.
+- Watches, retries, cache lifecycle. Consumer territory.
+- Cross-namespace reads. There is no way to say them.
 
-## Part 1: declaring a reference
-
-A definition lists its references under `structureDefinition.references`.
-Each entry answers three questions: what kind, which object or objects, and
-what name expressions use for it.
+## Declaring a reference
 
 ```yaml
 spec:
   structureDefinition:
     references:
 
-      # one object, found by name
+      # one object, by name
       - name: trainingRuntime
         apiVersion: trainer.kubeflow.org/v1alpha1
         kind: ClusterTrainingRuntime
         lookup:
           nameExpression: object.spec.runtimeRef.name
 
-      # a set of objects, found by a structured selector
+      # a set of objects, by selector
       - name: pods
         apiVersion: v1
         kind: Pod
@@ -106,151 +80,102 @@ spec:
             jobset.sigs.k8s.io/jobset-name:
               expression: object.metadata.name
           matchExpressions:
-            - key: batch.kubernetes.io/job-name
-              operator: Exists
             - key: trainer.kubeflow.org/trainjob-ancestor-step
               operator: In
               values:
                 - value: trainer
 ```
 
-Read `nameExpression` carefully: it does not say a name. It says where the
-name is found on each concrete workload. One definition serves every
-TrainJob whose `runtimeRef` names a ClusterTrainingRuntime, each pointing at
-its own runtime. (A TrainJob may instead name a namespaced TrainingRuntime;
-that shape gets its own declaration, or its own definition, and is out of
-scope here. See
-[TrainJob RuntimeRef](https://github.com/kubeflow/trainer/blob/master/pkg/apis/trainer/v1alpha1/trainjob_types.go).)
+`nameExpression` does not say a name. It says where the name is found on each
+workload, so one definition serves every TrainJob that points at a
+ClusterTrainingRuntime. (A TrainJob can also point at a namespaced
+TrainingRuntime; that variant is out of scope here.)
+
+There is no namespace field and no fetch knob. A reference resolves in the
+workload's own namespace, and the definition cannot say "use the cache" or
+"call this URL". A definition is portable data; the same file has to mean the
+same thing against a live cluster, a recording, and an in-memory store.
 
 <details>
-<summary>the exact rules of the block</summary>
+<summary>the exact rules</summary>
 
-- `name` is what expressions use, as `references.<name>`. It must be a valid
-  CEL identifier, unique across the list, and may not shadow a reserved word
-  (`object`, `value`, `instance`, `index`, `variables`, `references`).
-- Exactly one of `lookup` or `list` is set.
-- `lookup.nameExpression` is CEL over the workload and must return a
-  non-empty string at run time.
-- `list` maps onto a standard Kubernetes label selector. Each value in
-  `matchLabels` and `matchExpressions` takes one of `value` (a literal) or
-  `expression` (CEL over the workload). Operators are the selector's own:
-  `In`, `NotIn`, `Exists`, `DoesNotExist`. At least one of `matchLabels` or
-  `matchExpressions` is set.
-- References use the flat `apiVersion` plus `kind` form, like every
-  component kind after KEP-0001. (An earlier prototype used a nested gvk
-  block; the `v1alpha2` shape is the flat one.)
-- There is no namespace field, on purpose. A namespaced reference resolves
-  in the workload's own namespace. A cluster-scoped kind ignores the
-  namespace. An empty workload namespace is an error for a namespaced
-  target, never an all-namespaces read. The executor behind the reader
-  determines a kind's scope. A definition can never reach outside the
-  namespace its workload lives in.
+- `name` is a CEL identifier, unique, not a reserved word (`object`, `value`,
+  `instance`, `index`, `variables`, `references`). Expressions use it as
+  `references.<name>`.
+- Exactly one of `lookup` or `list`.
+- `lookup.nameExpression` must resolve to a non-empty string at run time.
+- `list` maps onto a standard label selector. Values take `value` (literal)
+  or `expression` (CEL over the workload); operators are `In`, `NotIn`,
+  `Exists`, `DoesNotExist`. At least one of `matchLabels` or
+  `matchExpressions`.
+- Kinds use the flat `apiVersion` + `kind` form from KEP-0001.
+- Namespace: a namespaced kind resolves in the workload's namespace, a
+  cluster-scoped kind ignores it, and an empty workload namespace is an
+  error for a namespaced target, never an all-namespaces read. The executor
+  behind the reader knows which kinds are cluster-scoped.
+- On fetch knobs, the precedent that convinced us to keep them out: Kyverno
+  policies can carry API calls (URL, method, body), and its own docs list
+  the cost, an offline CLI that cannot evaluate them and refresh-based
+  staleness
+  ([external data sources](https://kyverno.io/docs/policy-types/cluster-policy/external-data-sources/)).
 </details>
 
-<details>
-<summary>what the block can never say, and why</summary>
-
-No fetch strategy, no cache or consistency hints, no refresh intervals, no
-endpoints, no API-call entries. A definition is portable data. The same file
-must mean the same thing against a live cluster, a recording, and an
-in-memory store. A mechanics field is meaningful to at most one of those,
-and dead weight or a lie for the rest.
-
-Kyverno is the instructive precedent. Its policies can carry in-document API
-calls (URL path, method, POST body) and external service calls, and the
-documented costs follow: the offline CLI cannot evaluate the external HTTP
-sources, and periodically refreshed entries are documented as possibly stale
-([external data sources](https://kyverno.io/docs/policy-types/cluster-policy/external-data-sources/)).
-That machinery suits an engine that owns those runtime capabilities. A
-portable definition should not depend on one.
-</details>
-
-## Part 2: reading a reference
-
-A resolved reference is one more bound name, next to `object` and
-`variables`. The catalog's TrainJob image, verbatim:
-
-```yaml
-specDefinition:
-  fragmentedPodSpecDefinition:
-    image:
-      expression: >-
-        object.?spec.?trainer.?image.orValue(
-          references.trainingRuntime.spec.template.spec.replicatedJobs
-            .filter(j, j.?template.?metadata.?labels
-              ["trainer.kubeflow.org/trainjob-ancestor-step"]
-              .orValue("") == "trainer")[0]
-            .template.spec.template.spec.containers
-            .filter(c, c[?"name"].orValue("") == "node")[0]
-            [?"image"].orValue(null))
-```
-
-The override wins when set. Otherwise the expression walks into the runtime,
-picks the trainer job by its label and the container by its name, and takes
-its image. No new syntax: the reference is a document, and CEL reads
-documents.
+## Reading a reference
 
 ![one lookup, end to end](kep-refs-lookup.png)
 
-Resolution is lazy. A read whose expressions never use references makes no
-fetch: the trainer's status read is proven to make zero reader calls. The
-first read that does use a reference resolves all of them, once, and the
-values are kept for the factory's lifetime. One factory sees one coherent
-picture.
+The catalog's TrainJob image, verbatim:
+
+```yaml
+image:
+  expression: >-
+    object.?spec.?trainer.?image.orValue(
+      references.trainingRuntime.spec.template.spec.replicatedJobs
+        .filter(j, j.?template.?metadata.?labels
+          ["trainer.kubeflow.org/trainjob-ancestor-step"]
+          .orValue("") == "trainer")[0]
+        .template.spec.template.spec.containers
+        .filter(c, c[?"name"].orValue("") == "node")[0]
+        [?"image"].orValue(null))
+```
+
+The override wins when set, otherwise the expression walks into the runtime.
+No new syntax; the reference is a document and CEL reads documents. A lookup
+that found nothing stays unbound, so `references.?trainingRuntime` with a
+default is how a definition tolerates a missing runtime. A list that matched
+nothing binds `[]`.
+
+Resolution is lazy, and that is worth real money in a controller:
 
 ![laziness and the frame rule](kep-refs-lazy.png)
 
 <details>
-<summary>absence, precisely</summary>
+<summary>the fine print: absence, errors, laziness</summary>
 
-- A lookup that found nothing stays unbound. Plain access
-  (`references.trainingRuntime.spec`) fails naming the reference; optional
-  access (`references.?trainingRuntime`) lets the expression supply a
-  default. Not found is data, not an error.
-- A list that matched nothing binds `[]`, never null. Comprehensions over an
-  empty match work unchanged.
-- A miss is not a failure, but a failure is never a miss. A recipe error, a
-  permission denial, or a fetch error fails any evaluation that needs
-  reference resolution, naming the failing reference, even when the
-  expression at hand reads a different one. Errors do not degrade into
-  absent values.
-- A reference nobody declared is rejected when the definition is validated
-  (an admission check this KEP adds; it covers dot access, optional access,
-  and literal indexing, while dynamic indexing falls back to a runtime
-  unknown).
-- List order is deterministic: the shared binder sorts every list by
-  namespace then name, whichever door supplied it. Recordings, live runs,
-  in-memory data, and pre-resolved values bind identical values given the
-  same object contents.
+- Not found is data. A lookup miss binds nothing; only expressions that read
+  the reference fail, by name. A failure is different: a recipe error, a
+  denied read, or a fetch error fails any evaluation that needs resolution,
+  and never degrades into an absent value.
+- Dependency detection is syntactic. A mention anywhere in the expression or
+  its variables counts, even on a branch evaluation would not take. The
+  image expression above depends on the runtime even when the override is
+  set, because the fallback names it.
+- The first dependent read resolves every declared reference. Success is
+  cached for the factory's lifetime; a failed attempt is not cached and
+  retries on the next dependent read.
+- The frame rule: a factory is one snapshot, one workload observation, one
+  binding set. New observation, new factory. Nothing refreshes in place.
+- Lists are sorted by namespace then name by the shared binder, whichever
+  door supplied them, so replay and live bind identical values.
+- Using an undeclared `references.<name>` fails when the definition is
+  validated, not at first evaluation. That check is new work in this KEP.
 </details>
 
-<details>
-<summary>laziness, precisely</summary>
+## Feeding the data
 
-- Dependency detection is syntactic. A mention anywhere in the expression,
-  or in a variable it uses, counts, including on a branch evaluation would
-  not take. The image expression above depends on the runtime even for a
-  TrainJob that carries an override, because the fallback names it.
-- The first dependent read resolves every declared reference.
-- A successful resolution is cached for the factory's lifetime. A failed
-  attempt is not cached; it retries on the next dependent read, using that
-  call's context.
-- The frame rule: a factory is one evaluation snapshot over one workload
-  observation. A new observation means a new factory. Nothing refreshes a
-  bound reference in place.
-</details>
-
-## Part 3: feeding the data
-
-Karta core owns the reading contract but no client:
+The core owns a small reading contract and no client:
 
 ```go
-// ListQuery grows by fields, never variadic options.
-type ListQuery struct {
-    Namespace string
-    Selector  labels.Selector
-}
-
 type ResourceReader interface {
     Get(ctx context.Context, gvk schema.GroupVersionKind,
         namespace, name string) (*unstructured.Unstructured, error)
@@ -258,310 +183,30 @@ type ResourceReader interface {
         query ListQuery) ([]unstructured.Unstructured, error)
 }
 
+type ListQuery struct {          // grows by fields, never options
+    Namespace string
+    Selector  labels.Selector
+}
+
 var ErrNotFound = errors.New("resource not found")
 var ErrPermissionDenied = errors.New("resource read denied")
-
-// PermissionChecker is optional. When the reader implements it, resolution
-// probes before fetching and a denial names the reference and the verb.
-type PermissionChecker interface {
-    CheckRead(ctx context.Context, gvk schema.GroupVersionKind,
-        namespace, verb string) error
-}
 ```
 
-Two methods over unstructured, plain arguments, sentinel errors. It is the
-same read surface controller-runtime settled on
-([client.Reader](https://github.com/kubernetes-sigs/controller-runtime/blob/main/pkg/client/interfaces.go)),
-without importing it. The reasons are concrete: no client-go dependency in
-the core or in any no-cluster consumer, results returned instead of written
-into caller-supplied output objects, a closed query struct instead of
-variadic options an implementer must interpret, and sentinel errors instead
-of Kubernetes status-error conventions an offline implementer would have to
-fabricate.
+It is controller-runtime's own read surface
+([client.Reader](https://github.com/kubernetes-sigs/controller-runtime/blob/main/pkg/client/interfaces.go))
+minus the parts an offline implementer should not carry: no client-go
+dependency, results returned instead of written into caller-supplied objects,
+a closed query struct instead of variadic options, sentinels instead of
+status errors.
 
-The factory keeps exactly two options; the four doors compose them:
+The factory takes exactly one reference source:
 
 ```go
-// exactly one of the two
 func WithReferenceReader(reader references.ResourceReader) FactoryOption
 func WithReferences(resolved references.ResolvedReferences) FactoryOption
 ```
 
-### Door 1: a client, behind the shipped adapter
-
-```go
-import ctrlreader "github.com/run-ai/karta/adapters/controllerruntime"
-
-reader := ctrlreader.FromReader(mgr.GetAPIReader())
-factory := resource.NewComponentFactoryFromObject(trainJobKarta, trainJob,
-    resource.WithReferenceReader(reader))
-```
-
-One line for a consumer that already holds a client. Cache or live is the
-consumer's choice of what it passes in; the seam does not know. The adapter
-lives in a separate Go module, `adapters/controllerruntime`, so the core and
-every no-cluster consumer stay client-free. This is the headline door in the
-docs. Both reader doors resolve lazily; this one also defers the cluster
-reads themselves, so a controller that polls status all day never fetches a
-reference it does not read.
-
-<details>
-<summary>door 1 fine print: caching, errors, permission preflight</summary>
-
-- The adapter reads unstructured objects. The default manager client
-  bypasses its cache for those unless unstructured caching is enabled
-  (`client.Options.Cache.Unstructured`). A consumer that wants cached
-  reference reads sets that up; `mgr.GetClient()` alone is not enough.
-- The adapter owns the two translations where adapter bugs live: not-found
-  to `ErrNotFound`, and forbidden to `ErrPermissionDenied`, dual-wrapped so
-  both `errors.Is(err, ErrPermissionDenied)` and `apierrors.IsForbidden(err)`
-  hold.
-- `FromClientWithAccessReviews(c)` adds a permission preflight: a denial
-  names the reference and verb before any fetch. Its limit comes from the
-  `CheckRead` contract: the check carries no object name, so it can deny a
-  caller whose RBAC allows exactly the named object (`resourceNames` rules;
-  see [SelfSubjectAccessReview](https://kubernetes.io/docs/reference/kubernetes-api/authorization-resources/self-subject-access-review-v1/)).
-  Consumers with name-scoped roles use the plain adapter, where the API
-  answer on the real read is the only authority.
-</details>
-
-### Door 2: the objects, no cluster
-
-```go
-reader := references.NewObjectsReader(objects...)
-```
-
-An in-memory reader over plain unstructured objects, shipped in core. The
-replay tests carry a private version of it today; this KEP promotes it into
-the library, and the CLI verify path and a wasm guest adopt it as they grow
-reference support. The full resolution machinery still runs: the name recipe
-still evaluates, the lookup still happens, a wrong `nameExpression` still
-misses. Resolution logic stays testable without a cluster, which is the
-point.
-
-### Door 3: the plan, any client
-
-The definition can hand the consumer its needs as data. The consumer asks
-"what do you need for this workload", fetches it however it likes, and
-returns the answers for checking:
-
-```go
-queries, err := references.Plan(ctx, trainJobKarta, trainJob)
-if err != nil {
-    return err // a recipe failed; nothing was fetched
-}
-results, err := fetchWithWhateverYouHave(queries)
-if err != nil {
-    return err
-}
-resolved, err := references.Fulfill(queries, results)
-if err != nil {
-    return err // a hole or a wrong answer; nothing binds
-}
-factory := resource.NewComponentFactoryFromObject(trainJobKarta, trainJob,
-    resource.WithReferences(resolved))
-```
-
-For a TrainJob named `bert` in `team-a` pointing at `karta-busybox`, the
-plan comes out as data any client can execute:
-
-```yaml
-- reference: trainingRuntime
-  apiVersion: trainer.kubeflow.org/v1alpha1
-  kind: ClusterTrainingRuntime
-  namespace: team-a        # cluster-scoped target ignores it
-  name: karta-busybox
-- reference: pods
-  apiVersion: v1
-  kind: Pod
-  namespace: team-a
-  selector: jobset.sigs.k8s.io/jobset-name=bert,
-            batch.kubernetes.io/job-name,
-            trainer.kubeflow.org/trainjob-ancestor-step in (trainer)
-```
-
-![the plan door](kep-refs-plan.png)
-
-The trade is stated plainly: planning is fetch-free, but the fetching it
-drives is eager, everything declared, up front. A status-polling controller
-belongs on door 1.
-
-<details>
-<summary>door 3 signatures</summary>
-
-Three pure functions in core. No new factory option, no CRD change:
-
-```go
-// Query is one concrete fetch. Exactly one of Name or Selector is set.
-// Namespace is the workload's own; a cluster-scoped target ignores it.
-type Query struct {
-    Reference string
-    GVK       schema.GroupVersionKind
-    Namespace string
-    Name      string
-    Selector  labels.Selector
-}
-
-// QueryResult answers one query. A get that found nothing answers with a
-// nil Object: not found is an explicit answer, never an omission.
-type QueryResult struct {
-    Reference string
-    Object    *unstructured.Unstructured
-    Items     []unstructured.Unstructured
-}
-
-// Plan evaluates every declared recipe against the workload and returns
-// the concrete queries, in declaration order. It fetches nothing.
-func Plan(ctx context.Context, karta *v1alpha2.Karta,
-    workload any) ([]Query, error)
-
-// Fulfill matches results to the plan and returns the values
-// WithReferences accepts, sorted and bound exactly as the reader path
-// binds them.
-func Fulfill(plan []Query, results []QueryResult) (ResolvedReferences, error)
-
-// ReferencedKinds returns the distinct GVKs a definition may read, with no
-// workload: enough to set up watches and RBAC ahead of time.
-func ReferencedKinds(karta *v1alpha2.Karta) []schema.GroupVersionKind
-```
-</details>
-
-<details>
-<summary>door 3 fine print: how Fulfill judges the answers</summary>
-
-The whole safety story is one distinction: "I forgot to look" and "I looked
-and it is not there" must never be confused. Without the check, both are an
-empty value, and the definition silently computes wrong answers.
-
-| the consumer's answers | what happens |
-|---|---|
-| a planned query has no answer | `ErrIncompletePlan`, naming the reference |
-| a lookup answered with a nil object | fine: an explicit miss, binds unbound |
-| a list answered with empty items | fine: binds `[]` |
-| an answer no query asked for, or a duplicate | `ErrUnplannedResult` |
-| both object and items set on one answer | `ErrUnplannedResult` |
-| wrong GVK, wrong name, or a list member outside the selector | `ErrWrongObject` |
-| wrong namespace on a namespaced answer, or duplicate list members | `ErrWrongObject` |
-
-The namespace check is lenient where it must be: an answer for a
-cluster-scoped kind carries no namespace, and `Fulfill` does no discovery,
-so it rejects only a namespace that contradicts the query's.
-
-Over-fetching while acquiring is fine. The consumer partitions its haul into
-exact answers before `Fulfill`; extra members inside a claimed answer are
-rejected rather than silently narrowed, so a dropped selector term is
-visible.
-
-One-shot is an API invariant, not a current limitation: recipes read the
-workload alone, so no fetched value can ever extend the plan. Crossplane's
-composition functions can request additional resources in later rounds,
-because their requirements grow from fetched data (the protocol shape is in
-[run_function.proto](https://github.com/crossplane/crossplane/blob/main/proto/fn/v1/run_function.proto),
-the iteration behavior in the
-[composition docs](https://docs.crossplane.io/latest/composition/compositions/)).
-Karta takes the requirements idea and drops the loop, because its recipes
-cannot grow that way by construction.
-</details>
-
-### Door 4: finished values, trusted
-
-```go
-resolved := references.ResolvedReferences{
-    // a hit: the object you fetched
-    "trainingRuntime": references.NewLookupValue(runtimeObject),
-    // an explicit miss: pass nil, the reference binds unbound
-    // "trainingRuntime": references.NewLookupValue(nil),
-    // an empty list: binds [], comprehensions see zero items
-    "pods": references.NewListValue(nil),
-}
-factory := resource.NewComponentFactoryFromObject(karta, workload,
-    resource.WithReferences(resolved))
-```
-
-The escape hatch for values that never came from queries: a batch pipeline
-with its own fetch layer, a host that resolved on its side of a boundary.
-No checks, no fetches, documented plainly as skipping both, with a pointer
-to `Fulfill` for the checked path. A declared list the map omits binds as an
-empty list; a declared lookup the map omits stays unbound.
-
-### One pipeline, no drift
-
-Internally there is exactly one resolution pipeline:
-
-```text
-Resolve(ctx, reader, karta, workload)
-    = Plan(ctx, karta, workload)      # compute the queries
-    + execute them through the reader # the only fetch
-    + bind the results                # shared with Fulfill
-```
-
-The reader path and the plan path share the compiler and the binder, so the
-two can never disagree about what a declaration means. A conformance suite
-(`referencestest.Conformance`) runs the same scenarios over every reader:
-hit, miss, namespace scoping including the empty-namespace rule,
-cluster-scoped kinds, selector matching, denial classification, list order.
-A reader that passes it behaves like the others on everything the resolver
-asks.
-
-## Prior art
-
-The declaration shape and the host split follow settled upstream patterns.
-Short version: every surveyed system keeps "what data" in the document and
-"how to fetch" in the host; the one that blurred the line is the cautionary
-tale.
-
-<details>
-<summary>ValidatingAdmissionPolicy params (Kubernetes)</summary>
-
-The policy declares `paramKind`; a binding declares `paramRef` with name XOR
-selector; the plugin owns all fetching, and the CEL layer receives resolved
-values only
-([ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/)).
-Karta's lookup XOR list mirrors the shape. `parameterNotFoundAction` is the
-model for a possible future per-reference not-found knob.
-</details>
-
-<details>
-<summary>Crossplane composition functions</summary>
-
-Requirements returned as data, host fetches, function computes: the origin
-of the plan door. Crossplane iterates because a function's requirements can
-grow from fetched data; Karta's recipes cannot, so its plan is one-shot
-([run_function.proto](https://github.com/crossplane/crossplane/blob/main/proto/fn/v1/run_function.proto),
-[composition docs](https://docs.crossplane.io/latest/composition/compositions/)).
-</details>
-
-<details>
-<summary>Gatekeeper referential data</summary>
-
-Sync configs declare which kinds the host replicates for policy to read;
-the CLI evaluates offline over user-supplied data
-([replicating data](https://github.com/open-policy-agent/gatekeeper/blob/master/website/docs/sync.md)).
-Also the cautionary half: the template's `requires-sync-data` annotation is
-descriptive, checked only by `gator sync test`
-([gator](https://open-policy-agent.github.io/gatekeeper/website/docs/gator/)),
-and can drift from what templates actually read. Karta's declarations are
-enforced by the engine itself.
-</details>
-
-<details>
-<summary>Kyverno external data sources</summary>
-
-The counter-example for fetch mechanics inside the document, discussed in
-part 1
-([external data sources](https://kyverno.io/docs/policy-types/cluster-policy/external-data-sources/)).
-</details>
-
-<details>
-<summary>controller-runtime client.Reader</summary>
-
-The two-method read surface Karta's reader mirrors without importing
-([interfaces.go](https://github.com/kubernetes-sigs/controller-runtime/blob/main/pkg/client/interfaces.go)).
-</details>
-
-## Consumer walkthroughs
-
-The headline case, a controller reconciling TrainJobs:
+### Door 1: a client
 
 ```go
 reader := ctrlreader.FromReader(mgr.GetAPIReader())
@@ -571,183 +216,259 @@ root, err := factory.GetRootComponent()
 if err != nil {
     return err
 }
-
 status, err := root.GetStatus(ctx)          // zero fetches
 spec, err := root.GetFragmentedPodSpec(ctx) // one Get, memoized
 if err != nil {
     return err
 }
-// single-instance components key their results by the empty instance id
-fmt.Println(spec[""].Image)                 // "busybox:1.36", from the runtime
+fmt.Println(spec[""].Image) // "busybox:1.36" - single-instance key is ""
 ```
 
+The adapter is a separate module, `adapters/controllerruntime`, so the core
+stays client-free. This is the door most consumers should use, and the docs
+say so: it is the only one that defers the cluster reads themselves, so a
+controller that polls status all day never pays for a reference it does not
+read.
+
 <details>
-<summary>recorded replay, same engine, no cluster</summary>
+<summary>door 1 fine print</summary>
+
+- The adapter reads unstructured objects. A default manager client bypasses
+  its cache for those; enable `client.Options.Cache.Unstructured` if cached
+  reference reads are wanted. `mgr.GetAPIReader()` reads direct either way.
+- The adapter owns the two translations where adapter bugs live: not-found
+  to `ErrNotFound`, forbidden to `ErrPermissionDenied` (dual-wrapped, so
+  `errors.Is` and `apierrors.IsForbidden` both hold).
+- `FromClientWithAccessReviews` adds a preflight that names the reference
+  and verb on a denial. It is best-effort: the check carries no object name,
+  so RBAC `resourceNames` rules can make it deny a read that would succeed.
+  Name-scoped consumers use the plain adapter; the real read is the
+  authority.
+</details>
+
+### Door 2: the objects
 
 ```go
 reader := references.NewObjectsReader(recording.References()...)
-factory := resource.NewComponentFactoryFromObject(trainJobKarta, recordedJob,
-    resource.WithReferenceReader(reader))
 ```
 
-Same resolver, same sort, same binding normalization: a recording replays
-exactly as the cluster ran.
-</details>
+Plain objects in, no cluster. Replay, the CLI, and a wasm guest use this
+door. The point is what still runs: the name recipe still evaluates, the
+lookup still happens, a wrong `nameExpression` still misses. Resolution logic
+gets tested without a cluster. (The replay tests carry a private version of
+this reader today; this KEP promotes it into the library.)
 
-<details>
-<summary>fetch personally, with any client (the plan door)</summary>
+### Door 3: the plan
 
-The full example is in door 3 above. The short of it: `Plan` gives concrete
-queries, you execute them with anything, `Fulfill` checks the answers, and
-the factory takes the result through `WithReferences`.
-</details>
+The definition can hand over its needs as data and let the consumer fetch
+with anything at all:
 
-<details>
-<summary>a wasm host</summary>
-
-`ReferencedKinds` tells the host what a definition may need. The host
-fetches over its bridge and either answers through `Fulfill` or wraps the
-objects with `NewObjectsReader`. The core compiles for wasm because it
-carries no client.
-</details>
-
-<details>
-<summary>setting up ahead of time, no workload yet</summary>
+![the plan door](kep-refs-plan.png)
 
 ```go
-for _, gvk := range references.ReferencedKinds(trainJobKarta) {
-    // add a watch, precompute an RBAC rule
+queries, err := references.Plan(ctx, trainJobKarta, trainJob) // no fetches
+if err != nil {
+    return err
 }
+results, err := fetchYourWay(queries) // any client, a recording, a bridge
+if err != nil {
+    return err
+}
+resolved, err := references.Fulfill(queries, results) // checks the answers
+if err != nil {
+    return err
+}
+factory := resource.NewComponentFactoryFromObject(trainJobKarta, trainJob,
+    resource.WithReferences(resolved))
 ```
+
+For `bert` in `team-a`, the plan is two queries any client can run: get
+ClusterTrainingRuntime `karta-busybox`, and list pods in `team-a` matching
+`jobset.sigs.k8s.io/jobset-name=bert,
+trainer.kubeflow.org/trainjob-ancestor-step in (trainer)`.
+
+The plan is one-shot by construction: recipes read the workload alone, so an
+answer can never create a new question. And the trade is stated up front:
+planning fetches nothing, but the fetching it drives is eager. Status
+pollers belong on door 1.
+
+<details>
+<summary>door 3 signatures and checks</summary>
+
+```go
+type Query struct {           // one concrete fetch; Name XOR Selector
+    Reference string
+    GVK       schema.GroupVersionKind
+    Namespace string
+    Name      string
+    Selector  labels.Selector
+}
+
+type QueryResult struct {     // nil Object = "looked, not there"
+    Reference string
+    Object    *unstructured.Unstructured
+    Items     []unstructured.Unstructured
+}
+
+func Plan(ctx context.Context, karta *v1alpha2.Karta,
+    workload any) ([]Query, error)
+func Fulfill(plan []Query, results []QueryResult) (ResolvedReferences, error)
+func ReferencedKinds(karta *v1alpha2.Karta) []schema.GroupVersionKind
+```
+
+`Fulfill` exists because "I forgot to look" and "I looked and it is not
+there" must never be confused; without the check both are an empty value and
+the definition silently computes wrong answers.
+
+| the answers | result |
+|---|---|
+| a planned query has no answer | `ErrIncompletePlan`, naming the reference |
+| a lookup answered nil, a list answered empty | fine: explicit miss / binds `[]` |
+| an unplanned or duplicate answer, or both object and items set | `ErrUnplannedResult` |
+| wrong GVK, name or namespace, a member outside the selector, duplicates | `ErrWrongObject` |
+
+Over-fetching while acquiring is fine, but answers must be exact: the
+consumer partitions before `Fulfill`, and extras inside a claimed answer are
+rejected so a dropped selector term is visible. The namespace check is
+lenient for cluster-scoped answers, which carry none.
+
+`ReferencedKinds` needs no workload; it exists for watch setup and RBAC
+precomputation.
+
+Prior art for the round question: Crossplane functions fetch in rounds
+because their requirements grow from fetched data
+([proto](https://github.com/crossplane/crossplane/blob/main/proto/fn/v1/run_function.proto),
+[docs](https://docs.crossplane.io/latest/composition/compositions/));
+Karta's cannot, so it takes the idea and drops the loop.
 </details>
+
+### Door 4: finished values
+
+```go
+resolved := references.ResolvedReferences{
+    "trainingRuntime": references.NewLookupValue(runtimeObject), // a hit
+    "pods":            references.NewListValue(nil),             // empty list
+}
+factory := resource.NewComponentFactoryFromObject(karta, workload,
+    resource.WithReferences(resolved))
+```
+
+The trusted escape hatch: no checks, no fetches, for consumers with their own
+fetch layer. `NewLookupValue(nil)` says "looked, not there" explicitly. An
+omitted declared list binds empty; an omitted lookup stays unbound. Anyone
+who wants the checks uses `Fulfill` first.
+
+### One pipeline
+
+Internally, `Resolve` IS `Plan` plus execute plus bind. The reader path and
+the plan path share the compiler and the binder, so they cannot drift apart.
+A conformance suite (`referencestest.Conformance`) runs the same scenarios
+over the shipped adapter, the objects reader, and any consumer's reader:
+hit, miss, namespace scoping, cluster-scoped kinds, selectors, denials,
+order. A reader that passes behaves like the others on everything the
+resolver asks.
+
+## Prior art
+
+- ValidatingAdmissionPolicy params: `paramKind` in the policy, `paramRef`
+  with name XOR selector in the binding, the plugin fetches, CEL gets
+  resolved values. The closest shape to this design.
+  ([docs](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/))
+- Crossplane functions: requirements as data, host fetches. The plan door's
+  origin. ([docs](https://docs.crossplane.io/latest/composition/compositions/))
+- Gatekeeper: sync configs declare referential data, the CLI evaluates
+  offline over user-supplied data; its descriptive `requires-sync-data`
+  annotation drifts because only a linter reads it, which is why Karta's
+  declarations are engine-enforced.
+  ([sync](https://github.com/open-policy-agent/gatekeeper/blob/master/website/docs/sync.md),
+  [gator](https://open-policy-agent.github.io/gatekeeper/website/docs/gator/))
+- Kyverno: the cautionary tale for fetch mechanics inside the document, cited
+  in the declaring section.
+- TrainJob runtimeRef, the motivating workload:
+  [trainjob_types.go](https://github.com/kubeflow/trainer/blob/master/pkg/apis/trainer/v1alpha1/trainjob_types.go).
 
 ## Migration and versioning
 
-References are additive. They ship in the same `run.ai/v1alpha2` version
-KEP-0001 introduces. A definition without a `references` block is unchanged,
-and every existing consumer keeps working without touching the new options.
-There is no conversion and no storage change beyond KEP-0001's.
-
-Consumers adopt at their own pace. A controller adds one
-`WithReferenceReader` line when it starts using a definition that declares
-references. A consumer that passes nothing still works until an expression
-actually reads a reference; that read fails with a sentinel saying the
-factory was built without a reference source.
+Additive, in the same `run.ai/v1alpha2` KEP-0001 introduces. A definition
+without references is unchanged; a consumer that passes no reference source
+still works until an expression reads a reference, and that read fails with
+a sentinel saying the factory has no reference source. No conversion, no
+storage change beyond KEP-0001's.
 
 ## Validation
 
-Which expressions see which names:
-
-| expression | environment |
+| expression | sees |
 |---|---|
-| a reference recipe (nameExpression, label values) | `object` only |
-| definition expressions (reads, patches, matchers) | `object`, `variables`, `references` |
-| pod-side expressions (podSelector, groupBy) | one pod |
+| reference recipes (nameExpression, label values) | `object` only |
+| definition expressions | `object`, `variables`, `references` |
+| pod-side expressions | one pod |
 
-- Admission, structural: reference names are unique CEL identifiers off the
-  reserved list; exactly one of lookup or list; label values set exactly one
-  of value or expression; selector operators and value counts follow the
-  Kubernetes selector rules.
-- Admission, compilation: every reference recipe compiles against the
-  workload-only environment, so a recipe naming `references.` is rejected.
-  That rule is what keeps plans one-shot. Every definition expression using
-  `references.<name>` must name a declared reference; the check covers dot
-  access, optional access, and literal indexing, and dynamic indexing falls
-  back to a runtime unknown. These checks are new work this KEP adds; the
-  prototype does not enforce them yet.
-- Run time, per workload: a resolved lookup name must be a non-empty string
-  (this depends on the workload, so it cannot be an admission check); a
-  failed recipe names its reference; a denied read names the reference and
-  verb; the binder sorts lists from every door.
+Admission checks the structure (identifiers, one-ofs, selector rules) and
+compiles every expression: recipes compile in the workload-only environment,
+which is the rule that keeps plans one-shot, and definition expressions may
+only use declared reference names. Those compile-time checks are new work in
+this KEP. What depends on the workload stays a run-time check: a resolved
+lookup name must be a non-empty string, errors name their reference.
 
 ## Test plan
 
-- Unit: recipe evaluation (empty name, non-string result), selector
-  building across all four operators and both value sources, miss and empty
-  bindings, deterministic order, plan and fulfill for every row of the
-  answer table, reserved-name and one-of validation.
-- Conformance: the suite over the shipped adapter (against a fake client),
-  the objects reader, and the replay reader; equivalence between
-  reader-resolved and plan-fulfilled bindings on the same inputs.
-- Live e2e: the TrainJob flow against a real cluster: effective image and
-  resources through the runtime, zero fetches on a status-only pass, a
-  denial naming the reference, suspend and resume unaffected.
-- Replay: recorded trainer lifecycles replay byte-identical to the live
-  run's observed statuses.
+- Unit: recipes (empty name, non-string), selectors across all operators and
+  both value sources, miss and empty bindings, order, every row of the
+  `Fulfill` table, reserved names and one-ofs.
+- Conformance: the suite over the shipped adapter (fake client), the objects
+  reader, and the replay reader; reader-resolved equals plan-fulfilled on
+  the same inputs.
+- Live e2e: the TrainJob flow: effective image and resources through the
+  runtime, zero fetches on a status-only pass, a denial naming the
+  reference.
+- Replay: recorded trainer lifecycles replay identical to the live run.
 
 ## Risks and mitigations
 
-- Stale joins. The workload and a reference are two reads; no Kubernetes API
-  makes them one instant. The mitigation is the frame rule plus level-based
-  reconciliation: one factory per observation, converge on the next event.
-- An under-fetching plan consumer. Mitigated by `Fulfill`: a hole is a loud
-  error, never an empty value; misses must be said explicitly.
-- Recorded data that silently lacks a reference. The objects reader answers
-  what it holds; a recording made before a definition declared a new
-  reference replays that reference as a miss. Validating a recording's
-  captured inventory against the declarations is future work; until then
-  the gap is documented, not detected.
-- Permission preflight is best-effort. The `CheckRead` contract carries no
-  object name, so a broad access review can deny a caller whose RBAC allows
-  exactly the named object. Consumers with name-scoped roles use the plain
-  adapter; the API answer on the real read is always authoritative.
-- Fan-out on list references. A wide selector is the definition author's
-  choice and visible in review. A reader must return the complete matching
-  set or an error; silently capping a list would change counts and
-  comprehensions, and `Fulfill` can detect an unanswered query, not a
-  dishonestly shortened answer.
-- Trust and permissions. A definition is data and may come from anyone;
-  reference reads run under the consumer's credentials, not the definition
-  author's. The declarations bound what a definition can name (kinds and
-  same-namespace objects), and the consumer bounds what its reader will
-  actually serve, from RBAC on its client down to a reader that pins
-  namespaces or allow-lists kinds. Recordings contain the referenced
-  objects' contents and deserve the same handling as the workloads they
-  capture. Resolution errors name references and kinds, never object
-  contents.
+- Stale joins. Two objects, two reads, never one instant; no Kubernetes API
+  offers a cross-object snapshot. The frame rule plus level-based
+  reconciliation is the answer: one factory per observation, converge on the
+  next event.
+- A recording can predate a declaration and replay that reference as a miss.
+  Checking a recording's inventory against the declarations is future work;
+  until then the gap is documented, not detected.
+- A reader that silently caps a list changes counts and comprehensions. The
+  contract forbids it: complete set or error. `Fulfill` catches unanswered
+  queries, not dishonest ones.
+- Trust: a definition is data from anyone, and reads run under the
+  consumer's credentials. Declarations bound what can be named (kinds,
+  same-namespace); the consumer bounds what its reader serves, via RBAC or
+  a reader that pins namespaces and allow-lists kinds. Recordings contain
+  referenced objects and deserve the same handling as the workloads they
+  capture. Errors name references and kinds, never contents.
 
 ## Alternatives considered
 
-- controller-runtime `client.Reader` as the seam, adapter-free. One import
-  line cheaper for controllers, and it drags client-go into the CLI, the
-  replay tests, and the wasm build, while forcing no-cluster implementers
-  to fabricate typed status errors. Rejected; the adapter closes the gap to
-  one constructor call.
-- Iterative requirements rounds. Needed only when fetched data can extend
-  the requirements; Karta's recipes cannot, by validation. Rejected as
-  machinery without a driver.
-- Fetch mechanics in the CRD (strategy, cache hints, API-call entries).
-  Rejected for portability and for handing definition authors a load lever
-  over consumer credentials; the Kyverno experience is the cautionary tale.
-- A namespace field on references. Rejected: the workload's namespace is
-  the boundary, and a definition that can name other namespaces is a
-  definition that can read them.
-- One merged Get-or-List method with a query union. Rejected: two methods
-  with plain arguments are easier to implement correctly, and the union
-  reintroduces the nil-versus-empty ambiguity the sentinels exist to kill.
-- An unchecked `Plan() + WithReferences` convenience. Rejected: incomplete
-  fetching must not look like success; `Fulfill` exists exactly for that.
+- `client.Reader` as the seam, adapter-free. Cheaper by one import for
+  controllers; drags client-go into the CLI, replay, and wasm, and makes
+  offline implementers fabricate status errors. The adapter closes the gap
+  to one constructor call.
+- Iterative plan rounds. Machinery without a driver; recipes cannot grow
+  from fetched data.
+- Fetch mechanics in the CRD. Portability and a load lever handed to
+  definition authors; see the Kyverno note.
+- A namespace field on references. A definition that can name other
+  namespaces is a definition that can read them.
+- An unchecked `Plan` + `WithReferences` shortcut. Incomplete fetching must
+  not look like success; that is the entire reason `Fulfill` exists.
 
 ## Future work
 
-- A per-reference not-found action, the `parameterNotFoundAction` shape, if
-  catalog experience shows misses that should fail fast instead of binding
-  unbound.
-- Field selectors on list references, as a new `ListQuery` field flowing
-  through the same compiler into `Query`.
-- A dependency protocol for reference chains, only if a real definition
-  needs one; it will not arrive by loosening the workload-only rule
-  quietly.
-- Watch helpers built on `ReferencedKinds` for consumers that want cache
-  warm-up before the first reconcile.
-- Validating a recording's captured reference inventory against the
-  definition's declarations.
+- A per-reference not-found action (the `parameterNotFoundAction` shape) if
+  the catalog grows misses that should fail fast.
+- Field selectors on lists, as a `ListQuery` field flowing into `Query`.
+- Recording inventory validation against declarations.
+- Watch helpers on top of `ReferencedKinds`.
 
 ## Implementation history
 
-- 2026-09-12: reference declarations, resolver, recorder support, and the
-  live TrainJob flow prototyped; recorded fixtures replay green.
+- 2026-09-12: declarations, resolver, recorder support, and the live
+  TrainJob flow prototyped; recorded fixtures replay green.
 - 2026-09-14: this KEP; status `implementable`. The adapter module, the
-  exported objects reader, the plan door (Plan, Fulfill, ReferencedKinds),
-  the usage-against-declarations admission checks, and the conformance
-  suite are proposal only.
+  exported objects reader, the plan door, the usage-against-declarations
+  checks, and the conformance suite are proposal only.
