@@ -403,6 +403,12 @@ change and needs a KEP.
 
 ### A whole definition, before and after
 
+The v1alpha2 version is below; the v1alpha1 original is folded for
+contrast.
+
+<details>
+<summary>the same definition in v1alpha1 (jq)</summary>
+
 ```yaml
 # v1alpha1 (jq)
 apiVersion: run.ai/v1alpha1
@@ -432,6 +438,7 @@ spec:
           - path: .spec.suspend
             value: "false"
 ```
+</details>
 
 ```yaml
 # v1alpha2 (CEL)
@@ -678,18 +685,107 @@ additionalChildKinds:
   selectors kept verbatim) apply to it too.
 </details>
 
+## The new CRD, at a glance
+
+One skeleton with every change marked. The folded lists after it give the
+reason for each difference, one line per field; the sections above hold
+the full story.
+
+```yaml
+apiVersion: run.ai/v1alpha2              # new version, breaking on purpose
+kind: Karta
+spec:
+  variables:                             # new: name an expression once
+    - name: specParallelism
+      expression: object.?spec.?parallelism.orValue(1)
+  structureDefinition:
+    rootComponent:
+      name: job
+      apiVersion: batch/v1               # was kind: {group, version, kind}
+      kind: Job
+      specDefinition:
+        podTemplateSpec:                 # was podTemplateSpecPath
+          expression: object[?"spec"][?"template"].orValue(null)
+          patches:                       # new: the write, declared
+            - patchType: MergePatch     #   what the expression builds
+              expression: '{"spec": {"template": value}}'
+          patchStrategy: Replace         # new: clear first, then set
+      scaleDefinition:
+        replicas:                        # was replicasPath
+          expression: variables.specParallelism
+      statusDefinition:
+        statusMappings:
+          running:
+            - byExpression:              # expectedResult is gone
+                expression: object.?status.?active.orValue(0) > 0
+      suspendDefinition:
+        suspendActions:                  # was path + value pairs
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
+  scheduling:                            # was optimizationInstructions
+    podGroup:                            # the podGroups plural is gone
+      name: job
+```
+
+<details>
+<summary>new fields, and why</summary>
+
+| field | why it exists |
+|---|---|
+| `expression` | every read is CEL, the language admission policies already use; wrong-typed questions fail loudly instead of answering wrong |
+| `patches` + `patchType` | writes are declared, not inferred from the read path; the list shape is what MutatingAdmissionPolicy uses for mutations |
+| `matchConditions` | if/else lives in the API, first match wins, instead of ternaries buried in strings |
+| `patchStrategy` | a pod template must not merge into the old one; an enum so a third strategy can arrive without a break |
+| `variables` | a long expression gets a name once, the VAP shape, and every field that needs it says `variables.<name>` |
+</details>
+
+<details>
+<summary>renamed or reshaped, and why</summary>
+
+| was | now | why |
+|---|---|---|
+| `kind: {group, version, kind}` | `apiVersion` + `kind` | the two lines every manifest starts with; `kind.kind` stops stuttering |
+| `optimizationInstructions` | `scheduling` | named for one consumer; `RuntimeClass.spec.scheduling` is the shipping name for the same idea |
+| `gangScheduling.podGroups` (deprecated) | `scheduling.podGroup` + `subGroups` | the old API already pointed here; the version bump finishes the move |
+| `instanceIdPath` | `instanceIDs` | the path becomes an expression like every read, and upstream spells `machineID`, never `Ids` |
+| `additionalChildKinds` entries | flat, keyed by `(apiVersion, kind)` | `kind` alone collides when two groups define the same kind name |
+| `groupByKeyPaths` | `groupByExpressions` | same move as every other path |
+</details>
+
+<details>
+<summary>removed, and why</summary>
+
+| gone | why |
+|---|---|
+| all 24 `*Path` fields | reads are expressions now |
+| `expectedResult` | a matcher is a boolean, like every CEL gate in Kubernetes |
+| `filters` | selection logic moves into the expressions that need it |
+| path + value suspend actions | actions are patch entries, same grammar as every write |
+| the `podGroups` plural and its wrapper | the deprecated model, finished |
+</details>
+
 ## Migration and versioning
 
 - `run.ai/v1alpha2` is served and stored; no conversion webhook. Alpha
   to alpha carries no compatibility promise, which is why the change
   lands now and not at beta.
-- A stored version cannot just disappear. The operator procedure:
-  export the existing definitions; pause writers and consumers; apply
-  the transitional CRD (v1alpha1 served, v1alpha2 storage); apply the
-  rewritten definitions; confirm nothing is still stored as v1alpha1;
-  drop v1alpha1 from served versions and from `status.storedVersions`;
-  restart consumers. Rolling back is the same walk in reverse with the
-  exported originals.
+- A stored version cannot just disappear. The walk-through for a
+  cluster that already stores v1alpha1 definitions is folded below.
+
+<details>
+<summary>retiring the stored v1alpha1, step by step</summary>
+
+1. Export the existing definitions.
+2. Pause writers and consumers.
+3. Apply the transitional CRD: v1alpha1 served, v1alpha2 storage.
+4. Apply the rewritten definitions.
+5. Confirm nothing is still stored as v1alpha1.
+6. Drop v1alpha1 from served versions and from `status.storedVersions`.
+7. Restart consumers.
+
+Rolling back is the same walk in reverse, with the exported originals.
+</details>
+
 - The CRD, the catalog, admission validation, and the consuming
   binaries move together. Mixed old-language consumers against
   new-language definitions are not supported.
