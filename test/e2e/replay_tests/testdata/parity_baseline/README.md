@@ -3,7 +3,7 @@ SPDX-License-Identifier: Apache-2.0
 Copyright (c) 2026 NVIDIA Corporation
 -->
 
-# jq engine baseline
+# Parity baseline
 
 These fixtures are the raw output of the jq engine, captured at commit
 `a0166142`, the last commit before the CEL adoption. For every recorded
@@ -24,11 +24,11 @@ The generator needs the jq engine, which no longer exists on this
 branch, so it runs in a worktree of the pre-CEL commit:
 
 ```sh
-git worktree add ../jq-baseline-src a0166142
-mkdir ../jq-baseline-src/paritydump
-cp test/e2e/replay_tests/testdata/jq_baseline/generator/main.go ../jq-baseline-src/paritydump/
-cd ../jq-baseline-src
-go run ./paritydump <repo>/test/e2e/recorded_data <repo>/test/e2e/replay_tests/testdata/jq_baseline
+git worktree add ../baseline-src a0166142
+mkdir ../baseline-src/paritydump
+cp test/e2e/replay_tests/testdata/parity_baseline/generator/main.go ../baseline-src/paritydump/
+cd ../baseline-src
+go run ./paritydump <repo>/test/e2e/recorded_data <repo>/test/e2e/replay_tests/testdata/parity_baseline
 ```
 
 ## Accepted divergences

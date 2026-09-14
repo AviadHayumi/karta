@@ -4,7 +4,7 @@
 // Baseline generator for the cel-vs-jq parity suite. Runs at the last jq
 // commit and dumps, per recorded object, the result of every read and every
 // write the component API offers. The snapshot logic below is a verbatim copy
-// of snapshotStep and its helpers from jq_parity_test.go on the cel branch.
+// of snapshotStep and its helpers from parity_test.go on the cel branch.
 //
 // Usage: go run ./paritydump <recordings-root> <output-root>
 package main
@@ -106,7 +106,7 @@ func die(err error) {
 // snapshotStep drives every read and every write the component API offers
 // against one recorded object and returns a serializable picture of what the
 // engine did with it. The same function body runs on the pre-CEL commit to
-// produce the jq baseline, so any edit here requires regenerating the fixtures.
+// produce the parity baseline, so any edit here requires regenerating the fixtures.
 func snapshotStep(karta *kartav1alpha1.Karta, raw map[string]any) map[string]any {
 	ctx := context.Background()
 	obj := (&unstructured.Unstructured{Object: raw}).DeepCopy()

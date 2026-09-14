@@ -22,11 +22,11 @@ import (
 )
 
 const (
-	jqBaselineRoot   = "testdata/jq_baseline"
-	parityScheduler  = "karta-parity-scheduler"
-	parityLabelKey   = "karta-parity"
-	parityLabelValue = "true"
-	readErrorMarker  = "<read-error>"
+	parityBaselineRoot = "testdata/parity_baseline"
+	parityScheduler    = "karta-parity-scheduler"
+	parityLabelKey     = "karta-parity"
+	parityLabelValue   = "true"
+	readErrorMarker    = "<read-error>"
 )
 
 var parityNodeAffinity = &corev1.NodeAffinity{
@@ -39,14 +39,14 @@ var parityNodeAffinity = &corev1.NodeAffinity{
 	},
 }
 
-// The baseline under testdata/jq_baseline was produced by the jq engine at the
+// The baseline under testdata/parity_baseline was produced by the jq engine at the
 // last commit before the CEL adoption, by running snapshotStep - the exact same
 // logic as below - over every recorded object. This suite replays the identical
 // reads and writes through the CEL engine and requires byte-for-byte agreement,
 // with four accepted divergence classes where the jq engine was wrong or lossy;
 // each is enforced by a narrow rule below and documented with counts in
-// testdata/jq_baseline/README.md, together with the regeneration steps.
-var _ = Describe("CEL matches the jq engine baseline", func() {
+// testdata/parity_baseline/README.md, together with the regeneration steps.
+var _ = Describe("CEL matches the previous engine baseline", func() {
 	recordings, _ := filepath.Glob(recordedGlob)
 	if len(recordings) == 0 {
 		return
@@ -56,9 +56,9 @@ var _ = Describe("CEL matches the jq engine baseline", func() {
 		path := path
 		rel := strings.TrimPrefix(path, "../recorded_data/")
 		It("matches "+rel, func(_ SpecContext) {
-			baselineBytes, err := os.ReadFile(filepath.Join(jqBaselineRoot, rel))
+			baselineBytes, err := os.ReadFile(filepath.Join(parityBaselineRoot, rel))
 			Expect(err).NotTo(HaveOccurred(),
-				"missing jq baseline for %s; see testdata/jq_baseline/README.md", rel)
+				"missing parity baseline for %s; see testdata/parity_baseline/README.md", rel)
 			var baseline map[string]any
 			Expect(yaml.Unmarshal(baselineBytes, &baseline)).To(Succeed())
 			baselineSteps, _ := baseline["steps"].([]any)
@@ -78,14 +78,14 @@ var _ = Describe("CEL matches the jq engine baseline", func() {
 				steps = append(steps, step)
 			}
 			Expect(steps).To(HaveLen(len(baselineSteps)),
-				"%s: cel walked a different number of recorded states than jq did", rel)
+				"%s: cel walked a different number of recorded states than the previous engine did", rel)
 
 			for i, step := range steps {
 				baseStep, _ := baselineSteps[i].(map[string]any)
 				state, _ := step["state"].(string)
 				for _, section := range []string{"state", "factoryError", "mutations", "suspends"} {
 					Expect(canonYAML(step[section])).To(Equal(canonYAML(baseStep[section])),
-						"%s step %d (%s): %s diverges from the jq engine", rel, i, state, section)
+						"%s step %d (%s): %s diverges from the previous engine", rel, i, state, section)
 				}
 				compareReads(rel, i, state, step["reads"], baseStep["reads"])
 				for _, section := range []string{"docAfterWrites", "docAfterSuspend", "docAfterResume"} {
@@ -107,7 +107,7 @@ func compareReads(rel string, step int, state string, got, base any) {
 	gotList, _ := got.([]any)
 	baseList, _ := base.([]any)
 	Expect(gotList).To(HaveLen(len(baseList)),
-		"%s step %d (%s): cel sees a different number of components than jq did", rel, step, state)
+		"%s step %d (%s): cel sees a different number of components than the previous engine did", rel, step, state)
 
 	for i := range gotList {
 		gotRead, _ := gotList[i].(map[string]any)
@@ -134,7 +134,7 @@ func compareReads(rel string, step int, state string, got, base any) {
 					"%s step %d (%s) component %v: jq errored reading instanceIds; cel reads no ids there and must not return ids or an error", rel, step, state, gotRead["name"])
 			default:
 				Expect(canonYAML(gotVal)).To(Equal(canonYAML(baseVal)),
-					"%s step %d (%s) component %v: read %s diverges from the jq engine", rel, step, state, gotRead["name"], key)
+					"%s step %d (%s) component %v: read %s diverges from the previous engine", rel, step, state, gotRead["name"], key)
 			}
 		}
 	}
@@ -147,10 +147,10 @@ func compareStatus(rel string, step int, state string, name, got, base any) {
 	gotMap, gotOK := deepCanon(got).(map[string]any)
 	baseMap, baseOK := deepCanon(base).(map[string]any)
 	Expect(gotOK && baseOK).To(BeTrue(),
-		"%s step %d (%s) component %v: status diverges from the jq engine (jq=%v cel=%v)", rel, step, state, name, base, got)
+		"%s step %d (%s) component %v: status diverges from the previous engine (jq=%v cel=%v)", rel, step, state, name, base, got)
 	for _, field := range []string{"phase", "conditions"} {
 		Expect(canonYAML(gotMap[field])).To(Equal(canonYAML(baseMap[field])),
-			"%s step %d (%s) component %v: status %s diverges from the jq engine", rel, step, state, name, field)
+			"%s step %d (%s) component %v: status %s diverges from the previous engine", rel, step, state, name, field)
 	}
 	gotStatuses, _ := gotMap["matchedStatuses"].([]any)
 	baseStatuses, _ := baseMap["matchedStatuses"].([]any)
@@ -188,7 +188,7 @@ func compareDoc(rel string, step int, section string, got, base any) {
 		return
 	}
 	Expect(canonYAML(stripNulls(deepCanon(got)))).To(Equal(canonYAML(stripNulls(deepCanon(base)))),
-		"%s step %d: %s diverges from the jq engine beyond null elision", rel, step, section)
+		"%s step %d: %s diverges from the previous engine beyond null elision", rel, step, section)
 }
 
 func stripNulls(value any) any {
@@ -216,7 +216,7 @@ func stripNulls(value any) any {
 // snapshotStep drives every read and every write the component API offers
 // against one recorded object and returns a serializable picture of what the
 // engine did with it. The same function body runs on the pre-CEL commit to
-// produce the jq baseline, so any edit here requires regenerating the fixtures.
+// produce the parity baseline, so any edit here requires regenerating the fixtures.
 func snapshotStep(karta *kartav1alpha1.Karta, raw map[string]any) map[string]any {
 	ctx := context.Background()
 	obj := (&unstructured.Unstructured{Object: raw}).DeepCopy()
