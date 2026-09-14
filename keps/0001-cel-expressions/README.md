@@ -89,13 +89,48 @@ podTemplateSpec:
 The `[?"key"]` form means "this field may be missing". A missing field
 becomes a value you handle with `.orValue(...)`, instead of an error or a
 silent null. jq made that choice for you; CEL makes you write it down.
-One trap to know when converting: jq's `// 0` default also fires when the
-value is `false`. CEL's `orValue` fires only on absence. Where a
-definition relied on the jq behavior, spell it out:
+
+There are three ways to reach a field, all standard CEL:
+
+```yaml
+object.spec.template            # plain: an error if any hop is missing
+object.?spec.?template          # optional, for identifier-shaped keys
+object[?"spec"][?"template"]    # optional, for any key
+```
+
+The two optional forms mean the same thing. The bracket form exists for
+keys a dot cannot spell, like a label key:
+`object.metadata.labels[?"jobset.sigs.k8s.io/jobset-name"]`. Use plain
+access for fields the API guarantees, an optional form plus `orValue` for
+everything else, and pick dot or bracket by the key.
+
+<details>
+<summary>migrating jq's // default, exactly</summary>
+
+jq's `//` falls through on null and also on `false`. CEL's `orValue`
+fires only on absence. For nearly every field this does not matter: a
+replica count is never `false`, so `object.?spec.?parallelism.orValue(1)`
+is the whole migration. The catalog's mechanical conversion kept jq's
+behavior literally wherever it could not prove the field never holds
+`false`, and that spelling looks like this:
 
 ```yaml
 expression: ([dyn(object.?status.?ready.orValue(null))].filter(v, v != null && v != false) + [0])[0]
 ```
+
+Token by token: read the field, absent becomes null; wrap the one value
+in a list; drop it when it is null or false; append the default; take the
+first element. A one-element coalesce, written with list machinery
+because CEL has no "null-or-false" operator.
+
+There is no shorter standard spelling. cel-go's
+`optional.ofNonZeroValue` looks close but treats every zero value as
+absent, so a legitimate `ready: 0` would turn into the default. The
+`cel.bind` extension would only name the repetition, and it is not part
+of karta's environment. When a definition needs this idiom more than
+once, name it once as a variable; when the field cannot hold `false`,
+write `orValue` and move on.
+</details>
 
 ### How a write looks
 
@@ -131,6 +166,104 @@ podTemplateSpec:
   authors write their removals explicitly. It is an enum rather than a
   boolean so a third strategy can be added later without a breaking
   change.
+
+<details>
+<summary>everything a patch can do, on real definitions</summary>
+
+Set one field. The CronJob catalog's suspend action:
+
+```yaml
+- patchType: MergePatch
+  expression: '{"spec": {"suspend": true}}'
+```
+```yaml
+# the CronJob, before -> after
+spec:
+  schedule: "*/1 * * * *"        spec:
+                                   schedule: "*/1 * * * *"
+                                   suspend: true
+```
+
+Replace a subtree. The CronJob pod template write, with
+`patchStrategy: Replace` so the old template cannot bleed into the new
+one:
+
+```yaml
+patches:
+  - patchType: MergePatch
+    expression: '{"spec": {"jobTemplate": {"spec": {"template": value}}}}'
+patchStrategy: Replace
+```
+
+The first pass runs with `value` bound to null, which deletes
+`spec.jobTemplate.spec.template`; the second sets the new template clean.
+Under the default `Merge`, a container removed from the new template
+would have survived from the old one.
+
+Delete a field. In a merge patch, null removes:
+
+```yaml
+- patchType: MergePatch
+  expression: '{"metadata": {"labels": {"failed-attempt": null}}}'
+```
+
+Write one instance of a map-keyed component. The Dynamo definition, where
+`instance` is the service name being written:
+
+```yaml
+- patchType: MergePatch
+  expression: '{"spec": {"services": {instance: {"labels": value}}}}'
+```
+```yaml
+# DynamoGraphDeployment: only the addressed service changes
+spec:
+  services:
+    Frontend:  {labels: ...}   # instance == "Frontend" -> written
+    Worker:    {...}           # untouched
+```
+
+Write one instance of a list-keyed component. The JobSet definition,
+where `index` is the position; RFC 6902 is the tool because a merge
+patch cannot address a list element:
+
+```yaml
+- patchType: JSONPatch
+  expression: '[{"op": "add",
+    "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template",
+    "value": value}]'
+```
+
+An `add` on an existing key replaces it, so this is a clean per-element
+overwrite. Any RFC 6902 op is legal in the list: `add`, `replace`,
+`remove`, `test`.
+
+Write into parents that may not exist. The Grove definition sets pod
+affinity under a path whose `affinity` map often is not there yet:
+
+```yaml
+- patchType: JSONPatch
+  expression: '[{"op": "add",
+    "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/podAffinity",
+    "value": value}]'
+```
+
+Strict RFC 6902 fails when a parent is missing; karta creates missing
+map parents for an `add`, so this works on a clique with no affinity at
+all. List parents are never invented.
+
+Decide at write time whether to write. The KServe definition writes the
+predictor container only when the definition found one; `{}` means no
+change:
+
+```yaml
+- patchType: MergePatch
+  expression: 'variables.containerKey != "" ?
+    {"spec": {"predictor": {variables.containerKey: value}}} : {}'
+```
+
+Pick a patch by the document's shape. That is the `matchConditions`
+mechanism, next section.
+</details>
 
 Why one list and not a single `patch` field plus a list? Because upstream
 never does that. MutatingAdmissionPolicy has `mutations`, a list;
@@ -217,6 +350,10 @@ spec:
         replicas:
           expression: variables.specReplicas
 ```
+
+(That expression is the exact-jq default from the migration note above,
+verbose on purpose: an idiom worth naming once is exactly what variables
+are for.)
 
 Rules: names are unique CEL identifiers, may not shadow the reserved
 words (`object`, `value`, `instance`, `index`, `variables`,
@@ -305,7 +442,7 @@ metadata:
 spec:
   variables:
     - name: specParallelism
-      expression: ([dyn(object[?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+      expression: object.?spec.?parallelism.orValue(1)
   structureDefinition:
     rootComponent:
       name: job
