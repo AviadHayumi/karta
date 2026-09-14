@@ -69,7 +69,7 @@ metrics interface.
 
 Every workload-scoped series carries `namespace`, `workload`,
 `workload_kind`, and `workload_group`. Labels are additive-only: a released
-metric never loses or renames a label. The exporter emits five families:
+metric never loses or renames a label. The exporter emits six families:
 
 ```text
 # one series per attributed pod, value always 1 - the attribution primitive
@@ -128,13 +128,15 @@ For each chosen Karta the exporter starts one full informer on the root
 kind and metadata-only informers on the child kinds (the `kind` of child
 components plus `additionalChildKinds`). Pods come from a single informer
 whose cache is trimmed to metadata, `spec.nodeName`, and `status.phase`,
-which is everything pod selectors read; `--full-pod-cache` is the escape
-hatch for a custom Karta that reads deeper.
+which is everything pod selectors read; `--full-pod-cache` widens the
+cache and re-attributes on any pod change, the escape hatch for a custom
+Karta that reads deeper.
 
 A workload event runs jq on the workload once: the status mappings, the
 scale paths, and the instance ids, stored as one record. A pod event walks
-controller owner references through the owner index until it reaches a
-kind with a chosen Karta. Pods register their own owner edge too, because
+controller owner references through the owner index to the outermost kind
+with a chosen Karta: a described Job inside a described JobSet belongs to
+the JobSet. Pods register their own owner edge too, because
 pods can be middle owners: a LeaderWorkerSet worker StatefulSet is owned by
 its leader pod, so a worker's chain is pod, StatefulSet, Pod, StatefulSet,
 LeaderWorkerSet. A walk that dead-ends on a not-yet-observed owner parks
@@ -163,8 +165,9 @@ workload-to-pods index, so a workload event re-attributes only its own
 pods, and only when its instance set changed. The collector renders a
 consistent snapshot as const metrics on scrape: no gauge bookkeeping, so a
 deleted object simply stops being rendered and Prometheus staleness closes
-its series. `/readyz` stays false until every informer syncs; a restarting
-exporter is a visible scrape gap, never plausible zeros.
+its series. Until the first full sync, `/metrics` answers 503 and
+`/readyz` stays false; a starting exporter is a visible scrape gap, never
+plausible zeros.
 
 ### The join
 
@@ -185,31 +188,35 @@ Three decisions in that expression carry the correctness story:
 
 - Every granularity is computed from the raw per-pod join, never from
   another recorded average. A prefill pod with 8 GPUs at 90 next to a
-  decode pod with 1 GPU at 0 must record the pod-weighted 80, not 45. The
-  rule tests assert exactly that case.
+  decode pod with 1 GPU at 0 must record the GPU-weighted 80, not the
+  average-of-averages 45. The rule tests assert exactly that case.
 - The `max by` guard on the identity side keeps the join evaluating when a
   deleted and recreated pod briefly leaves two identity series with the
-  same name; without it the whole rule group errors on many-to-many.
-- Sentinel pods are excluded from component-level rules but kept at
-  workload level, so a broken selector can never produce a false idle for
-  the suspend policy.
+  same name and the same attribution; a same-name overlap with conflicting
+  attribution within one scrape stays a known residual case.
+- Sentinel pods stay in the workload-level rules, so a broken selector can
+  never produce a false idle for the suspend policy. Component rules drop
+  only the component sentinel; component-instance rules drop both.
 
 The same shape records `karta:gpu_memory_used_bytes` and
 `karta:gpu_memory_total_bytes` (FB_USED plus FB_FREE; FB_TOTAL is not in
 dcgm-exporter's default counter list), and `karta:cpu_usage_cores` and
 `karta:memory_working_set_bytes` from cadvisor. cadvisor is the CPU source
 because metrics-server is an API, not Prometheus series, so it cannot
-join, and node exporter is node-granular. Source metric names and join
-labels are Helm values, so a relabeling scheme that renames `pod` is fixed
-by a values change. One more rule watches the join itself:
+join, and node exporter is node-granular. All source metric names are Helm
+values. A relabeling scheme that renames `pod` on the telemetry side is
+fixed in the scrape config (honor labels), since the identity series
+always carries plain `pod`. One more rule watches the join itself:
 
 ```yaml
 - record: karta:join_coverage:ratio
 ```
 
-the fraction of pod-labeled GPU series that joined. Free GPUs carry no pod
-label and are excluded from both sides. A drop below 1 is the day-one
-alert: it means the telemetry labels and the identity labels disagree.
+the fraction of pod-labeled GPU series that joined. Free GPUs carry no
+pod label and are excluded from both sides; GPU pods outside any Karta
+keep the baseline below 1, so the alert is a drop from the cluster's own
+baseline, plus an absence alert, since a fully broken join yields no
+sample at all rather than 0.
 
 ### Degradation
 
@@ -248,6 +255,8 @@ workload kind at once:
 
 ```promql
 # the suspend policy signal (UC-1); the consumer owns threshold and window
+# (combined with a presence check so a freshly observed workload does not
+# qualify off a single sample)
 max_over_time(karta:gpu_utilization:workload[15m]) < 5
 
 # the prefill/decode imbalance (UC-2)
@@ -292,7 +301,7 @@ kind at once.
 ## Migration and versioning
 
 No CRD change and no library change; the exporter is a new module consuming
-the existing public packages. The five metric families and the `karta:*`
+the existing public packages. The six metric families and the `karta:*`
 rule output names are the public contract, additive-only. A golden
 exposition file in the tests is the enforcement: any label change fails a
 test visibly.
@@ -337,8 +346,8 @@ watchers. Everything that can go wrong per pod has a signal:
   join query is documented, and a direct-scrape layer remains the designed
   escape hatch if this blocks real adoption.
 - Series volume: about 190k exporter series at 5000 workloads and 50000
-  pods, kube-state-metrics territory. Levers: namespace allowlists and
-  relabel-dropping `uid` and `replica`.
+  pods, kube-state-metrics territory. Levers: `metric_relabel_configs`
+  dropping `uid` and `replica` or filtering namespaces at the scrape.
 - A trimmed pod cache silently mismatches a custom Karta whose selectors
   read non-metadata pod fields; such pods surface only as unattributed.
   `--full-pod-cache` is the documented escape hatch.
