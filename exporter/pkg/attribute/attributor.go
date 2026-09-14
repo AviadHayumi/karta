@@ -52,6 +52,11 @@ func Attribute(ctx context.Context, pod *corev1.Pod, entry *registry.Entry, inst
 	}
 
 	ids := instanceIDs[componentName]
+	if len(ids) == 0 && definition.PodSelector != nil && definition.PodSelector.ComponentInstanceSelector != nil {
+		result.Instance = collector.SentinelUnknown
+		result.Reason = collector.ReasonUnknownInstance
+		return result
+	}
 	if len(ids) > 0 && ids[0] != "" && definition.PodSelector != nil {
 		instance, err := querier.GetMatchingInstanceId(ctx, definition.PodSelector.ComponentInstanceSelector, ids)
 		switch {

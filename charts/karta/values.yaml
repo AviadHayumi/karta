@@ -200,6 +200,8 @@ exporter:
     gpuUtilizationMetric: DCGM_FI_DEV_GPU_UTIL
     gpuMemoryUsedMetric: DCGM_FI_DEV_FB_USED
     gpuMemoryFreeMetric: DCGM_FI_DEV_FB_FREE
+    cpuUsageMetric: container_cpu_usage_seconds_total
+    memoryWorkingSetMetric: container_memory_working_set_bytes
     joinLabels: ["namespace", "pod"]
     cpuRateWindow: 5m
 

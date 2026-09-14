@@ -50,13 +50,13 @@ spec:
         - record: karta:cpu_usage_cores:{{ $level.suffix }}
           expr: |
             sum by (namespace, {{ $level.groupLeft }}) (
-              rate(container_cpu_usage_seconds_total{container!=""}[{{ $rule.cpuRateWindow }}])
+              rate({{ $rule.cpuUsageMetric }}{container!=""}[{{ $rule.cpuRateWindow }}])
               {{ $joinClause }}
             )
         - record: karta:memory_working_set_bytes:{{ $level.suffix }}
           expr: |
             sum by (namespace, {{ $level.groupLeft }}) (
-              container_memory_working_set_bytes{container!=""}
+              {{ $rule.memoryWorkingSetMetric }}{container!=""}
               {{ $joinClause }}
             )
         {{- end }}

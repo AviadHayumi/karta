@@ -23,7 +23,20 @@ type Server struct {
 
 func New(addr string, gatherer prometheus.Gatherer, ready func() bool) *Server {
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}))
+	metricsHandler := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
+	everReady := false
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		// a half-built store must fail the scrape visibly, not serve
+		// plausible zeros; once synced, keep serving forever
+		if !everReady {
+			if !ready() {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+			everReady = true
+		}
+		metricsHandler.ServeHTTP(w, r)
+	})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})

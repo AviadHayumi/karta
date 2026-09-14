@@ -205,7 +205,8 @@ func (c *Controller) onPodUpdate(oldObj, newObj any) {
 
 	identityChanged := !reflect.DeepEqual(oldPod.Labels, newPod.Labels) ||
 		!reflect.DeepEqual(oldPod.Annotations, newPod.Annotations) ||
-		!reflect.DeepEqual(oldPod.OwnerReferences, newPod.OwnerReferences)
+		!reflect.DeepEqual(oldPod.OwnerReferences, newPod.OwnerReferences) ||
+		(c.options.FullPodCache && oldPod.ResourceVersion != newPod.ResourceVersion)
 
 	if identityChanged {
 		c.attributePod(newPod)

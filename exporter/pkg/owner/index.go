@@ -126,25 +126,29 @@ func (i *Index) PendingCount() int {
 	return count
 }
 
-// RootFor walks controller owner references until it reaches a kind for
-// which isRoot returns true. Roots are matched by group and kind only:
-// owner references may carry any served version.
+// RootFor walks controller owner references to the outermost kind for
+// which isRoot returns true: a JobSet child Job can itself be a described
+// kind, and the pod belongs to the JobSet. Roots are matched by group and
+// kind only: owner references may carry any served version. A chain that
+// dead-ends above a found root parks rather than settling for the inner
+// root, so the answer never flips once the missing owner arrives.
 func (i *Index) RootFor(ownerRefs []metav1.OwnerReference, isRoot func(schema.GroupKind) bool) WalkResult {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
 
+	var best *Ref
 	current := controllerRef(ownerRefs)
 	for depth := 0; depth < maxWalkDepth; depth++ {
 		if current == nil {
+			if best != nil {
+				return WalkResult{Outcome: OutcomeFound, Root: *best}
+			}
 			return WalkResult{Outcome: OutcomeNoController}
 		}
 
 		gvk := refGVK(current)
 		if isRoot(gvk.GroupKind()) {
-			return WalkResult{
-				Outcome: OutcomeFound,
-				Root:    Ref{UID: current.UID, GVK: gvk, Name: current.Name},
-			}
+			best = &Ref{UID: current.UID, GVK: gvk, Name: current.Name}
 		}
 
 		middle, ok := i.nodes[current.UID]
