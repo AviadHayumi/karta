@@ -1,0 +1,85 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2026 NVIDIA Corporation -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>inspect the evidence - reference</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#11161d; --panel2:#0e1319; --line:#1e2733;
+  --ink:#e8edf3; --dim:#9fb0c3; --faint:#5c6b7d;
+  --acc:#76b900; --acc2:#33d17a;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans)}
+.wrap{max-width:1180px;margin:0 auto;padding:34px 42px 60px}
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);margin-bottom:12px}
+h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.01em;margin-bottom:10px}
+.tier{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:2px 8px;border-radius:20px;border:1px solid var(--line);vertical-align:2px;margin-left:8px}
+.tier.part{color:#c8ccd2;border-color:#5c6b7d}
+.inset{background:rgba(28,126,214,.07);border:1px solid rgba(28,126,214,.35);border-radius:10px;padding:8px 13px;font-size:13px;color:var(--dim);margin:10px 0;max-width:72ch}
+.inset b{color:#8fc2ee;font-weight:650}
+.beats{margin:14px 0 0;padding-left:22px;max-width:74ch}
+.beats li{color:var(--dim);font-size:15px;line-height:1.55;padding:2px 0}
+.beats li::marker{color:var(--acc2);font-family:var(--mono);font-size:13px}
+.scope{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:18px;max-width:90ch}
+.caption{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:8px}
+.treecard{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-top:18px}
+.branch{font-family:var(--mono);font-size:12px;color:var(--faint);margin-bottom:10px}
+ul.tree{list-style:none}
+ul.tree ul{list-style:none;margin:4px 0 6px 22px}
+ul.tree li{color:var(--dim);font-size:13.5px;line-height:1.6;padding:3px 0 3px 18px;position:relative}
+ul.tree li::before{content:"";position:absolute;left:2px;top:12px;width:7px;height:7px;border-radius:2px;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+ul.tree a{color:var(--acc2);font-family:var(--mono);font-size:12.5px;text-decoration:none;border-bottom:1px solid rgba(51,209,122,.35)}
+ul.tree a:hover{border-bottom-color:var(--acc2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="eyebrow">reference - outside the main story</p>
+<h2>inspect the evidence</h2>
+<div class="inset"><b>Settle test:</b> the old script incorrectly waited for startTime to clear before continuing.</div>
+<ol class="beats">
+  <li>Inspect the log, captures, manifests and prototype.</li>
+  <li>Historical scripts need fresh names/state and a corrected settle test.</li>
+  <li>Kyverno filing still needs false/true/mutation-error controls.</li>
+  <li>The Kubernetes draft is a historical duplicate of #134521.</li>
+</ol>
+<div class="treecard">
+<p class="branch">fork branch: AviadHayumi/karta @ exporter-integration-lab - every link opens on GitHub</p>
+<ul class="tree">
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/INTEGRATION-LOG.md" target="_blank" rel="noopener">labs/exporter-kyverno-rr/INTEGRATION-LOG.md</a> - the full lab log; section 6 is the executed comparison table, section 7 the rerun limits.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/tree/exporter-integration-lab/labs/exporter-kyverno-rr/captures" target="_blank" rel="noopener">labs/exporter-kyverno-rr/captures/</a> - 31 raw transcript files; every number on a slide pins a line range in one of them.
+    <ul>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/30-lab2-kyverno-phase.txt" target="_blank" rel="noopener">30-lab2-kyverno-phase.txt</a> - lab2 Kyverno phase: policy apply, suspensions, user resume, re-suspension 123.947s later.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/22-rr-anti-trap.txt" target="_blank" rel="noopener">22-rr-anti-trap.txt</a> - the RR run over the same window: ResumeDetected, EscalatedNeedsHuman, still running at the final check.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/20-rr-observe.txt" target="_blank" rel="noopener">20-rr-observe.txt</a> - Observe mode: WouldAct x4, one SkippedNoHandle, targets left unsuspended.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/21-rr-enforce.txt" target="_blank" rel="noopener">21-rr-enforce.txt</a> - Enforce mode: Intended/Executed pairs, then suspend=true on both trainers.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/23-rr-rbac.txt" target="_blank" rel="noopener">23-rr-rbac.txt</a> - permission removed then restored: SkippedNotReady, then Intended/Executed.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/24-rr-forensics.txt" target="_blank" rel="noopener">24-rr-forensics.txt</a> - after deleting trainer-e: four surviving receipts and one full Executed body.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/17-kyverno-forensics.txt" target="_blank" rel="noopener">17-kyverno-forensics.txt</a> - Kyverno before/after deletion: reports, Events, URs, policy status.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/31-cel-error-repro.txt" target="_blank" rel="noopener">31-cel-error-repro.txt</a> - CEL runtime-error repro: URs complete with an empty message; only the aggregate metric counts errors.</li>
+      <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/captures/10-v2-http-timeline.txt" target="_blank" rel="noopener">10-v2-http-timeline.txt</a> - lab1 http-policy timeline: suspension 0.644s after the v2 apply marker.</li>
+    </ul>
+  </li>
+  <li><a href="https://github.com/AviadHayumi/karta/tree/exporter-integration-lab/labs/exporter-kyverno-rr/manifests" target="_blank" rel="noopener">labs/exporter-kyverno-rr/manifests/</a> - the exporter, Prometheus, workloads, Kyverno policy variants and RR RBAC exactly as applied.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/rr-poc/rr_poc.py" target="_blank" rel="noopener">labs/exporter-kyverno-rr/rr-poc/rr_poc.py</a> - the whole prototype runner: receipts, allowance epochs, escalation, preflight, recovery.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/rr-poc/rules.yaml" target="_blank" rel="noopener">labs/exporter-kyverno-rr/rr-poc/rules.yaml</a> - the RuntimeRule shape: filter/condition/action, actionsPerEpoch: 1, reArmOnResume: false.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/rr-poc/run-rr-phase.sh" target="_blank" rel="noopener">labs/exporter-kyverno-rr/rr-poc/run-rr-phase.sh</a> - the record of what ran; fixed names/run IDs and the invalid settle gate make a naive rerun mix evidence.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/rr-poc/kyverno-forensics.sh" target="_blank" rel="noopener">labs/exporter-kyverno-rr/rr-poc/kyverno-forensics.sh</a> - the before/after deletion inspection behind capture 17.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/upstream-drafts.md" target="_blank" rel="noopener">labs/exporter-kyverno-rr/upstream-drafts.md</a> - two drafts: the Kyverno diagnostics issue, whose false/true/mutation-error controls remain <span class="tier part">NOT TESTED</span>, and a Kubernetes draft kept as a historical duplicate of #134521.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/labs/exporter-kyverno-rr/kep-0004.md" target="_blank" rel="noopener">labs/exporter-kyverno-rr/kep-0004.md</a> - the exporter KEP text the lab's metric names come from; Runtime Rules (kep-0003) is the proposal the prototype exercises.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/docs/catalog/batch-job-v1.yaml" target="_blank" rel="noopener">docs/catalog/batch-job-v1.yaml</a> - the Job description whose suspendDefinition the runner translated to /spec/suspend.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/blob/exporter-integration-lab/pkg/api/runai/v1alpha1/structure.go" target="_blank" rel="noopener">pkg/api/runai/v1alpha1/structure.go</a> - suspendDefinition and statusDefinition, the API fields behind the deck's terms.</li>
+  <li><a href="https://github.com/AviadHayumi/karta/tree/exporter-integration-lab/exporter" target="_blank" rel="noopener">exporter/</a> - the exporter source that serves karta_workload_status on both clusters.</li>
+</ul>
+</div>
+<p class="scope">Reference only. Controls remain unexecuted. Verify public links at publication time.</p>
+<p class="caption">close this tab to return to the calling slide; the main deck stays held.</p>
+</div>
+</body>
+</html>

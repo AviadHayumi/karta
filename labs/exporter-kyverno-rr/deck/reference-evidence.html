@@ -1,0 +1,353 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2026 NVIDIA Corporation -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>compare the evidence - reference</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#11161d; --panel2:#0e1319; --line:#1e2733;
+  --ink:#e8edf3; --dim:#9fb0c3; --faint:#5c6b7d;
+  --acc:#76b900; --acc2:#33d17a;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans)}
+.wrap{max-width:1480px;margin:0 auto;padding:34px 42px 60px}
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);margin-bottom:12px}
+h2{font-size:32px;line-height:1.12;font-weight:750;letter-spacing:-.01em;margin-bottom:10px}
+.tier{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:2px 8px;border-radius:20px;border:1px solid var(--line);vertical-align:2px;margin-left:8px}
+.tier.exec{color:#7ee2a1;border-color:#2f9e44}
+.tier.ver{color:#8fc2ee;border-color:#1c7ed6}
+.tier.inf{color:#f1c568;border-color:#e0a100}
+.tier.part{color:#c8ccd2;border-color:#5c6b7d}
+.beats{margin:14px 0 0;padding-left:22px;max-width:74ch}
+.beats li{color:var(--dim);font-size:15px;line-height:1.55;padding:2px 0}
+.beats li::marker{color:var(--acc2);font-family:var(--mono);font-size:13px}
+.scope{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:18px;max-width:90ch}
+.caption{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:8px}
+.q{position:absolute;opacity:0;pointer-events:none}
+.qbar{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 14px}
+.qbar label{font-family:var(--mono);font-size:12.5px;padding:5px 13px;border-radius:30px;border:1px solid var(--line);color:var(--dim);cursor:pointer}
+#q-metric:checked ~ .qbar label[for="q-metric"],
+#q-error:checked ~ .qbar label[for="q-error"],
+#q-resume:checked ~ .qbar label[for="q-resume"],
+#q-forensics:checked ~ .qbar label[for="q-forensics"],
+#q-permission:checked ~ .qbar label[for="q-permission"],
+#q-handle:checked ~ .qbar label[for="q-handle"],
+#q-observe:checked ~ .qbar label[for="q-observe"],
+#q-outcome:checked ~ .qbar label[for="q-outcome"]{border-color:var(--acc);color:var(--acc2)}
+#q-metric:focus-visible ~ .qbar label[for="q-metric"],
+#q-error:focus-visible ~ .qbar label[for="q-error"],
+#q-resume:focus-visible ~ .qbar label[for="q-resume"],
+#q-forensics:focus-visible ~ .qbar label[for="q-forensics"],
+#q-permission:focus-visible ~ .qbar label[for="q-permission"],
+#q-handle:focus-visible ~ .qbar label[for="q-handle"],
+#q-observe:focus-visible ~ .qbar label[for="q-observe"],
+#q-outcome:focus-visible ~ .qbar label[for="q-outcome"]{outline:1px solid var(--acc);outline-offset:2px}
+.rows .row{display:none}
+#q-metric:checked ~ .rows #r-metric { display:block; }
+#q-error:checked ~ .rows #r-error { display:block; }
+#q-resume:checked ~ .rows #r-resume { display:block; }
+#q-forensics:checked ~ .rows #r-forensics { display:block; }
+#q-permission:checked ~ .rows #r-permission { display:block; }
+#q-handle:checked ~ .rows #r-handle { display:block; }
+#q-observe:checked ~ .rows #r-observe { display:block; }
+#q-outcome:checked ~ .rows #r-outcome { display:block; }
+.rowq{font-family:var(--mono);font-size:12px;color:var(--faint);margin-bottom:10px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.duo>*{min-width:0}
+.cell{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.cell h3{font-size:14px;font-weight:700;margin-bottom:8px}
+.cell p.claim{color:var(--dim);font-size:13.5px;line-height:1.5;margin-bottom:6px}
+pre.ev{background:#0d1117;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:11.8px;line-height:1.55;color:var(--dim);white-space:pre-wrap;word-break:break-word;margin:8px 0 2px}
+.sep{color:var(--faint);font-family:var(--mono);padding:2px 0}
+.limit{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:6px}
+@media (max-width:900px){.duo{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="eyebrow">reference - outside the main story</p>
+<h2>compare the evidence</h2>
+<ol class="beats">
+  <li>Choose one comparison question.</li>
+  <li>Read Kyverno and RR outcomes for that row.</li>
+  <li>Keep each result's evidence tier and scope.</li>
+  <li>Return to the calling slide.</li>
+</ol>
+<div class="switch">
+<input class="q" type="radio" name="q" id="q-metric" checked>
+<input class="q" type="radio" name="q" id="q-error">
+<input class="q" type="radio" name="q" id="q-resume">
+<input class="q" type="radio" name="q" id="q-forensics">
+<input class="q" type="radio" name="q" id="q-permission">
+<input class="q" type="radio" name="q" id="q-handle">
+<input class="q" type="radio" name="q" id="q-observe">
+<input class="q" type="radio" name="q" id="q-outcome">
+<div class="qbar">
+  <label for="q-metric">metric-conditioned action</label>
+  <label for="q-error">condition failure</label>
+  <label for="q-resume">user resume</label>
+  <label for="q-forensics">provenance after deletion</label>
+  <label for="q-permission">missing permission</label>
+  <label for="q-handle">missing handle</label>
+  <label for="q-observe">observe / dry-run</label>
+  <label for="q-outcome">outcome verification</label>
+</div>
+<div class="rows">
+
+<div class="row" id="r-metric">
+  <p class="rowq">did a metric condition drive a real action on both sides?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno - MutatingPolicy mutate-existing <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">The http policy suspended trainer-a 0.644s after the v2 apply marker (computed from captured timestamps).</p>
+      <pre class="ev">v2 apply at 17:45:19.049 UTC
+mutatingpolicy.policies.kyverno.io/metric-suspend-running configured
+t+1 17:45:19.693 trainer-a suspend=true</pre>
+      <p class="caption">captures/10-v2-http-timeline.txt:1-3 - lab1, v2 http policy variant</p>
+      <p class="limit">a GlobalContext variant with a named projection also acted (capture 19, lab1); this row pins the http run</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">Enforce wrote an Intended/Executed pair per trainer; both ended suspend=true.</p>
+      <pre class="ev">[2026-09-14T18:26:34.226+00:00] receipt Intended: rr-33e597e6-e0-enf-1 (trainer-e)
+[2026-09-14T18:26:34.539+00:00] receipt Executed: rr-33e597e6-e0-enf-2 (trainer-e)
+[2026-09-14T18:26:34.670+00:00] receipt Intended: rr-048f7fd5-e0-enf-3 (trainer-f)
+[2026-09-14T18:26:34.880+00:00] receipt Executed: rr-048f7fd5-e0-enf-4 (trainer-f)</pre>
+      <p class="caption">captures/21-rr-enforce.txt:4-7 - lab2, Enforce run</p>
+    </div>
+  </div>
+</div>
+
+<div class="row" id="r-error">
+  <p class="rowq">what does a condition/source failure look like?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">A CEL runtime error completed URs with an empty message <span class="tier ver">VERIFIED</span>; the Job stayed untouched; the aggregate error-count metric was the only executor trace inspected.</p>
+      <pre class="ev">ADDED      ur-97xsp   rr-cel-runtime-error   cel-mutate                                                              0s
+MODIFIED   ur-97xsp   rr-cel-runtime-error   cel-mutate                                                     Pending   0s
+MODIFIED   ur-97xsp   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+DELETED    ur-97xsp   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+ADDED      ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                                 0s
+MODIFIED   ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                     Pending     0s
+MODIFIED   ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+DELETED    ur-r5mhw   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+ADDED      ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                                 0s
+MODIFIED   ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                     Pending     0s
+MODIFIED   ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                     Completed   1s
+DELETED    ur-jrn4v   rr-cel-runtime-error   cel-mutate                                                     Completed   1s
+ADDED      ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                                 0s
+MODIFIED   ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                     Pending     0s
+MODIFIED   ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+DELETED    ur-mlmpd   rr-cel-runtime-error   cel-mutate                                                     Completed   0s
+--- job after ---
+suspend=false
+--- policy status ---
+{"conditions":[{"lastTransitionTime":"2026-09-14T18:24:48Z","message":"Policy is ready for reporting.","reason":"Succeeded","status":"True","type":"RBACPermissionsGranted"}],"message":"","ready":true}</pre>
+      <p class="caption">captures/31-cel-error-repro.txt:9-28 - lab2 repro; the UR table's column header row (line 8) is not included</p>
+      <div class="sep">&#8943; lines 29-38 not shown</div>
+      <pre class="ev">--- metrics AFTER ---
+kyverno_mutating_policy_execution_duration_seconds_count{execution_cause="background_scan",otel_scope_name="kyverno",otel_scope_schema_url="",otel_scope_version="",policy_background_mode="true",policy_name="rr-cel-runtime-error",policy_namespace="",resource_kind="Job",result="error"} 4</pre>
+      <p class="caption">captures/31-cel-error-repro.txt:39-40 - metrics AFTER; result="error" count 4</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc <span class="tier ver">VERIFIED</span> source only</h3>
+      <p class="claim">Handled query errors attempt a rule-level FactsUnavailable receipt; an uncaught JSON parse failure would crash the loop and bypass that record.</p>
+      <p class="limit">fault injection was not executed <span class="tier part">NOT TESTED</span>; no captured FactsUnavailable receipt exists</p>
+    </div>
+  </div>
+</div>
+
+<div class="row" id="r-resume">
+  <p class="rowq">what happens after a user resumes a workload the engine suspended?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno - trainer-a <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">The engine re-suspended trainer-a 123.947s after the user resume, with no new human intent (computed from captured timestamps).</p>
+      <pre class="ev">[18:21:10.688 UTC] K2: USER RESUMES trainer-a
+[18:21:10.783 UTC] healthy resume on v1.34.3: active=1 after 0.0s (startTime reset to 2026-09-14T18:21:10Z)
+[18:23:14.635 UTC] K2 DONE - TRAP EXECUTED: engine re-suspended trainer-a 123.9s after the user resume. No new human intent.
+[18:23:14.635 UTC] K-phase complete. trainer-a suspend=true trainer-b suspend=true</pre>
+      <p class="caption">captures/30-lab2-kyverno-phase.txt:5-8 - lab2, edited excerpt of the recorder log</p>
+      <p class="limit">recorder commentary: line 6's "0.0s" and line 7's "123.9s" are rounded narration; the exact offsets from the bracketed timestamps are 0.095s and 123.947s. indefinite repetition under recurring eligibility <span class="tier inf">INFERRED</span> - the rule has no cap; one repeat was observed</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc - trainer-f <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">ResumeDetected 0.692s after the resume; EscalatedNeedsHuman at renewed eligibility (124.526s); still unsuspended and active at the 300.147s sampled check.</p>
+      <pre class="ev">18:28:43.906 UTC
+job.batch/trainer-f patched
+running RR loop for 300s across the window refill...
+[2026-09-14T18:28:44.208+00:00] rr-poc r2 start rule=suspend-running-2m mode=Enforce reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:28:44.598+00:00] receipt ResumeDetected: rr-048f7fd5-e1-trap-1 (trainer-f)
+[2026-09-14T18:30:48.432+00:00] receipt EscalatedNeedsHuman: rr-048f7fd5-e1-trap-2 (trainer-f)
+[2026-09-14T18:33:43.568+00:00] max loops reached (30), exiting
+18:33:44.053 UTC
+trainer-f suspend=false active=1</pre>
+      <p class="caption">captures/22-rr-anti-trap.txt:2-10 - lab2, Enforce run across the window refill</p>
+    </div>
+  </div>
+</div>
+
+<div class="row" id="r-forensics">
+  <p class="rowq">what action provenance survives workload deletion?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno - after deleting trainer-a <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">0 scoped reports remain, no URs, Events only counted (7); no per-action record in the inspected surfaces.</p>
+      <pre class="ev">deleted at 2026-09-14T18:23:25+00:00
+job.batch "trainer-a" deleted from ai-team namespace
+=== AFTER deletion ===
+--- policyreports scoped to trainer-a ---
+0 report(s) remain for trainer-a
+--- events on trainer-a (TTL-bound, not action-coupled) ---
+       7
+--- updaterequests ---
+No resources found in kyverno namespace.</pre>
+      <p class="caption">captures/17-kyverno-forensics.txt:17-25 - lab2; the recorder's universal gloss at lines 26-27 is excluded</p>
+      <p class="limit">logs, metrics, API audit and external sinks were not inspected <span class="tier part">NOT INSPECTED</span>; policy status was read before deletion only</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc - after deleting trainer-e <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">Four receipts survive: WouldAct x2, Intended, Executed; the Executed body retains identity, evidence sample, patch and operation linkage.</p>
+      <pre class="ev">job.batch "trainer-e" deleted from ai-team namespace
+--- receipts for trainer-e after deletion ---
+NAME                   PHASE
+rr-33e597e6-e0-enf-1   Intended
+rr-33e597e6-e0-enf-2   Executed
+rr-33e597e6-e0-obs-1   WouldAct
+rr-33e597e6-e0-obs-4   WouldAct
+--- one full receipt body ---
+{
+ "rule": "suspend-running-2m",
+ "phase": "Executed",
+ "workload": {
+  "namespace": "ai-team",
+  "name": "trainer-e",
+  "kind": "Job",
+  "uid": "33e597e6-6f23-41ae-be7e-1a6ae0e67770"
+ },
+ "targetResourceVersion": "1908",
+ "time": "2026-09-14T18:26:34.432+00:00",
+ "epoch": 0,
+ "evidence": {
+  "promql": "min_over_time(karta_workload_status{namespace=\"ai-team\",phase=\"Running\"}[2m]) == 1",
+  "value": "1",
+  "sampleTime": 1789410393.863
+ },
+ "karta": "batch-job-v1",
+ "patchPointer": "/spec/suspend",
+ "patchValue": true,
+ "operation": "suspend-running-2m/33e597e6-6f23-41ae-be7e-1a6ae0e67770/e0/suspend",
+ "supersedes": "rr-33e597e6-e0-enf-1"
+}</pre>
+      <p class="caption">captures/24-rr-forensics.txt:2-32 - lab2, full Executed body</p>
+      <p class="limit">receipts are mutable ConfigMaps; no actor identity or rule revision is recorded <span class="tier ver">VERIFIED</span></p>
+    </div>
+  </div>
+</div>
+
+<div class="row" id="r-permission">
+  <p class="rowq">what happens when the executor lacks action permission?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno - earlier experiment run <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">Background mutation with missing RBAC was a silent no-op with ready=true status; not re-executed in this lab.</p>
+      <pre class="ev">1. Background mutation with missing RBAC: no UR errors surfaced, policy
+   status ready=true, no forbidden lines at default log verbosity. Only
+   the reports controller hinted at drift, phrased as a compliance
+   violation of the workload.</pre>
+      <p class="caption">03-experiments-executed.md:114-117 - an earlier execution note, not a raw transcript here; separate run and scope</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">Grant removed before the next evaluation: SkippedNotReady receipt. After restore: Intended/Executed, then suspend=true.</p>
+      <pre class="ev">rolebinding.rbac.authorization.k8s.io "rr-poc-actions" deleted from ai-team namespace
+[2026-09-14T18:36:14.539+00:00] rr-poc r2 start rule=suspend-running-2m mode=Enforce reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:36:14.849+00:00] receipt SkippedNotReady: rr-84dc8eac-e0-rbac1-1 (trainer-g)
+[2026-09-14T18:36:14.955+00:00] max loops reached (1), exiting
+--- rolebinding restored ---
+namespace/rr-system unchanged
+serviceaccount/rr-poc unchanged
+role.rbac.authorization.k8s.io/rr-poc-actions unchanged
+rolebinding.rbac.authorization.k8s.io/rr-poc-actions created
+[2026-09-14T18:36:15.279+00:00] rr-poc r2 start rule=suspend-running-2m mode=Enforce reArmOnResume=False actionsPerEpoch=1 impersonate=system:serviceaccount:rr-system:rr-poc (reads/state use ambient identity; actions/preflight impersonate) suspend handles: ['CronJob', 'Job', 'JobSet', 'MPIJob', 'PyTorchJob', 'RayCluster', 'RayJob']
+[2026-09-14T18:36:15.553+00:00] receipt Intended: rr-84dc8eac-e0-rbac2-1 (trainer-g)
+[2026-09-14T18:36:15.769+00:00] receipt Executed: rr-84dc8eac-e0-rbac2-2 (trainer-g)
+[2026-09-14T18:36:15.881+00:00] max loops reached (1), exiting
+trainer-g suspend=true</pre>
+      <p class="caption">captures/23-rr-rbac.txt:2-15 - lab2; the file's line 1 header is omitted (permission was removed before evaluation, not mid-flight)</p>
+    </div>
+  </div>
+</div>
+
+<div class="row" id="r-handle">
+  <p class="rowq">what happens on a kind without a suspend handle?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno <span class="tier inf">INFERRED</span></h3>
+      <p class="claim">Authoring burden: per-kind patch logic would be written into policy. No Kyverno control was executed for this row.</p>
+      <p class="limit">no control run exists; this cell is an inference, not a measurement</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">SkippedNoHandle receipt for the web-app Deployment; per-epoch dedupe of that receipt is <span class="tier ver">VERIFIED</span> in code.</p>
+      <pre class="ev">[2026-09-14T18:26:27.807+00:00] receipt SkippedNoHandle: rr-526dee83-e0-obs-3 (web-app)</pre>
+      <p class="caption">captures/20-rr-observe.txt:5-5 - lab2, Observe run</p>
+    </div>
+  </div>
+</div>
+
+<div class="row" id="r-observe">
+  <p class="rowq">is there an observe / dry-run mode at runtime?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno <span class="tier ver">VERIFIED</span></h3>
+      <p class="claim">The reporting scan evaluates continuously but under different condition semantics (target=false); no observe gate on the mutate-existing executor was found or tested.</p>
+      <p class="limit">source reading of v1.19.1; not an executed observe run</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc <span class="tier exec">EXECUTED</span></h3>
+      <p class="claim">WouldAct receipts with real preflight; targets verified untouched; a later Enforce run acted. Observe writes receipts and saves state - it is not read-only.</p>
+      <pre class="ev">[2026-09-14T18:26:27.539+00:00] receipt WouldAct: rr-33e597e6-e0-obs-1 (trainer-e)
+[2026-09-14T18:26:27.698+00:00] receipt WouldAct: rr-048f7fd5-e0-obs-2 (trainer-f)
+[2026-09-14T18:26:27.807+00:00] receipt SkippedNoHandle: rr-526dee83-e0-obs-3 (web-app)
+[2026-09-14T18:26:33.264+00:00] receipt WouldAct: rr-33e597e6-e0-obs-4 (trainer-e)
+[2026-09-14T18:26:33.458+00:00] receipt WouldAct: rr-048f7fd5-e0-obs-5 (trainer-f)
+[2026-09-14T18:26:33.556+00:00] max loops reached (2), exiting
+trainer-b suspend=true
+trainer-e suspend=false
+trainer-f suspend=false</pre>
+      <p class="caption">captures/20-rr-observe.txt:3-11 - lab2, Observe run</p>
+      <p class="limit">line 9's trainer-b suspend=true is a leftover of the earlier Kyverno phase on lab2, not an RR action</p>
+    </div>
+  </div>
+</div>
+
+<div class="row" id="r-outcome">
+  <p class="rowq">does either side verify the action's outcome?</p>
+  <div class="duo">
+    <div class="cell">
+      <h3>Kyverno <span class="tier part">NOT TESTED</span></h3>
+      <p class="claim">No automatic controller-convergence check demonstrated; the v1.34.0 Job breakage was invisible on its inspected surfaces.</p>
+    </div>
+    <div class="cell">
+      <h3>rr-poc <span class="tier part">PARTIAL</span></h3>
+      <p class="claim">Executed receipts attest patch-command success, not controller convergence. pendingOp recovery, UnknownOutcome and FailedPrecondition branches are <span class="tier ver">VERIFIED</span> in code, not exercised <span class="tier part">NOT TESTED</span>.</p>
+      <p class="limit">neither side demonstrated automatic wedge detection</p>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+<p class="scope">Reference only. Separate runs and the earlier permission experiment retain their own labels.</p>
+<p class="caption">close this tab to return to the calling slide; the main deck stays held.</p>
+</div>
+</body>
+</html>
