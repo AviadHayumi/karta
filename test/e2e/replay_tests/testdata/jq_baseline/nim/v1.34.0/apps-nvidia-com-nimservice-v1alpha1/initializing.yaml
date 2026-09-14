@@ -1,0 +1,75 @@
+steps:
+- docAfterWrites:
+    apiVersion: apps.nvidia.com/v1alpha1
+    kind: NIMService
+    metadata:
+      creationTimestamp: "2026-08-18T12:39:12Z"
+      generation: 1
+      name: karta-e2e-nim-initializing
+      namespace: test-8m4bc
+      uid: 29f41728-6685-4b9c-a511-8f7e083b4ae9
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karta-parity/pool
+                operator: In
+                values:
+                - parity
+      authSecret: ngc-secret
+      env:
+      - name: NIM_REQUEST_LATENCY
+        value: "2"
+      expose:
+        service:
+          port: 8000
+          type: ClusterIP
+      image:
+        pullPolicy: IfNotPresent
+        repository: nonexistent-nim
+        tag: bad
+      inferencePlatform: standalone
+      replicas: 1
+      schedulerName: karta-parity-scheduler
+      storage:
+        pvc:
+          create: true
+          size: 1Gi
+          volumeAccessMode: ReadWriteOnce
+  mutations:
+  - fragmentedPodSpec: applied
+    name: nimservice
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  reads:
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale:
+          replicas: 1
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps.nvidia.com
+      kind: NIMService
+      version: v1alpha1
+    name: nimservice
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "":
+        replicas: 1
+    status:
+      matchedStatuses:
+      - Undefined
+      phase: ""
+  state: Initializing

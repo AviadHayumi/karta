@@ -1,0 +1,2119 @@
+steps:
+- docAfterResume:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Launcher: {}
+        Worker: {}
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: true
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Launcher: {}
+        Worker: {}
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Launcher: {}
+        Worker: {}
+      startTime: "2026-08-18T12:30:52Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: mpijob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: launcher
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: MPIJob
+      version: v2beta1
+    name: mpijob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      matchedStatuses:
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - "false"
+              image: busybox:1.36
+              name: mpi-launcher
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: launcher
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - "false"
+            image: busybox:1.36
+            name: mpi-launcher
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: mpi-worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: mpi-worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Initializing
+  suspends:
+    mpijob:resume: applied
+    mpijob:suspend: applied
+- docAfterResume:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Launcher: {}
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: true
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Launcher: {}
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Launcher: {}
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: mpijob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: launcher
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: MPIJob
+      version: v2beta1
+    name: mpijob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      matchedStatuses:
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - "false"
+              image: busybox:1.36
+              name: mpi-launcher
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: launcher
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - "false"
+            image: busybox:1.36
+            name: mpi-launcher
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: mpi-worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: mpi-worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Initializing
+  suspends:
+    mpijob:resume: applied
+    mpijob:suspend: applied
+- docAfterResume:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          active: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: true
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          active: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          active: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: mpijob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: launcher
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: MPIJob
+      version: v2beta1
+    name: mpijob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      matchedStatuses:
+      - Running
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - "false"
+              image: busybox:1.36
+              name: mpi-launcher
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: launcher
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - "false"
+            image: busybox:1.36
+            name: mpi-launcher
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: mpi-worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: mpi-worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Running
+  suspends:
+    mpijob:resume: applied
+    mpijob:suspend: applied
+- docAfterResume:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          active: 1
+          failed: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: true
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          active: 1
+          failed: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          active: 1
+          failed: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: mpijob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: launcher
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: MPIJob
+      version: v2beta1
+    name: mpijob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      matchedStatuses:
+      - Running
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - "false"
+              image: busybox:1.36
+              name: mpi-launcher
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: launcher
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - "false"
+            image: busybox:1.36
+            name: mpi-launcher
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: mpi-worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: mpi-worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Running
+  suspends:
+    mpijob:resume: applied
+    mpijob:suspend: applied
+- docAfterResume:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          failed: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: true
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          failed: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Launcher:
+          failed: 1
+        Worker:
+          active: 1
+      startTime: "2026-08-18T12:30:52Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: mpijob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: launcher
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: MPIJob
+      version: v2beta1
+    name: mpijob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "True"
+        type: Running
+      matchedStatuses:
+      - Running
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - "false"
+              image: busybox:1.36
+              name: mpi-launcher
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: launcher
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - "false"
+            image: busybox:1.36
+            name: mpi-launcher
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: mpi-worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: mpi-worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Running
+  suspends:
+    mpijob:resume: applied
+    mpijob:suspend: applied
+- docAfterResume:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      completionTime: "2026-08-18T12:30:56Z"
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "False"
+        type: Running
+      - lastTransitionTime: "2026-08-18T12:30:56Z"
+        lastUpdateTime: "2026-08-18T12:30:56Z"
+        message: Job has reached the specified backoff limit
+        reason: BackoffLimitExceeded
+        status: "True"
+        type: Failed
+      replicaStatuses:
+        Launcher:
+          failed: 1
+        Worker: {}
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: true
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      completionTime: "2026-08-18T12:30:56Z"
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "False"
+        type: Running
+      - lastTransitionTime: "2026-08-18T12:30:56Z"
+        lastUpdateTime: "2026-08-18T12:30:56Z"
+        message: Job has reached the specified backoff limit
+        reason: BackoffLimitExceeded
+        status: "True"
+        type: Failed
+      replicaStatuses:
+        Launcher:
+          failed: 1
+        Worker: {}
+      startTime: "2026-08-18T12:30:52Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v2beta1
+    kind: MPIJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:30:52Z"
+      generation: 1
+      name: karta-e2e-mpi-failed
+      namespace: test-8m4bc
+      uid: 8bbb958d-4a03-474a-8c81-1a974b74ffbf
+    spec:
+      launcherCreationPolicy: AtStartup
+      mpiImplementation: OpenMPI
+      mpiReplicaSpecs:
+        Launcher:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - "false"
+                image: busybox:1.36
+                name: mpi-launcher
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          replicas: 1
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sleep
+                - infinity
+                image: busybox:1.36
+                name: mpi-worker
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+      runLauncherAsWorker: false
+      runPolicy:
+        backoffLimit: 0
+        cleanPodPolicy: None
+        suspend: false
+      slotsPerWorker: 1
+      sshAuthMountPath: /root/.ssh
+    status:
+      completionTime: "2026-08-18T12:30:56Z"
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:30:52Z"
+        lastUpdateTime: "2026-08-18T12:30:52Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:30:53Z"
+        lastUpdateTime: "2026-08-18T12:30:53Z"
+        message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "False"
+        type: Running
+      - lastTransitionTime: "2026-08-18T12:30:56Z"
+        lastUpdateTime: "2026-08-18T12:30:56Z"
+        message: Job has reached the specified backoff limit
+        reason: BackoffLimitExceeded
+        status: "True"
+        type: Failed
+      replicaStatuses:
+        Launcher:
+          failed: 1
+        Worker: {}
+      startTime: "2026-08-18T12:30:52Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: mpijob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: launcher
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: MPIJob
+      version: v2beta1
+    name: mpijob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is created.
+        reason: MPIJobCreated
+        status: "True"
+        type: Created
+      - message: MPIJob test-8m4bc/karta-e2e-mpi-failed is running.
+        reason: MPIJobRunning
+        status: "False"
+        type: Running
+      - message: Job has reached the specified backoff limit
+        reason: BackoffLimitExceeded
+        status: "True"
+        type: Failed
+      matchedStatuses:
+      - Failed
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - "false"
+              image: busybox:1.36
+              name: mpi-launcher
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: launcher
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - "false"
+            image: busybox:1.36
+            name: mpi-launcher
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: mpi-worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: mpi-worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Failed
+  suspends:
+    mpijob:resume: applied
+    mpijob:suspend: applied

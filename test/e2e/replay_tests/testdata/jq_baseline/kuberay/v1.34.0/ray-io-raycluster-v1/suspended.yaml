@@ -1,0 +1,345 @@
+steps:
+- docAfterResume:
+    apiVersion: ray.io/v1
+    kind: RayCluster
+    metadata:
+      creationTimestamp: "2026-08-18T12:40:57Z"
+      generation: 1
+      name: karta-e2e-ray-suspended
+      namespace: test-8m4bc
+      uid: 0be1270f-70b1-4875-baac-2cdfc3682af9
+    spec:
+      headGroupSpec:
+        rayStartParams: {}
+        template:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 30
+                periodSeconds: 10
+                tcpSocket:
+                  port: 6379
+              name: ray-head
+              readinessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                tcpSocket:
+                  port: 6379
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+                requests:
+                  cpu: 250m
+                  memory: 1Gi
+            schedulerName: karta-parity-scheduler
+      rayVersion: 2.40.0
+      suspend: false
+      workerGroupSpecs:
+      - groupName: small
+        maxReplicas: 1
+        minReplicas: 0
+        numOfHosts: 1
+        rayStartParams: {}
+        replicas: 0
+        template:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              name: ray-worker
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+            schedulerName: karta-parity-scheduler
+  docAfterSuspend:
+    apiVersion: ray.io/v1
+    kind: RayCluster
+    metadata:
+      creationTimestamp: "2026-08-18T12:40:57Z"
+      generation: 1
+      name: karta-e2e-ray-suspended
+      namespace: test-8m4bc
+      uid: 0be1270f-70b1-4875-baac-2cdfc3682af9
+    spec:
+      headGroupSpec:
+        rayStartParams: {}
+        template:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 30
+                periodSeconds: 10
+                tcpSocket:
+                  port: 6379
+              name: ray-head
+              readinessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                tcpSocket:
+                  port: 6379
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+                requests:
+                  cpu: 250m
+                  memory: 1Gi
+            schedulerName: karta-parity-scheduler
+      rayVersion: 2.40.0
+      suspend: true
+      workerGroupSpecs:
+      - groupName: small
+        maxReplicas: 1
+        minReplicas: 0
+        numOfHosts: 1
+        rayStartParams: {}
+        replicas: 0
+        template:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              name: ray-worker
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+            schedulerName: karta-parity-scheduler
+  docAfterWrites:
+    apiVersion: ray.io/v1
+    kind: RayCluster
+    metadata:
+      creationTimestamp: "2026-08-18T12:40:57Z"
+      generation: 1
+      name: karta-e2e-ray-suspended
+      namespace: test-8m4bc
+      uid: 0be1270f-70b1-4875-baac-2cdfc3682af9
+    spec:
+      headGroupSpec:
+        rayStartParams: {}
+        template:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 30
+                periodSeconds: 10
+                tcpSocket:
+                  port: 6379
+              name: ray-head
+              readinessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                tcpSocket:
+                  port: 6379
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+                requests:
+                  cpu: 250m
+                  memory: 1Gi
+            schedulerName: karta-parity-scheduler
+      rayVersion: 2.40.0
+      suspend: true
+      workerGroupSpecs:
+      - groupName: small
+        maxReplicas: 1
+        minReplicas: 0
+        numOfHosts: 1
+        rayStartParams: {}
+        replicas: 0
+        template:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              name: ray-worker
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+            schedulerName: karta-parity-scheduler
+  mutations:
+  - fragmentedPodSpec: empty
+    name: raycluster
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: head
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: ray.io
+      kind: RayCluster
+      version: v1
+    name: raycluster
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      matchedStatuses:
+      - Suspended
+      phase: ""
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 30
+                periodSeconds: 10
+                tcpSocket:
+                  port: 6379
+              name: ray-head
+              readinessProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                tcpSocket:
+                  port: 6379
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+                requests:
+                  cpu: 250m
+                  memory: 1Gi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: head
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - image: ray-e2e:local
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              failureThreshold: 30
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              tcpSocket:
+                port: 6379
+            name: ray-head
+            readinessProbe:
+              failureThreshold: 30
+              initialDelaySeconds: 10
+              periodSeconds: 5
+              tcpSocket:
+                port: 6379
+            resources:
+              limits:
+                cpu: "1"
+                memory: 2Gi
+              requests:
+                cpu: 250m
+                memory: 1Gi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      small:
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - image: ray-e2e:local
+              imagePullPolicy: IfNotPresent
+              name: ray-worker
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+        scale:
+          maxReplicas: 1
+          minReplicas: 0
+          replicas: 0
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: true
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - small
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      small:
+        metadata: {}
+        spec:
+          containers:
+          - image: ray-e2e:local
+            imagePullPolicy: IfNotPresent
+            name: ray-worker
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+    scale:
+      small:
+        maxReplicas: 1
+        minReplicas: 0
+        replicas: 0
+    status: null
+  state: Suspended
+  suspends:
+    raycluster:resume: applied
+    raycluster:suspend: applied

@@ -1,0 +1,900 @@
+steps:
+- docAfterWrites:
+    apiVersion: leaderworkerset.x-k8s.io/v1
+    kind: LeaderWorkerSet
+    metadata:
+      creationTimestamp: "2026-08-18T12:34:17Z"
+      generation: 1
+      name: karta-e2e-lws
+      namespace: test-8m4bc
+      uid: 4458b256-bb00-4596-a2f6-e109b1270510
+    spec:
+      leaderWorkerTemplate:
+        leaderTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+        restartPolicy: RecreateGroupOnPodRestart
+        size: 2
+        workerTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+      networkConfig:
+        subdomainPolicy: Shared
+      replicas: 1
+      rolloutStrategy:
+        rollingUpdateConfiguration:
+          maxSurge: 0
+          maxUnavailable: 1
+          partition: 0
+        type: RollingUpdate
+      startupPolicy: LeaderCreated
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:34:17Z"
+        message: Replicas are progressing
+        reason: GroupsProgressing
+        status: "True"
+        type: Progressing
+      hpaPodSelector: leaderworkerset.sigs.k8s.io/name=karta-e2e-lws,leaderworkerset.sigs.k8s.io/worker-index=0
+  mutations:
+  - fragmentedPodSpec: empty
+    name: leaderworkerset
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: group
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: leader
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: leaderworkerset.x-k8s.io
+      kind: LeaderWorkerSet
+      version: v1
+    name: leaderworkerset
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: Replicas are progressing
+        reason: null
+        status: "True"
+        type: Progressing
+      matchedStatuses:
+      - Undefined
+  - extractedInstances:
+      "":
+        scale:
+          replicas: 2
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    name: group
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "":
+        replicas: 2
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: leader
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: leader
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Initializing
+- docAfterWrites:
+    apiVersion: leaderworkerset.x-k8s.io/v1
+    kind: LeaderWorkerSet
+    metadata:
+      creationTimestamp: "2026-08-18T12:34:17Z"
+      generation: 1
+      name: karta-e2e-lws
+      namespace: test-8m4bc
+      uid: 4458b256-bb00-4596-a2f6-e109b1270510
+    spec:
+      leaderWorkerTemplate:
+        leaderTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+        restartPolicy: RecreateGroupOnPodRestart
+        size: 2
+        workerTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+      networkConfig:
+        subdomainPolicy: Shared
+      replicas: 1
+      rolloutStrategy:
+        rollingUpdateConfiguration:
+          maxSurge: 0
+          maxUnavailable: 1
+          partition: 0
+        type: RollingUpdate
+      startupPolicy: LeaderCreated
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:34:17Z"
+        message: Replicas are progressing
+        reason: GroupsProgressing
+        status: "True"
+        type: Progressing
+      hpaPodSelector: leaderworkerset.sigs.k8s.io/name=karta-e2e-lws,leaderworkerset.sigs.k8s.io/worker-index=0
+      updatedReplicas: 1
+  mutations:
+  - fragmentedPodSpec: empty
+    name: leaderworkerset
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: group
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: leader
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: leaderworkerset.x-k8s.io
+      kind: LeaderWorkerSet
+      version: v1
+    name: leaderworkerset
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: Replicas are progressing
+        reason: null
+        status: "True"
+        type: Progressing
+      matchedStatuses:
+      - Undefined
+  - extractedInstances:
+      "":
+        scale:
+          replicas: 2
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    name: group
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "":
+        replicas: 2
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: leader
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: leader
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Initializing
+- docAfterWrites:
+    apiVersion: leaderworkerset.x-k8s.io/v1
+    kind: LeaderWorkerSet
+    metadata:
+      creationTimestamp: "2026-08-18T12:34:17Z"
+      generation: 1
+      name: karta-e2e-lws
+      namespace: test-8m4bc
+      uid: 4458b256-bb00-4596-a2f6-e109b1270510
+    spec:
+      leaderWorkerTemplate:
+        leaderTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+        restartPolicy: RecreateGroupOnPodRestart
+        size: 2
+        workerTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+      networkConfig:
+        subdomainPolicy: Shared
+      replicas: 1
+      rolloutStrategy:
+        rollingUpdateConfiguration:
+          maxSurge: 0
+          maxUnavailable: 1
+          partition: 0
+        type: RollingUpdate
+      startupPolicy: LeaderCreated
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:34:17Z"
+        message: Replicas are progressing
+        reason: GroupsProgressing
+        status: "True"
+        type: Progressing
+      hpaPodSelector: leaderworkerset.sigs.k8s.io/name=karta-e2e-lws,leaderworkerset.sigs.k8s.io/worker-index=0
+      replicas: 1
+      updatedReplicas: 1
+  mutations:
+  - fragmentedPodSpec: empty
+    name: leaderworkerset
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: group
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: leader
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: leaderworkerset.x-k8s.io
+      kind: LeaderWorkerSet
+      version: v1
+    name: leaderworkerset
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: Replicas are progressing
+        reason: null
+        status: "True"
+        type: Progressing
+      matchedStatuses:
+      - Undefined
+  - extractedInstances:
+      "":
+        scale:
+          replicas: 2
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    name: group
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "":
+        replicas: 2
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: leader
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: leader
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Initializing
+- docAfterWrites:
+    apiVersion: leaderworkerset.x-k8s.io/v1
+    kind: LeaderWorkerSet
+    metadata:
+      creationTimestamp: "2026-08-18T12:34:17Z"
+      generation: 1
+      name: karta-e2e-lws
+      namespace: test-8m4bc
+      uid: 4458b256-bb00-4596-a2f6-e109b1270510
+    spec:
+      leaderWorkerTemplate:
+        leaderTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+        restartPolicy: RecreateGroupOnPodRestart
+        size: 2
+        workerTemplate:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+            schedulerName: karta-parity-scheduler
+      networkConfig:
+        subdomainPolicy: Shared
+      replicas: 1
+      rolloutStrategy:
+        rollingUpdateConfiguration:
+          maxSurge: 0
+          maxUnavailable: 1
+          partition: 0
+        type: RollingUpdate
+      startupPolicy: LeaderCreated
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:34:17Z"
+        message: Replicas are progressing
+        reason: GroupsProgressing
+        status: "False"
+        type: Progressing
+      - lastTransitionTime: "2026-08-18T12:34:18Z"
+        message: All replicas are ready
+        reason: AllGroupsReady
+        status: "True"
+        type: Available
+      hpaPodSelector: leaderworkerset.sigs.k8s.io/name=karta-e2e-lws,leaderworkerset.sigs.k8s.io/worker-index=0
+      readyReplicas: 1
+      replicas: 1
+      updatedReplicas: 1
+  mutations:
+  - fragmentedPodSpec: empty
+    name: leaderworkerset
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: group
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: leader
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: leaderworkerset.x-k8s.io
+      kind: LeaderWorkerSet
+      version: v1
+    name: leaderworkerset
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: Replicas are progressing
+        reason: null
+        status: "False"
+        type: Progressing
+      - message: All replicas are ready
+        reason: null
+        status: "True"
+        type: Available
+      matchedStatuses:
+      - Running
+  - extractedInstances:
+      "":
+        scale:
+          replicas: 2
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    name: group
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "":
+        replicas: 2
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: leader
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: leader
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: leader
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sleep
+              - infinity
+              image: busybox:1.36
+              name: worker
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 32Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 32Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Running

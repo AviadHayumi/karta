@@ -1,0 +1,895 @@
+steps:
+- docAfterResume:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+      runPolicy:
+        suspend: false
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Master:
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+      runPolicy:
+        suspend: true
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Master:
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      replicaStatuses:
+        Master:
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: pytorchjob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: master
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: PyTorchJob
+      version: v1
+    name: pytorchjob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: null
+        status: "True"
+        type: Created
+      matchedStatuses:
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sh
+              - -c
+              - sleep 15; exit 1
+              image: busybox:1.36
+              name: pytorch
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: master
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sh
+            - -c
+            - sleep 15; exit 1
+            image: busybox:1.36
+            name: pytorch
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers: null
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers: null
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Initializing
+  suspends:
+    pytorchjob:resume: applied
+    pytorchjob:suspend: applied
+- docAfterResume:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+      runPolicy:
+        suspend: false
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:29:09Z"
+        lastUpdateTime: "2026-08-18T12:29:09Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: PyTorchJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Master:
+          active: 1
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+      runPolicy:
+        suspend: true
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:29:09Z"
+        lastUpdateTime: "2026-08-18T12:29:09Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: PyTorchJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Master:
+          active: 1
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+    status:
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:29:09Z"
+        lastUpdateTime: "2026-08-18T12:29:09Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: PyTorchJobRunning
+        status: "True"
+        type: Running
+      replicaStatuses:
+        Master:
+          active: 1
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: pytorchjob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: master
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: PyTorchJob
+      version: v1
+    name: pytorchjob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: null
+        status: "True"
+        type: Created
+      - message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: null
+        status: "True"
+        type: Running
+      matchedStatuses:
+      - Running
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sh
+              - -c
+              - sleep 15; exit 1
+              image: busybox:1.36
+              name: pytorch
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: master
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sh
+            - -c
+            - sleep 15; exit 1
+            image: busybox:1.36
+            name: pytorch
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers: null
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers: null
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Running
+  suspends:
+    pytorchjob:resume: applied
+    pytorchjob:suspend: applied
+- docAfterResume:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+      runPolicy:
+        suspend: false
+    status:
+      completionTime: "2026-08-18T12:29:25Z"
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:29:09Z"
+        lastUpdateTime: "2026-08-18T12:29:09Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: PyTorchJobRunning
+        status: "False"
+        type: Running
+      - lastTransitionTime: "2026-08-18T12:29:25Z"
+        lastUpdateTime: "2026-08-18T12:29:25Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is failed because 1 Master replica(s)
+          failed.
+        reason: PyTorchJobFailed
+        status: "True"
+        type: Failed
+      replicaStatuses:
+        Master:
+          failed: 1
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  docAfterSuspend:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+      runPolicy:
+        suspend: true
+    status:
+      completionTime: "2026-08-18T12:29:25Z"
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:29:09Z"
+        lastUpdateTime: "2026-08-18T12:29:09Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: PyTorchJobRunning
+        status: "False"
+        type: Running
+      - lastTransitionTime: "2026-08-18T12:29:25Z"
+        lastUpdateTime: "2026-08-18T12:29:25Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is failed because 1 Master replica(s)
+          failed.
+        reason: PyTorchJobFailed
+        status: "True"
+        type: Failed
+      replicaStatuses:
+        Master:
+          failed: 1
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  docAfterWrites:
+    apiVersion: kubeflow.org/v1
+    kind: PyTorchJob
+    metadata:
+      creationTimestamp: "2026-08-18T12:29:08Z"
+      generation: 1
+      name: karta-e2e-pytorch-failed
+      namespace: test-8m4bc
+      uid: d5f1f1e6-7b0d-446e-945f-c60b6def2722
+    spec:
+      pytorchReplicaSpecs:
+        Master:
+          replicas: 1
+          restartPolicy: Never
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - command:
+                - sh
+                - -c
+                - sleep 15; exit 1
+                image: busybox:1.36
+                name: pytorch
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              schedulerName: karta-parity-scheduler
+        Worker:
+          template:
+            metadata: {}
+            spec:
+              containers: null
+              schedulerName: karta-parity-scheduler
+    status:
+      completionTime: "2026-08-18T12:29:25Z"
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:29:08Z"
+        lastUpdateTime: "2026-08-18T12:29:08Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: PyTorchJobCreated
+        status: "True"
+        type: Created
+      - lastTransitionTime: "2026-08-18T12:29:09Z"
+        lastUpdateTime: "2026-08-18T12:29:09Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: PyTorchJobRunning
+        status: "False"
+        type: Running
+      - lastTransitionTime: "2026-08-18T12:29:25Z"
+        lastUpdateTime: "2026-08-18T12:29:25Z"
+        message: PyTorchJob karta-e2e-pytorch-failed is failed because 1 Master replica(s)
+          failed.
+        reason: PyTorchJobFailed
+        status: "True"
+        type: Failed
+      replicaStatuses:
+        Master:
+          failed: 1
+          selector: training.kubeflow.org/job-name=karta-e2e-pytorch-failed,training.kubeflow.org/operator-name=pytorchjob-controller,training.kubeflow.org/replica-type=master
+      startTime: "2026-08-18T12:29:08Z"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: pytorchjob
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: master
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  - fragmentedPodSpec: empty
+    name: worker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: applied
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: true
+    instanceIds:
+    - ""
+    kind:
+      group: kubeflow.org
+      kind: PyTorchJob
+      version: v1
+    name: pytorchjob
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - message: PyTorchJob karta-e2e-pytorch-failed is created.
+        reason: null
+        status: "True"
+        type: Created
+      - message: PyTorchJob karta-e2e-pytorch-failed is running.
+        reason: null
+        status: "False"
+        type: Running
+      - message: PyTorchJob karta-e2e-pytorch-failed is failed because 1 Master replica(s)
+          failed.
+        reason: null
+        status: "True"
+        type: Failed
+      matchedStatuses:
+      - Failed
+      - Initializing
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers:
+            - command:
+              - sh
+              - -c
+              - sleep 15; exit 1
+              image: busybox:1.36
+              name: pytorch
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: master
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sh
+            - -c
+            - sleep 15; exit 1
+            image: busybox:1.36
+            name: pytorch
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        podTemplateSpec:
+          metadata: {}
+          spec:
+            containers: null
+        scale:
+          replicas: 1
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: ""
+      kind: Pod
+      version: v1
+    name: worker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec:
+      "":
+        metadata: {}
+        spec:
+          containers: null
+    scale:
+      "":
+        replicas: 1
+    status: null
+  state: Failed
+  suspends:
+    pytorchjob:resume: applied
+    pytorchjob:suspend: applied

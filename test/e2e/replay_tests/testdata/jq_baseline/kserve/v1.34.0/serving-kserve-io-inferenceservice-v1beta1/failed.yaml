@@ -1,0 +1,533 @@
+steps:
+- docAfterWrites:
+    apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
+    metadata:
+      creationTimestamp: "2026-08-18T12:43:59Z"
+      finalizers:
+      - inferenceservice.finalizers
+      generation: 1
+      name: karta-e2e-kserve-failed
+      namespace: test-rb5mt
+      uid: 785989f6-fc31-40fb-b34a-93de2274dea5
+    spec:
+      predictor:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: karta-parity/pool
+                  operator: In
+                  values:
+                  - parity
+        containers:
+        - image: karta-e2e-no-such-registry.invalid/nope:latest
+          name: kserve-container
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        schedulerName: karta-parity-scheduler
+      transformer:
+        labels:
+          karta-parity: "true"
+  mutations:
+  - fragmentedPodSpec: empty
+    name: inferenceservice
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: applied
+    name: predictor
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: transformer
+    podMetadata: applied
+    podSpec: applied
+    podTemplateSpec: empty
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: serving.kserve.io
+      kind: InferenceService
+      version: v1beta1
+    name: inferenceservice
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      matchedStatuses:
+      - Undefined
+  - extractedInstances:
+      "":
+        fragmentedPodSpec:
+          containers:
+          - image: karta-e2e-no-such-registry.invalid/nope:latest
+            name: kserve-container
+            resources:
+              limits:
+                cpu: "1"
+                memory: 2Gi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+        scale: {}
+    fragmentedPodSpec:
+      "":
+        containers:
+        - image: karta-e2e-no-such-registry.invalid/nope:latest
+          name: kserve-container
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: predictor
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        metadata: {}
+        podSpec:
+          containers: null
+        scale: {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: transformer
+    podMetadata:
+      "": {}
+    podSpec:
+      "":
+        containers: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  state: Initializing
+- docAfterWrites:
+    apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
+    metadata:
+      creationTimestamp: "2026-08-18T12:43:59Z"
+      finalizers:
+      - inferenceservice.finalizers
+      generation: 1
+      name: karta-e2e-kserve-failed
+      namespace: test-rb5mt
+      uid: 785989f6-fc31-40fb-b34a-93de2274dea5
+    spec:
+      predictor:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: karta-parity/pool
+                  operator: In
+                  values:
+                  - parity
+        containers:
+        - image: karta-e2e-no-such-registry.invalid/nope:latest
+          name: kserve-container
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        schedulerName: karta-parity-scheduler
+      transformer:
+        labels:
+          karta-parity: "true"
+    status:
+      components:
+        predictor: {}
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        reason: PredictorConfigurationReady not ready
+        severity: Info
+        status: Unknown
+        type: LatestDeploymentReady
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        reason: PredictorRouteReady not ready
+        severity: Info
+        status: Unknown
+        type: RoutesReady
+      modelStatus:
+        states:
+          activeModelState: ""
+          targetModelState: Pending
+        transitionStatus: InProgress
+  mutations:
+  - fragmentedPodSpec: empty
+    name: inferenceservice
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: applied
+    name: predictor
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: transformer
+    podMetadata: applied
+    podSpec: applied
+    podTemplateSpec: empty
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: serving.kserve.io
+      kind: InferenceService
+      version: v1beta1
+    name: inferenceservice
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - reason: null
+        status: Unknown
+        type: LatestDeploymentReady
+      - reason: null
+        status: Unknown
+        type: RoutesReady
+      matchedStatuses:
+      - Undefined
+  - extractedInstances:
+      "":
+        fragmentedPodSpec:
+          containers:
+          - image: karta-e2e-no-such-registry.invalid/nope:latest
+            name: kserve-container
+            resources:
+              limits:
+                cpu: "1"
+                memory: 2Gi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+        scale: {}
+    fragmentedPodSpec:
+      "":
+        containers:
+        - image: karta-e2e-no-such-registry.invalid/nope:latest
+          name: kserve-container
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: predictor
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        metadata: {}
+        podSpec:
+          containers: null
+        scale: {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: transformer
+    podMetadata:
+      "": {}
+    podSpec:
+      "":
+        containers: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  state: Initializing
+- docAfterWrites:
+    apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
+    metadata:
+      creationTimestamp: "2026-08-18T12:43:59Z"
+      finalizers:
+      - inferenceservice.finalizers
+      generation: 1
+      name: karta-e2e-kserve-failed
+      namespace: test-rb5mt
+      uid: 785989f6-fc31-40fb-b34a-93de2274dea5
+    spec:
+      predictor:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: karta-parity/pool
+                  operator: In
+                  values:
+                  - parity
+        containers:
+        - image: karta-e2e-no-such-registry.invalid/nope:latest
+          name: kserve-container
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        schedulerName: karta-parity-scheduler
+      transformer:
+        labels:
+          karta-parity: "true"
+    status:
+      components:
+        predictor:
+          latestCreatedRevision: karta-e2e-kserve-failed-predictor-00001
+      conditions:
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        reason: PredictorConfigurationReady not ready
+        severity: Info
+        status: "False"
+        type: LatestDeploymentReady
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        message: 'Revision "karta-e2e-kserve-failed-predictor-00001" failed with message:
+          Unable to fetch image "karta-e2e-no-such-registry.invalid/nope:latest":
+          failed to resolve image to digest: Get "https://karta-e2e-no-such-registry.invalid/v2/":
+          dial tcp: lookup karta-e2e-no-such-registry.invalid on 10.96.0.10:53: no
+          such host.'
+        reason: RevisionFailed
+        severity: Info
+        status: "False"
+        type: PredictorConfigurationReady
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
+          ready Revision.
+        reason: RevisionMissing
+        status: "False"
+        type: PredictorReady
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
+          ready Revision.
+        reason: RevisionMissing
+        severity: Info
+        status: "False"
+        type: PredictorRouteReady
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
+          ready Revision.
+        reason: RevisionMissing
+        status: "False"
+        type: Ready
+      - lastTransitionTime: "2026-08-18T12:43:59Z"
+        reason: PredictorRouteReady not ready
+        severity: Info
+        status: "False"
+        type: RoutesReady
+      modelStatus:
+        states:
+          activeModelState: ""
+          targetModelState: Pending
+        transitionStatus: InProgress
+      observedGeneration: 1
+  mutations:
+  - fragmentedPodSpec: empty
+    name: inferenceservice
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: applied
+    name: predictor
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec: empty
+    name: transformer
+    podMetadata: applied
+    podSpec: applied
+    podTemplateSpec: empty
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: serving.kserve.io
+      kind: InferenceService
+      version: v1beta1
+    name: inferenceservice
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      conditions:
+      - reason: null
+        status: "False"
+        type: LatestDeploymentReady
+      - message: 'Revision "karta-e2e-kserve-failed-predictor-00001" failed with message:
+          Unable to fetch image "karta-e2e-no-such-registry.invalid/nope:latest":
+          failed to resolve image to digest: Get "https://karta-e2e-no-such-registry.invalid/v2/":
+          dial tcp: lookup karta-e2e-no-such-registry.invalid on 10.96.0.10:53: no
+          such host.'
+        reason: null
+        status: "False"
+        type: PredictorConfigurationReady
+      - message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
+          ready Revision.
+        reason: null
+        status: "False"
+        type: PredictorReady
+      - message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
+          ready Revision.
+        reason: null
+        status: "False"
+        type: PredictorRouteReady
+      - message: Configuration "karta-e2e-kserve-failed-predictor" does not have any
+          ready Revision.
+        reason: null
+        status: "False"
+        type: Ready
+      - reason: null
+        status: "False"
+        type: RoutesReady
+      matchedStatuses:
+      - Failed
+  - extractedInstances:
+      "":
+        fragmentedPodSpec:
+          containers:
+          - image: karta-e2e-no-such-registry.invalid/nope:latest
+            name: kserve-container
+            resources:
+              limits:
+                cpu: "1"
+                memory: 2Gi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+        scale: {}
+    fragmentedPodSpec:
+      "":
+        containers:
+        - image: karta-e2e-no-such-registry.invalid/nope:latest
+          name: kserve-container
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: predictor
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        metadata: {}
+        podSpec:
+          containers: null
+        scale: {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: transformer
+    podMetadata:
+      "": {}
+    podSpec:
+      "":
+        containers: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  state: Failed
