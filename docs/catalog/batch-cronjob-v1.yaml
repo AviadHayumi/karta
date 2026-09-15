@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: batch-cronjob-v1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: cronjob
+      kind:
+        group: batch
+        version: v1
+        kind: CronJob
+      specDefinition:
+        podTemplateSpec:
+          expression: object[?"spec"][?"jobTemplate"][?"spec"][?"template"].orValue(null)
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"jobTemplate": {"spec": {"template": value}}}}'
+          patchStrategy: Replace
+      scaleDefinition:
+        replicas:
+          expression: variables.specJobTemplateSpecParallelism
+      statusDefinition:
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: object.?spec.?suspend.orValue(false) != true && object.?status.?lastScheduleTime.orValue(null) == null
+                expectedResult: "true"
+          running:
+            - byExpression:
+                expression: object.?spec.?suspend.orValue(false) != true && object.?status.?lastScheduleTime.orValue(null) != null
+                expectedResult: "true"
+          suspended:
+            - byExpression:
+                expression: object.?spec.?suspend.orValue(false) == true
+                expectedResult: "true"
+      suspendDefinition:
+        suspendActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
+        resumeActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
+    childComponents:
+      - name: job
+        kind:
+          group: batch
+          version: v1
+          kind: Job
+        ownerRef: cronjob
+  optimizationInstructions: {}
+  variables:
+    - name: specJobTemplateSpecParallelism
+      expression: ([dyn(object[?"spec"][?"jobTemplate"][?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

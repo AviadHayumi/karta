@@ -1,0 +1,71 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  creationTimestamp: "2026-08-18T12:30:47Z"
+  generation: 1
+  name: karta-e2e-mpi-running
+  namespace: test-8m4bc
+  uid: b8b542e8-7cbd-4749-b28d-96b52af8bf9e
+spec:
+  launcherCreationPolicy: AtStartup
+  mpiImplementation: OpenMPI
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sh
+            - -c
+            - sleep 300
+            image: busybox:1.36
+            name: mpi-launcher
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+          schedulerName: karta-golden-scheduler
+    Worker:
+      replicas: 1
+      template:
+        metadata: {}
+        spec:
+          containers:
+          - command:
+            - sleep
+            - infinity
+            image: busybox:1.36
+            name: mpi-worker
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+          schedulerName: karta-golden-scheduler
+  runLauncherAsWorker: false
+  runPolicy:
+    cleanPodPolicy: None
+    suspend: true
+  slotsPerWorker: 1
+  sshAuthMountPath: /root/.ssh
+status:
+  conditions:
+  - lastTransitionTime: "2026-08-18T12:30:47Z"
+    lastUpdateTime: "2026-08-18T12:30:47Z"
+    message: MPIJob test-8m4bc/karta-e2e-mpi-running is created.
+    reason: MPIJobCreated
+    status: "True"
+    type: Created
+  - lastTransitionTime: "2026-08-18T12:30:49Z"
+    lastUpdateTime: "2026-08-18T12:30:49Z"
+    message: MPIJob test-8m4bc/karta-e2e-mpi-running is running.
+    reason: MPIJobRunning
+    status: "True"
+    type: Running
+  replicaStatuses:
+    Launcher:
+      active: 1
+    Worker:
+      active: 1
+  startTime: "2026-08-18T12:30:47Z"

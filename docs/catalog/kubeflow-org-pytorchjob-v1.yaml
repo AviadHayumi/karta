@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: kubeflow-org-pytorchjob-v1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: pytorchjob
+      kind:
+        group: kubeflow.org
+        version: v1
+        kind: PyTorchJob
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+        statusMappings:
+          initializing:
+            - byConditions:
+                - type: Created
+                  status: "True"
+          running:
+            - byConditions:
+                - type: Running
+                  status: "True"
+          completed:
+            - byConditions:
+                - type: Succeeded
+                  status: "True"
+          failed:
+            - byConditions:
+                - type: Failed
+                  status: "True"
+          suspended:
+            - byConditions:
+                - type: Suspended
+                  status: "True"
+      suspendDefinition:
+        suspendActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": true}}}'
+        resumeActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": false}}}'
+    childComponents:
+      - name: master
+        kind:
+          group: ""
+          version: v1
+          kind: Pod
+        ownerRef: pytorchjob
+        specDefinition:
+          podTemplateSpec:
+            expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"template"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: variables.specPytorchReplicaSpecsMasterReplicas
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)
+            value: master
+      - name: worker
+        kind:
+          group: ""
+          version: v1
+          kind: Pod
+        ownerRef: pytorchjob
+        specDefinition:
+          podTemplateSpec:
+            expression: object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: variables.specPytorchReplicaSpecsWorkerReplicas
+          minReplicas:
+            expression: object[?"spec"][?"elasticPolicy"][?"minReplicas"].orValue(null)
+          maxReplicas:
+            expression: object[?"spec"][?"elasticPolicy"][?"maxReplicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/replica-type"].orValue(null)
+            value: worker
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: job
+          members:
+            - componentName: master
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)
+            - componentName: worker
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)
+  variables:
+    - name: specPytorchReplicaSpecsMasterReplicas
+      expression: ([dyn(object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: specPytorchReplicaSpecsWorkerReplicas
+      expression: ([dyn(object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

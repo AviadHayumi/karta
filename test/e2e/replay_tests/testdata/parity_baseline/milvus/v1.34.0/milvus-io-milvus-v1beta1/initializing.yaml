@@ -1,0 +1,1088 @@
+steps:
+- docAfterWrites:
+    apiVersion: milvus.io/v1beta1
+    kind: Milvus
+    metadata:
+      creationTimestamp: "2026-08-18T12:32:39Z"
+      generation: 1
+      name: karta-e2e-milvus-initializing
+      namespace: test-8m4bc
+      uid: 526f93d3-a6e1-4ae5-9f18-38bd3cf18a9a
+    spec:
+      components:
+        cdc:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        dataCoord:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        dataNode:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        image: milvusdb/milvus:v0.0.0-nonexistent
+        imageUpdateMode: rollingUpgrade
+        indexCoord:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        indexNode:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        mixCoord:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        proxy:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        queryCoord:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        queryNode:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        rootCoord:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        standalone:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+          serviceType: ClusterIP
+        streamingNode:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karta-parity/pool
+                    operator: In
+                    values:
+                    - parity
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    karta-parity: "true"
+                topologyKey: kubernetes.io/hostname
+          podAnnotations:
+            karta-parity: "true"
+          podLabels:
+            karta-parity: "true"
+          priorityClassName: karta-parity-priority
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          schedulerName: karta-parity-scheduler
+        targetPortType: string
+      dependencies:
+        etcd:
+          endpoints:
+          - nonexistent-etcd:2379
+          external: true
+          inCluster:
+            values:
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
+        msgStreamType: rocksmq
+        pulsar:
+          inCluster:
+            values:
+              bookkeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              broker:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              proxy:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+              zookeeper:
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 96Mi
+        storage:
+          endpoint: nonexistent-minio:9000
+          external: true
+          inCluster:
+            values:
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 96Mi
+          type: MinIO
+      mode: standalone
+  mutations:
+  - fragmentedPodSpec: empty
+    name: milvus
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: standalone
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: proxy
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: mixcoord
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: datanode
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: querynode
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: streamingnode
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: indexnode
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: rootcoord
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: datacoord
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: querycoord
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: indexcoord
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: empty
+      containers: empty
+      image: write-error
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: applied
+    name: cdc
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
+    name: etcd
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
+    name: minio
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
+    name: pulsar-zookeeper
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
+    name: pulsar-bookkeeper
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
+    name: pulsar-broker
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: write-error
+      container: empty
+      containers: empty
+      image: write-error
+      labels: write-error
+      nodeAffinity: write-error
+      podAffinity: write-error
+      priorityClassName: write-error
+      resourceClaims: write-error
+      resources: applied
+      schedulerName: write-error
+    name: pulsar-proxy
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: milvus.io
+      kind: Milvus
+      version: v1beta1
+    name: milvus
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      matchedStatuses:
+      - Undefined
+      phase: ""
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale:
+          replicas: 1
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: standalone
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "":
+        replicas: 1
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: proxy
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: mixcoord
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: datanode
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: querynode
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: streamingnode
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: indexnode
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: rootcoord
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: datacoord
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: querycoord
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: indexcoord
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: Deployment
+      version: v1
+    name: cdc
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: etcd
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: minio
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: pulsar-zookeeper
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: pulsar-bookkeeper
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: pulsar-broker
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  - extractedInstances:
+      "":
+        fragmentedPodSpec: {}
+        scale: {}
+    fragmentedPodSpec:
+      "": {}
+    hasInstanceIdDefinition: false
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: apps
+      kind: StatefulSet
+      version: v1
+    name: pulsar-proxy
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      "": {}
+    status: null
+  state: Initializing

@@ -1,0 +1,832 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: milvus-io-milvus-v1beta1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: milvus
+      kind:
+        group: milvus.io
+        version: v1beta1
+        kind: Milvus
+      statusDefinition:
+        phaseDefinition:
+          expression: object[?"status"][?"status"].orValue(null)
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+        statusMappings:
+          initializing:
+            - byPhase: Pending
+            - byExpression:
+                expression: variables.statusStatus == ""
+                expectedResult: "true"
+          running:
+            - byPhase: Healthy
+          degraded:
+            - byPhase: Unhealthy
+    childComponents:
+      - name: standalone
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"standalone"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"standalone"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"standalone"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"standalone"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"standalone"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"standalone": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"standalone"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: standalone
+      - name: proxy
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"proxy"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"proxy"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"proxy"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"proxy"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"proxy"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"proxy"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"proxy"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"proxy": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"proxy"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: proxy
+      - name: mixcoord
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"mixCoord"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"mixCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"mixCoord"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: mixcoord
+      - name: datanode
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"dataNode"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"dataNode"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: datanode
+      - name: querynode
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"queryNode"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"queryNode"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: querynode
+      - name: streamingnode
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"streamingNode"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"streamingNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"streamingNode"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: streamingnode
+      - name: indexnode
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"indexNode"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexNode": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"indexNode"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: indexnode
+      - name: rootcoord
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"rootCoord"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"rootCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"rootCoord"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: rootcoord
+      - name: datacoord
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"dataCoord"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"dataCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"dataCoord"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: datacoord
+      - name: querycoord
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"queryCoord"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"queryCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"queryCoord"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: querycoord
+      - name: indexcoord
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"indexCoord"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"indexCoord": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"indexCoord"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: indexcoord
+      - name: cdc
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"components"][?"cdc"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"schedulerName": value}}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"components"][?"cdc"][?"podLabels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"podLabels": value}}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"components"][?"cdc"][?"podAnnotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"podAnnotations": value}}}}'
+              patchStrategy: Replace
+            resources:
+              expression: object[?"spec"][?"components"][?"cdc"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"resources": value}}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"components"][?"cdc"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"affinity": {"podAffinity": value}}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"components"][?"cdc"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"affinity": {"nodeAffinity": value}}}}}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"components"][?"cdc"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"components": {"cdc": {"priorityClassName": value}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"components"][?"cdc"][?"replicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"app.kubernetes.io/component"].orValue(null)
+            value: cdc
+      - name: etcd
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"etcd": {"inCluster": {"values": {"resources": value}}}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"replicaCount"].orValue(null)
+      - name: minio
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"storage"][?"inCluster"][?"values"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"storage": {"inCluster": {"values": {"resources": value}}}}}}'
+              patchStrategy: Replace
+      - name: pulsar-zookeeper
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"zookeeper": {"resources": value}}}}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"replicaCount"].orValue(null)
+      - name: pulsar-bookkeeper
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"bookkeeper": {"resources": value}}}}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"replicaCount"].orValue(null)
+      - name: pulsar-broker
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"broker": {"resources": value}}}}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"replicaCount"].orValue(null)
+      - name: pulsar-proxy
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: milvus
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            resources:
+              expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"resources"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"proxy": {"resources": value}}}}}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"replicaCount"].orValue(null)
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: cluster
+          members:
+            - componentName: querynode
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)
+            - componentName: datanode
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)
+            - componentName: streamingnode
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/instance"].orValue(null)
+  variables:
+    - name: statusStatus
+      expression: ([dyn(object.?status.?status.orValue(null))].filter(v, v != null && v != false) + [""])[0]

@@ -1,0 +1,64 @@
+name: Pull Request
+
+on:
+  push:
+    branches: [ main, v0.* ]
+  pull_request:
+    branches: [ main, v0.* ]
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            operator/go.sum
+            cli/go.sum
+
+      - name: Cache bin tools
+        uses: actions/cache@v6
+        with:
+          path: bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('Makefile') }}-${{ hashFiles('go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-bin-${{ hashFiles('Makefile') }}-
+            ${{ runner.os }}-bin-
+
+      - name: Run checks
+        run: make check
+
+      - name: Get golangci-lint version
+        run: echo "GOLANGCI_LINT_VERSION=$(grep '^GOLANGCI_LINT_VERSION' hack/tools.mk | cut -d'=' -f2 | tr -d ' ')" >> $GITHUB_ENV
+
+      - name: Lint Go
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+
+      - name: Lint helm chart
+        run: make helm-lint
+
+      - name: Validate helm chart renders
+        run: make helm-validate
+
+      - name: Verify air-gap image lock coverage
+        run: make image-lock-verify
+
+      - name: Test air-gap image lock generator
+        run: make image-lock-test
+
+      - name: Run operator checks
+        working-directory: operator
+        run: make check
+
+      - name: Lint shell scripts
+        run: make lint-shell

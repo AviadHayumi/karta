@@ -1,0 +1,215 @@
+steps:
+- docAfterWrites:
+    apiVersion: nvidia.com/v1alpha1
+    kind: DynamoGraphDeployment
+    metadata:
+      annotations:
+        nvidia.com/dynamo-operator-origin-version: 1.2.1
+      creationTimestamp: "2026-08-18T12:30:45Z"
+      generation: 1
+      name: karta-e2e-dynamo-initializing
+      namespace: test-8m4bc
+      uid: c0865f0b-eb17-49df-b5f6-c481c47843b5
+    spec:
+      services:
+        Frontend:
+          annotations:
+            karta-parity: "true"
+          componentType: frontend
+          extraPodSpec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: karta-parity/pool
+                      operator: In
+                      values:
+                      - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
+            mainContainer:
+              image: ghcr.io/example/karta-parity:v1
+              imagePullPolicy: IfNotPresent
+              name: ""
+              resources: {}
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
+            schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
+          replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+        decode:
+          annotations:
+            karta-parity: "true"
+          componentType: worker
+          envFromSecret: hf-token-secret
+          extraPodSpec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: karta-parity/pool
+                      operator: In
+                      values:
+                      - parity
+              podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      karta-parity: "true"
+                  topologyKey: kubernetes.io/hostname
+            mainContainer:
+              args:
+              - --model-path
+              - nvidia/Llama-3.1-8B-Instruct-FP8
+              - --model-name
+              - nvidia/Llama-3.1-8B-Instruct-FP8
+              command:
+              - python3
+              - -m
+              - dynamo.mocker
+              image: ghcr.io/example/karta-parity:v1
+              imagePullPolicy: IfNotPresent
+              name: ""
+              resources: {}
+              workingDir: /workspace
+            priorityClassName: karta-parity-priority
+            resourceClaims:
+            - name: karta-parity-claim
+            schedulerName: karta-parity-scheduler
+          labels:
+            karta-parity: "true"
+          replicas: 1
+          resources:
+            requests:
+              cpu: 150m
+              memory: 96Mi
+          subComponentType: decode
+  mutations:
+  - fragmentedPodSpec: empty
+    name: dynamographdeployment
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  - fragmentedPodSpec:
+      annotations: applied
+      container: applied
+      containers: empty
+      image: applied
+      labels: applied
+      nodeAffinity: applied
+      podAffinity: applied
+      priorityClassName: applied
+      resourceClaims: applied
+      resources: applied
+      schedulerName: applied
+    name: service
+    podMetadata: empty
+    podSpec: empty
+    podTemplateSpec: empty
+  reads:
+  - extractedInstances:
+      "": {}
+    fragmentedPodSpec: null
+    hasInstanceIdDefinition: false
+    hasPodDefinition: false
+    hasSuspendDefinition: false
+    instanceIds:
+    - ""
+    kind:
+      group: nvidia.com
+      kind: DynamoGraphDeployment
+      version: v1alpha1
+    name: dynamographdeployment
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale: null
+    status:
+      matchedStatuses:
+      - Undefined
+      phase: ""
+  - extractedInstances:
+      Frontend:
+        fragmentedPodSpec:
+          container:
+            image: busybox:99.99.99
+            imagePullPolicy: IfNotPresent
+            name: ""
+            resources: {}
+          image: busybox:99.99.99
+        scale:
+          replicas: 1
+      decode:
+        fragmentedPodSpec:
+          container:
+            args:
+            - --model-path
+            - nvidia/Llama-3.1-8B-Instruct-FP8
+            - --model-name
+            - nvidia/Llama-3.1-8B-Instruct-FP8
+            command:
+            - python3
+            - -m
+            - dynamo.mocker
+            image: busybox:99.99.99
+            imagePullPolicy: IfNotPresent
+            name: ""
+            resources: {}
+            workingDir: /workspace
+          image: busybox:99.99.99
+        scale:
+          replicas: 1
+    fragmentedPodSpec:
+      Frontend:
+        container:
+          image: busybox:99.99.99
+          imagePullPolicy: IfNotPresent
+          name: ""
+          resources: {}
+        image: busybox:99.99.99
+      decode:
+        container:
+          args:
+          - --model-path
+          - nvidia/Llama-3.1-8B-Instruct-FP8
+          - --model-name
+          - nvidia/Llama-3.1-8B-Instruct-FP8
+          command:
+          - python3
+          - -m
+          - dynamo.mocker
+          image: busybox:99.99.99
+          imagePullPolicy: IfNotPresent
+          name: ""
+          resources: {}
+          workingDir: /workspace
+        image: busybox:99.99.99
+    hasInstanceIdDefinition: true
+    hasPodDefinition: true
+    hasSuspendDefinition: false
+    instanceIds:
+    - Frontend
+    - decode
+    name: service
+    podMetadata: null
+    podSpec: null
+    podTemplateSpec: null
+    scale:
+      Frontend:
+        replicas: 1
+      decode:
+        replicas: 1
+    status: null
+  state: Initializing

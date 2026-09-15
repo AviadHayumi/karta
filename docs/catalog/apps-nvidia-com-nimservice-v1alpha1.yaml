@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: apps-nvidia-com-nimservice-v1alpha1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: nimservice
+      kind:
+        group: apps.nvidia.com
+        version: v1alpha1
+        kind: NIMService
+      specDefinition:
+        fragmentedPodSpecDefinition:
+          schedulerName:
+            expression: object[?"spec"][?"schedulerName"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"schedulerName": value}}'
+            patchStrategy: Replace
+          labels:
+            expression: object[?"spec"][?"labels"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"labels": value}}'
+            patchStrategy: Replace
+          annotations:
+            expression: object[?"spec"][?"annotations"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"annotations": value}}'
+            patchStrategy: Replace
+          resources:
+            expression: object[?"spec"][?"resources"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"resources": value}}'
+            patchStrategy: Replace
+          podAffinity:
+            expression: object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"affinity": {"podAffinity": value}}}'
+            patchStrategy: Replace
+          nodeAffinity:
+            expression: object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"affinity": {"nodeAffinity": value}}}'
+            patchStrategy: Replace
+      scaleDefinition:
+        replicas:
+          expression: variables.specReplicas
+      statusDefinition:
+        phaseDefinition:
+          expression: object[?"status"][?"state"].orValue(null)
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: variables.statusState != "Ready" && variables.statusState != "Failed"
+                expectedResult: "true"
+          running:
+            - byPhase: Ready
+          failed:
+            - byPhase: Failed
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: service
+          members:
+            - componentName: nimservice
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"app.kubernetes.io/name"].orValue(null)
+  variables:
+    - name: specReplicas
+      expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: statusState
+      expression: ([dyn(object.?status.?state.orValue(null))].filter(v, v != null && v != false) + [""])[0]

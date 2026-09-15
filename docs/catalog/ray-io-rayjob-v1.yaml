@@ -1,0 +1,113 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: ray-io-rayjob-v1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: rayjob
+      kind:
+        group: ray.io
+        version: v1
+        kind: RayJob
+      statusDefinition:
+        phaseDefinition:
+          expression: object[?"status"][?"jobStatus"].orValue(null)
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+        statusMappings:
+          initializing:
+            - byPhase: PENDING
+            - byExpression:
+                expression: variables.statusJobStatus == "" && variables.statusJobDeploymentStatus != "Suspended" && variables.statusJobDeploymentStatus != "Suspending"
+                expectedResult: "true"
+          running:
+            - byPhase: RUNNING
+          completed:
+            - byPhase: SUCCEEDED
+          failed:
+            - byPhase: FAILED
+          suspended:
+            - byExpression:
+                expression: variables.statusJobDeploymentStatus == "Suspended" || variables.statusJobDeploymentStatus == "Suspending"
+                expectedResult: "true"
+      suspendDefinition:
+        suspendActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
+        resumeActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
+    childComponents:
+      - name: head
+        kind:
+          group: ""
+          version: v1
+          kind: Pod
+        ownerRef: rayjob
+        specDefinition:
+          podTemplateSpec:
+            expression: object[?"spec"][?"rayClusterSpec"][?"headGroupSpec"][?"template"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"rayClusterSpec": {"headGroupSpec": {"template": value}}}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: "1"
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"ray.io/node-type"].orValue(null)
+            value: head
+      - name: worker
+        kind:
+          group: ""
+          version: v1
+          kind: Pod
+        ownerRef: rayjob
+        specDefinition:
+          podTemplateSpec:
+            expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))
+            patches:
+              - patchType: JSONPatch
+                expression: '[{"op": "add", "path": "/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
+        scaleDefinition:
+          replicas:
+            expression: '(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])'
+          minReplicas:
+            expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"minReplicas"].orValue(null))
+          maxReplicas:
+            expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"maxReplicas"].orValue(null))
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"groupName"].orValue(null))
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"ray.io/node-type"].orValue(null)
+            value: worker
+          componentInstanceSelector:
+            expression: object[?"metadata"][?"labels"][?"ray.io/group"].orValue(null)
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: job
+          members:
+            - componentName: head
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"ray.io/cluster"].orValue(null)
+            - componentName: worker
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"ray.io/cluster"].orValue(null)
+  variables:
+    - name: workerGroups
+      expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0]
+    - name: workerReplicas
+      expression: variables.workerGroups.map(x, dyn(x[?"replicas"].orValue(null))).filter(v, v != null && v != false)
+    - name: statusJobStatus
+      expression: ([dyn(object.?status.?jobStatus.orValue(null))].filter(v, v != null && v != false) + [""])[0]
+    - name: statusJobDeploymentStatus
+      expression: ([dyn(object.?status.?jobDeploymentStatus.orValue(null))].filter(v, v != null && v != false) + [""])[0]

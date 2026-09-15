@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: leaderworkerset-x-k8s-io-leaderworkerset-v1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: leaderworkerset
+      kind:
+        group: leaderworkerset.x-k8s.io
+        version: v1
+        kind: LeaderWorkerSet
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: ([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Progressing" && c.?status.orValue(null) == "True") && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Available" && c.?status.orValue(null) == "True")
+                expectedResult: "true"
+          running:
+            - byConditions:
+                - type: Available
+                  status: "True"
+            - byExpression:
+                expression: variables.statusReplicas > 0 && object.?status.?readyReplicas.orValue(-1) == object.?status.?replicas.orValue(-2) && object.?status.?updatedReplicas.orValue(-1) == object.?status.?replicas.orValue(-2)
+                expectedResult: "true"
+          failed:
+            - byConditions:
+                - type: Available
+                  status: "False"
+                - type: Progressing
+                  status: "False"
+                - type: UpdateInProgress
+                  status: "False"
+    childComponents:
+      - name: group
+        ownerRef: leaderworkerset
+        scaleDefinition:
+          replicas:
+            expression: object[?"spec"][?"leaderWorkerTemplate"][?"size"].orValue(null)
+        podSelector:
+          replicaSelector:
+            expression: object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null)
+      - name: leader
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: group
+        specDefinition:
+          podTemplateSpec:
+            expression: object[?"spec"][?"leaderWorkerTemplate"][?"leaderTemplate"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"leaderWorkerTemplate": {"leaderTemplate": value}}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: variables.specReplicas
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/worker-index"].orValue(null)
+            value: "0"
+      - name: worker
+        kind:
+          group: apps
+          version: v1
+          kind: StatefulSet
+        ownerRef: group
+        specDefinition:
+          podTemplateSpec:
+            expression: object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"leaderWorkerTemplate": {"workerTemplate": value}}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: variables.specReplicasFloat * (variables.specLeaderWorkerTemplateSize - 1.0)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"annotations"][?"leaderworkerset.sigs.k8s.io/leader-name"].orValue(null)
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: group
+          members:
+            - componentName: group
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/name"].orValue(null)
+                - ([dyn(object[?"metadata"][?"labels"][?"leaderworkerset.sigs.k8s.io/group-index"].orValue(null))].filter(v, v != null && v != false) + ["0"])[0]
+  variables:
+    - name: statusReplicas
+      expression: ([dyn(object.?status.?replicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: specReplicas
+      expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: specReplicasFloat
+      expression: ([dyn(object.?spec.?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]
+    - name: specLeaderWorkerTemplateSize
+      expression: ([dyn(object.?spec.?leaderWorkerTemplate.?size.orValue(null))].filter(v, v != null && v != false) + [1.0])[0]

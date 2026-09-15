@@ -1,0 +1,149 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: serving-kserve-io-inferenceservice-v1beta1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: inferenceservice
+      kind:
+        group: serving.kserve.io
+        version: v1beta1
+        kind: InferenceService
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: '!([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Ready" && (c.?status.orValue(null) == "True" || c.?status.orValue(null) == "False"))'
+                expectedResult: "true"
+          running:
+            - byConditions:
+                - type: PredictorReady
+                  status: "True"
+                - type: RoutesReady
+                  status: "True"
+                - type: LatestDeploymentReady
+                  status: "True"
+          failed:
+            - byConditions:
+                - type: PredictorReady
+                  status: "False"
+                - type: PredictorConfigurationReady
+                  status: "False"
+                - type: RoutesReady
+                  status: "False"
+    childComponents:
+      - name: predictor
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: inferenceservice
+        specDefinition:
+          fragmentedPodSpecDefinition:
+            schedulerName:
+              expression: object[?"spec"][?"predictor"][?"schedulerName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"schedulerName": value}}}'
+              patchStrategy: Replace
+            labels:
+              expression: object[?"spec"][?"predictor"][?"labels"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"labels": value}}}'
+              patchStrategy: Replace
+            annotations:
+              expression: object[?"spec"][?"predictor"][?"annotations"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"annotations": value}}}'
+              patchStrategy: Replace
+            podAffinity:
+              expression: object[?"spec"][?"predictor"][?"affinity"][?"podAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"affinity": {"podAffinity": value}}}}'
+              patchStrategy: Replace
+            nodeAffinity:
+              expression: object[?"spec"][?"predictor"][?"affinity"][?"nodeAffinity"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"affinity": {"nodeAffinity": value}}}}'
+              patchStrategy: Replace
+            containers:
+              expression: object[?"spec"][?"predictor"][?"containers"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"containers": value}}}'
+              patchStrategy: Replace
+            container:
+              expression: 'variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null'
+              patches:
+                - patchType: MergePatch
+                  expression: 'variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}'
+              patchStrategy: Replace
+            priorityClassName:
+              expression: object[?"spec"][?"predictor"][?"priorityClassName"].orValue(null)
+              patches:
+                - patchType: MergePatch
+                  expression: '{"spec": {"predictor": {"priorityClassName": value}}}'
+              patchStrategy: Replace
+        scaleDefinition:
+          minReplicas:
+            expression: object[?"spec"][?"predictor"][?"minReplicas"].orValue(null)
+          maxReplicas:
+            expression: object[?"spec"][?"predictor"][?"maxReplicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"component"].orValue(null)
+            value: predictor
+      - name: transformer
+        kind:
+          group: apps
+          version: v1
+          kind: Deployment
+        ownerRef: inferenceservice
+        specDefinition:
+          podSpec:
+            expression: object[?"spec"][?"transformer"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"transformer": value}}'
+            patchStrategy: Replace
+          metadata:
+            expression: object[?"spec"][?"transformer"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"transformer": value}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          minReplicas:
+            expression: object[?"spec"][?"transformer"][?"minReplicas"].orValue(null)
+          maxReplicas:
+            expression: object[?"spec"][?"transformer"][?"maxReplicas"].orValue(null)
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"component"].orValue(null)
+            value: transformer
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: service
+          members:
+            - componentName: predictor
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"serving.kserve.io/inferenceservice"].orValue(null)
+            - componentName: transformer
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"serving.kserve.io/inferenceservice"].orValue(null)
+  variables:
+    - name: containerKey
+      expression: (([dyn(object[?"spec"][?"predictor"].orValue(null))].filter(v, type(v) == map) + [{}])[0].map(k, string(k)).sort().filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k] && object.spec.predictor[k]["storageUri"] != null && object.spec.predictor[k]["storageUri"] != false) + [""])[0]

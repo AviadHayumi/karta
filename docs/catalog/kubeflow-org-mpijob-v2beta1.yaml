@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: kubeflow-org-mpijob-v2beta1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: mpijob
+      kind:
+        group: kubeflow.org
+        version: v2beta1
+        kind: MPIJob
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+          reasonFieldName: reason
+        statusMappings:
+          initializing:
+            - byConditions:
+                - type: Created
+                  status: "True"
+          running:
+            - byConditions:
+                - type: Running
+                  status: "True"
+          completed:
+            - byConditions:
+                - type: Succeeded
+                  status: "True"
+          failed:
+            - byConditions:
+                - type: Failed
+                  status: "True"
+          suspended:
+            - byConditions:
+                - type: Suspended
+                  status: "True"
+      suspendDefinition:
+        suspendActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": true}}}'
+        resumeActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"runPolicy": {"suspend": false}}}'
+    childComponents:
+      - name: launcher
+        kind:
+          group: ""
+          version: v1
+          kind: Pod
+        ownerRef: mpijob
+        specDefinition:
+          podTemplateSpec:
+            expression: object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"template"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"mpiReplicaSpecs": {"Launcher": {"template": value}}}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: variables.specMpiReplicaSpecsLauncherReplicas
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/job-role"].orValue(null)
+            value: launcher
+      - name: worker
+        kind:
+          group: ""
+          version: v1
+          kind: Pod
+        ownerRef: mpijob
+        specDefinition:
+          podTemplateSpec:
+            expression: object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"template"].orValue(null)
+            patches:
+              - patchType: MergePatch
+                expression: '{"spec": {"mpiReplicaSpecs": {"Worker": {"template": value}}}}'
+            patchStrategy: Replace
+        scaleDefinition:
+          replicas:
+            expression: variables.specMpiReplicaSpecsWorkerReplicas
+        podSelector:
+          componentTypeSelector:
+            expression: object[?"metadata"][?"labels"][?"training.kubeflow.org/job-role"].orValue(null)
+            value: worker
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: job
+          members:
+            - componentName: launcher
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)
+            - componentName: worker
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"training.kubeflow.org/job-name"].orValue(null)
+  variables:
+    - name: specMpiReplicaSpecsLauncherReplicas
+      expression: ([dyn(object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: specMpiReplicaSpecsWorkerReplicas
+      expression: ([dyn(object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

@@ -1,0 +1,90 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: batch-job-v1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: job
+      kind:
+        group: batch
+        version: v1
+        kind: Job
+      specDefinition:
+        podTemplateSpec:
+          expression: object[?"spec"][?"template"].orValue(null)
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"template": value}}'
+          patchStrategy: Replace
+      scaleDefinition:
+        replicas:
+          expression: variables.specParallelism
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+          reasonFieldName: reason
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: variables.statusActive > 0 && variables.statusReady == 0
+                expectedResult: "true"
+          running:
+            - byExpression:
+                expression: variables.statusActive > 0 && variables.statusReady > 0
+                expectedResult: "true"
+          completed:
+            - byConditions:
+                - type: Complete
+                  status: "True"
+            - byConditions:
+                - type: SuccessCriteriaMet
+                  status: "True"
+          failed:
+            - byConditions:
+                - type: Failed
+                  status: "True"
+            - byConditions:
+                - type: FailureTarget
+                  status: "True"
+          degraded:
+            - byExpression:
+                expression: variables.specParallelismZero > 1 && variables.statusReady < variables.specParallelismZero && (variables.statusSucceeded > 0 || variables.statusFailed > 0)
+                expectedResult: "true"
+          suspended:
+            - byConditions:
+                - type: Suspended
+                  status: "True"
+      suspendDefinition:
+        suspendActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
+        resumeActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: job
+          members:
+            - componentName: job
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"batch.kubernetes.io/job-name"].orValue(null)
+  variables:
+    - name: specParallelism
+      expression: ([dyn(object[?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]
+    - name: statusActive
+      expression: ([dyn(object.?status.?active.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusReady
+      expression: ([dyn(object.?status.?ready.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: specParallelismZero
+      expression: ([dyn(object.?spec.?parallelism.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusSucceeded
+      expression: ([dyn(object.?status.?succeeded.orValue(null))].filter(v, v != null && v != false) + [0])[0]
+    - name: statusFailed
+      expression: ([dyn(object.?status.?failed.orValue(null))].filter(v, v != null && v != false) + [0])[0]

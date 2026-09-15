@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: apps-deployment-v1
+spec:
+  structureDefinition:
+    rootComponent:
+      name: deployment
+      kind:
+        group: apps
+        version: v1
+        kind: Deployment
+      specDefinition:
+        podTemplateSpec:
+          expression: object[?"spec"][?"template"].orValue(null)
+          patches:
+            - patchType: MergePatch
+              expression: '{"spec": {"template": value}}'
+          patchStrategy: Replace
+      scaleDefinition:
+        replicas:
+          expression: variables.specReplicas
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+          reasonFieldName: reason
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: ([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Progressing" && c.?status.orValue(null) == "True") && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, c.?type.orValue(null) == "Available" && c.?status.orValue(null) == "True")
+                expectedResult: "true"
+          running:
+            - byConditions:
+                - type: Progressing
+                  status: "True"
+                  reason: NewReplicaSetAvailable
+          failed:
+            - byConditions:
+                - type: Progressing
+                  status: "False"
+                  reason: ProgressDeadlineExceeded
+    childComponents:
+      - name: replicaset
+        kind:
+          group: apps
+          version: v1
+          kind: ReplicaSet
+        ownerRef: deployment
+  optimizationInstructions: {}
+  variables:
+    - name: specReplicas
+      expression: ([dyn(object[?"spec"][?"replicas"].orValue(null))].filter(v, v != null && v != false) + [1])[0]

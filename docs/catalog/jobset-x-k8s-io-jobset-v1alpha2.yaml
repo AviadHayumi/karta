@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+kind: Karta
+apiVersion: run.ai/v1alpha1
+metadata:
+  name: jobset-x-k8s-io-jobset-v1alpha2
+spec:
+  structureDefinition:
+    rootComponent:
+      name: jobset
+      kind:
+        group: jobset.x-k8s.io
+        version: v1alpha2
+        kind: JobSet
+      statusDefinition:
+        conditionsDefinition:
+          expression: object[?"status"][?"conditions"].orValue(null)
+          typeFieldName: type
+          statusFieldName: status
+          messageFieldName: message
+          reasonFieldName: reason
+        statusMappings:
+          initializing:
+            - byExpression:
+                expression: size(([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0]) > 0 && ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].all(r, r.?active.orValue(0) == 0 && r.?ready.orValue(0) == 0) && !([dyn(object.?status.?conditions.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(c, (c.?type.orValue(null) == "Completed" || c.?type.orValue(null) == "Failed" || c.?type.orValue(null) == "Suspended") && c.?status.orValue(null) == "True")
+                expectedResult: "true"
+          running:
+            - byExpression:
+                expression: ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].exists(r, r.?active.orValue(0) > 0 || r.?ready.orValue(0) > 0) && ([dyn(object.?status.?replicatedJobsStatus.orValue(null))].filter(v, type(v) == list) + [[]])[0].all(r, r.?failed.orValue(0) == 0)
+                expectedResult: "true"
+          completed:
+            - byConditions:
+                - type: Completed
+                  status: "True"
+          failed:
+            - byConditions:
+                - type: Failed
+                  status: "True"
+          suspended:
+            - byConditions:
+                - type: Suspended
+                  status: "True"
+      suspendDefinition:
+        suspendActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": true}}'
+        resumeActions:
+          - patchType: MergePatch
+            expression: '{"spec": {"suspend": false}}'
+    childComponents:
+      - name: replicatedjob
+        kind:
+          group: batch
+          version: v1
+          kind: Job
+        ownerRef: jobset
+        specDefinition:
+          podTemplateSpec:
+            expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))
+            patches:
+              - patchType: JSONPatch
+                expression: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
+        scaleDefinition:
+          replicas:
+            expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(j, j.replicas * j.template.spec.parallelism)
+        instanceIds:
+          expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))
+        podSelector:
+          componentInstanceSelector:
+            expression: object[?"metadata"][?"labels"][?"jobset.sigs.k8s.io/replicatedjob-name"].orValue(null)
+  optimizationInstructions:
+    gangScheduling:
+      podGroups:
+        - name: job
+          members:
+            - componentName: replicatedjob
+              groupByExpressions:
+                - object[?"metadata"][?"labels"][?"jobset.sigs.k8s.io/replicatedjob-name"].orValue(null)
