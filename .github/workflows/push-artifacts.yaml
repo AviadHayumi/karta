@@ -82,11 +82,17 @@ jobs:
         run: |
           make docker-buildx-push VERSION=$PACKAGE_VERSION IMAGE_REGISTRY="$REGISTRY_NAMESPACE"
 
+      - name: Build and push exporter image
+        working-directory: exporter
+        run: |
+          make docker-buildx-push VERSION=$PACKAGE_VERSION IMAGE_REGISTRY="$REGISTRY_NAMESPACE"
+
       - name: Generate air-gap image lock
         if: github.ref_type == 'tag'
         run: |
           # After the operator push so its tag resolves; PACKAGE_VERSION has no leading v.
-          make image-lock VERSION="$PACKAGE_VERSION"
+          make image-lock VERSION="$PACKAGE_VERSION" \
+            IMAGE_LOCK_SET="image.repository=$REGISTRY_NAMESPACE/karta-operator exporter.image.repository=$REGISTRY_NAMESPACE/karta-exporter"
 
       - name: Build helm chart
         run: |

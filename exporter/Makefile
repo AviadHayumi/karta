@@ -16,6 +16,13 @@ IMAGE_NAME      ?= karta-exporter
 IMAGE_TAG       ?= $(VERSION)
 IMAGE           ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 
+# Architectures for `make docker-buildx-push`
+PLATFORMS ?= linux/amd64 linux/arm64
+empty :=
+space := $(empty) $(empty)
+comma := ,
+PLATFORMS_CSV = $(subst $(space),$(comma),$(PLATFORMS))
+
 CONTAINER_TOOL ?= docker
 BUILD_ARGS     ?=
 
@@ -71,6 +78,17 @@ docker-build: ## Build Docker image for the host arch
 		--build-arg VERSION=$(VERSION) \
 		--tag $(IMAGE) \
 		-f Dockerfile \
+		..
+
+.PHONY: docker-buildx-push
+docker-buildx-push: ## Build and push a multi-arch Docker image via BuildKit (requires Docker)
+	@[ "$(CONTAINER_TOOL)" = "docker" ] || (echo "Error: docker-buildx-push requires CONTAINER_TOOL=docker (got '$(CONTAINER_TOOL)')" >&2; exit 1)
+	$(CONTAINER_TOOL) buildx build $(BUILD_ARGS) \
+		--platform $(PLATFORMS_CSV) \
+		--build-arg VERSION=$(VERSION) \
+		--tag $(IMAGE) \
+		-f Dockerfile \
+		--push \
 		..
 
 .PHONY: docker-push
