@@ -12,12 +12,12 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
-	"github.com/run-ai/karta/pkg/catalog"
-	"github.com/run-ai/karta/pkg/instructions"
+	"github.com/dsx-ai-factory/workload-map/pkg/api/runai/v1alpha1"
+	"github.com/dsx-ai-factory/workload-map/pkg/catalog"
+	"github.com/dsx-ai-factory/workload-map/pkg/instructions"
 
-	"github.com/run-ai/karta/exporter/pkg/registry"
-	"github.com/run-ai/karta/exporter/pkg/store"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/registry"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/store"
 )
 
 func jobsetEntry() *registry.Entry {

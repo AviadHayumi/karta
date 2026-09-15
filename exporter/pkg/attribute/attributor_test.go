@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/run-ai/karta/pkg/catalog"
+	"github.com/dsx-ai-factory/workload-map/pkg/catalog"
 
-	"github.com/run-ai/karta/exporter/pkg/collector"
-	"github.com/run-ai/karta/exporter/pkg/registry"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/collector"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/registry"
 )
 
 func entryFor(gvk schema.GroupVersionKind) *registry.Entry {

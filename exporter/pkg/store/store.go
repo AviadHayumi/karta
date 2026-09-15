@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
+	"github.com/dsx-ai-factory/workload-map/pkg/api/runai/v1alpha1"
 )
 
 // WorkloadRef identifies a workload object for metric labels.

@@ -10,8 +10,8 @@ $(LOCALBIN):
 # there are no tags or git is unavailable (e.g. a bare source tarball).
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.0.0-main")
 
-# Container image settings (defaults for ghcr.io/run-ai/karta OSS publishing).
-IMAGE_REGISTRY ?= ghcr.io/run-ai/karta
+# Container image settings (defaults for ghcr.io/dsx-ai-factory/workload-map OSS publishing).
+IMAGE_REGISTRY ?= ghcr.io/dsx-ai-factory/workload-map
 IMAGE_NAME      ?= karta-exporter
 IMAGE_TAG       ?= $(VERSION)
 IMAGE           ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
@@ -19,7 +19,7 @@ IMAGE           ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 CONTAINER_TOOL ?= docker
 BUILD_ARGS     ?=
 
-VERSION_PKG = github.com/run-ai/karta/pkg/version
+VERSION_PKG = github.com/dsx-ai-factory/workload-map/pkg/version
 LDFLAGS     = -ldflags "-X $(VERSION_PKG).version=$(VERSION)"
 
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint

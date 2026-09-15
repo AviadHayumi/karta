@@ -10,11 +10,11 @@ $(LOCALBIN):
 # there are no tags or git is unavailable (e.g. a bare source tarball).
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.0.0-main")
 
-# Container image settings (defaults for ghcr.io/run-ai/karta OSS publishing).
+# Container image settings (defaults for ghcr.io/dsx-ai-factory/workload-map OSS publishing).
 # Override any component from the command line, e.g.:
 #   make docker-build IMAGE_TAG=v1.2.3
 #   make docker-build IMAGE_REGISTRY=ghcr.io/myorg/karta
-IMAGE_REGISTRY ?= ghcr.io/run-ai/karta
+IMAGE_REGISTRY ?= ghcr.io/dsx-ai-factory/workload-map
 IMAGE_NAME      ?= karta-operator
 IMAGE_TAG       ?= $(VERSION)
 IMAGE           ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
@@ -24,7 +24,7 @@ BUILD_ARGS     ?=
 
 # VERSION_PKG is the Go package path that holds the version variable. The build
 # targets inject it into the binary via -ldflags so it is available at runtime.
-VERSION_PKG = github.com/run-ai/karta/pkg/version
+VERSION_PKG = github.com/dsx-ai-factory/workload-map/pkg/version
 LDFLAGS     = -ldflags "-X $(VERSION_PKG).version=$(VERSION)"
 
 GOLANGCI_LINT         ?= $(LOCALBIN)/golangci-lint

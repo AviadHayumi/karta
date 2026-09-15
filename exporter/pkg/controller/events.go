@@ -14,13 +14,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
+	"github.com/dsx-ai-factory/workload-map/pkg/api/runai/v1alpha1"
 
-	"github.com/run-ai/karta/exporter/pkg/attribute"
-	"github.com/run-ai/karta/exporter/pkg/collector"
-	"github.com/run-ai/karta/exporter/pkg/owner"
-	"github.com/run-ai/karta/exporter/pkg/state"
-	"github.com/run-ai/karta/exporter/pkg/store"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/attribute"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/collector"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/owner"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/state"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/store"
 )
 
 func (c *Controller) onKartaEvent(obj any) {

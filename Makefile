@@ -19,7 +19,7 @@ $(CLI_LOCALBIN_ABS):
 # (tag v1.2.3 -> 1.2.3, main -> 0.0.0-main-<sha>).
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.0.0-main")
 
-VERSION_PKG := github.com/run-ai/karta/pkg/version
+VERSION_PKG := github.com/dsx-ai-factory/workload-map/pkg/version
 LDFLAGS     := -ldflags "-X $(VERSION_PKG).version=$(VERSION)"
 
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

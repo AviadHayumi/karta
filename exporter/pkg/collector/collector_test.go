@@ -12,9 +12,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
+	"github.com/dsx-ai-factory/workload-map/pkg/api/runai/v1alpha1"
 
-	"github.com/run-ai/karta/exporter/pkg/store"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/store"
 )
 
 // goldenContract is the label-contract regression gate: any change to metric

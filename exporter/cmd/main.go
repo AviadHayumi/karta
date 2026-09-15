@@ -24,12 +24,12 @@ import (
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/run-ai/karta/exporter/pkg/collector"
-	"github.com/run-ai/karta/exporter/pkg/controller"
-	"github.com/run-ai/karta/exporter/pkg/owner"
-	"github.com/run-ai/karta/exporter/pkg/registry"
-	"github.com/run-ai/karta/exporter/pkg/server"
-	"github.com/run-ai/karta/exporter/pkg/store"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/collector"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/controller"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/owner"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/registry"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/server"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/store"
 )
 
 func main() {

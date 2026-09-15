@@ -1,4 +1,4 @@
-module github.com/run-ai/karta/operator
+module github.com/dsx-ai-factory/workload-map/operator
 
 go 1.26.3
 
@@ -7,7 +7,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.42.1
 	github.com/open-policy-agent/cert-controller v0.16.0
-	github.com/run-ai/karta v0.0.0
+	github.com/dsx-ai-factory/workload-map v0.0.0
 	k8s.io/api v0.36.3
 	k8s.io/apiextensions-apiserver v0.36.3
 	k8s.io/apimachinery v0.36.3
@@ -77,4 +77,4 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/run-ai/karta => ../
+replace github.com/dsx-ai-factory/workload-map => ../

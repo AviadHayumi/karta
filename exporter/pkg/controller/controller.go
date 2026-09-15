@@ -24,10 +24,10 @@ import (
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/run-ai/karta/exporter/pkg/collector"
-	"github.com/run-ai/karta/exporter/pkg/owner"
-	"github.com/run-ai/karta/exporter/pkg/registry"
-	"github.com/run-ai/karta/exporter/pkg/store"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/collector"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/owner"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/registry"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/store"
 )
 
 var kartaGVR = schema.GroupVersionResource{Group: "run.ai", Version: "v1alpha1", Resource: "kartas"}

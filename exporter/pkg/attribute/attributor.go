@@ -9,11 +9,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/run-ai/karta/pkg/instructions"
-	"github.com/run-ai/karta/pkg/resource"
+	"github.com/dsx-ai-factory/workload-map/pkg/instructions"
+	"github.com/dsx-ai-factory/workload-map/pkg/resource"
 
-	"github.com/run-ai/karta/exporter/pkg/collector"
-	"github.com/run-ai/karta/exporter/pkg/registry"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/collector"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/registry"
 )
 
 // Result is the pod-to-component attribution outcome. Reason is empty on a

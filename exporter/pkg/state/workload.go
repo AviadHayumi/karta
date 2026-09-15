@@ -9,11 +9,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
-	"github.com/run-ai/karta/pkg/resource"
+	"github.com/dsx-ai-factory/workload-map/pkg/api/runai/v1alpha1"
+	"github.com/dsx-ai-factory/workload-map/pkg/resource"
 
-	"github.com/run-ai/karta/exporter/pkg/registry"
-	"github.com/run-ai/karta/exporter/pkg/store"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/registry"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/store"
 )
 
 // Build computes the stored state of a workload from its live object:

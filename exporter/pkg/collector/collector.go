@@ -7,7 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/run-ai/karta/exporter/pkg/store"
+	"github.com/dsx-ai-factory/workload-map/exporter/pkg/store"
 )
 
 var workloadLabels = []string{LabelNamespace, LabelWorkload, LabelWorkloadKind, LabelWorkloadGroup}

@@ -6,7 +6,7 @@ package collector
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
+	"github.com/dsx-ai-factory/workload-map/pkg/api/runai/v1alpha1"
 )
 
 // Metric names exposed to consumers. These names, together with the label

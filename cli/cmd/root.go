@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/run-ai/karta/pkg/version"
+	"github.com/dsx-ai-factory/workload-map/pkg/version"
 )
 
 // NewRootCommand builds the root command for the karta binary. Global flags are

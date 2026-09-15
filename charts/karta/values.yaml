@@ -19,7 +19,7 @@ leaderElection:
   id: karta-operator.run.ai
 
 image:
-  repository: ghcr.io/run-ai/karta/karta-operator
+  repository: ghcr.io/dsx-ai-factory/workload-map/karta-operator
   # When empty, falls back to .Chart.AppVersion so chart and image versions
   # stay in lockstep.
   tag: ""
@@ -124,7 +124,7 @@ exporter:
   replicaCount: 1
 
   image:
-    repository: ghcr.io/run-ai/karta/karta-exporter
+    repository: ghcr.io/dsx-ai-factory/workload-map/karta-exporter
     # When empty, falls back to .Chart.AppVersion.
     tag: ""
     pullPolicy: IfNotPresent
