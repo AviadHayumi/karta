@@ -259,7 +259,7 @@ h2{font-size:34px;line-height:1.12;font-weight:750;letter-spacing:-.01em;margin-
 <!-- Copyright (c) 2026 NVIDIA Corporation -->
 
 <section class="slide" id="s1" data-fxmode="safeCount">
-  <div class="actlabel">act 0 - the hook</div>
+  <div class="actlabel">the hook - one executed moment, then the full story</div>
   <h1>the rule ran again</h1>
   <ol class="beats">
     <li>A policy engine suspended a demo Job.</li>
@@ -284,43 +284,178 @@ h2{font-size:34px;line-height:1.12;font-weight:750;letter-spacing:-.01em;margin-
     <p class="caption">captures/30-lab2-kyverno-phase.txt:5-8; the "after 0.0s" note is recorder commentary, its two markers differ by 95ms</p>
   </div>
   <p class="scope">EXECUTED: one recorded re-suspension, lab2.</p>
-  <p class="note">trace the fact that made this Job eligible again.</p>
+  <p class="note">first, the policy engine: admission and background actions.</p>
 </section>
 
-<section class="slide" id="s2" data-fxmode="popPills">
-  <h2>what we built and ran</h2>
-  <div class="inset"><b>karta description</b>: a recipe for reading a workload kind, its parts, status and supported action fields.</div>
+
+<style>
+#k1 .ebody .cl, #b1 .ebody .cl { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+
+<section class="slide" id="b3" data-fxmode="popPills">
+  <div class="actlabel">part 1 - what kyverno is</div>
+  <h2>what kyverno is</h2>
+  <div class="inset"><b>Kyverno</b>: the policy engine. Rules are yaml; conditions are small expressions.</div>
   <ol class="beats">
-    <li>The exporter exposes workload identity and status.</li>
-    <li>Prometheus stores samples for both consumers.</li>
-    <li>Runtime Rules (RR, kep-0003) is a proposal; its lab prototype acts separately from Kyverno.</li>
-    <li>Reported setup: lab1 Kubernetes v1.34.0; lab2 v1.34.3; both Kyverno v1.19.1. <span class="tier part">OPERATOR-REPORTED</span></li>
+    <li>It can check or change objects on API requests, including creation and updates - that is admission.</li>
+    <li>It can also keep editing existing objects in the background - that is mutate-existing.</li>
+    <li>First, a deny example; then a background rule that requests Job suspension.</li>
   </ol>
-  <div class="card">
-    <div class="timeline" style="align-items:center">
-      <span class="chip c-plain fx-pill">karta exporter</span>
-      <span class="arr">-&gt;</span>
-      <span class="chip c-plain fx-pill">Prometheus</span>
-      <span class="arr">-&gt;</span>
-      <span style="display:inline-flex;flex-direction:column;gap:8px">
-        <span class="chip c-plain fx-pill">Kyverno</span>
-        <span class="chip c-plain fx-pill">RR lab prototype</span>
-      </span>
-    </div>
-    <p class="caption">key: lab1=kind-kyverno-lab, lab2=kind-kyverno-lab2; architecture from source <span class="tier ver">VERIFIED</span></p>
-    <div class="evcard">
-      <span class="row v">time=2026-09-14T17:24:06.783Z level=INFO msg="karta exporter started" metricsAddr=:8080 fullPodCache=false useCatalog=true</span>
-      <span class="row k">&#8943;</span>
-      <span class="row v">customresourcedefinition.apiextensions.k8s.io/kartas.run.ai created</span>
-    </div>
-    <p class="caption">above: captures/03-exporter-watchers.txt:1-1; below: captures/01-crd.txt:2-2 <span class="tier exec">EXECUTED</span></p>
+  <div class="cols">
+    <div class="card fx-pill"><h3>admission</h3><p>a request comes in, the rule answers now: allow, deny, or change it.</p></div>
+    <div class="card fx-pill"><h3>background actions</h3><p>a loop revisits existing objects and applies the change when the condition holds.</p></div>
   </div>
-  <p class="scope">Sleep Jobs; no GPU benchmark. RR reads local files, not a RuntimeRule CRD. Versions are reported setup, not saved server-query output.</p>
-  <p class="note">start with how the exporter turns workload objects into metric series.</p>
+  <p class="scope">Kyverno v1.19.1 on both clusters <span class="tier part">OPERATOR-REPORTED</span>. Metrics-based rules follow in part 3.</p>
+</section>
+
+<section class="slide" id="k1" data-fxmode="popPills">
+  <h2>a rule is yaml plus one expression</h2>
+  <div class="inset"><b>CEL</b> (Common Expression Language) evaluates conditions. This <b>ValidatingPolicy</b> uses Deny to reject matching requests when validation fails.</div>
+  <ol class="beats">
+    <li>match: which objects the rule cares about (Deployments here).</li>
+    <li>one expression: no regular container image may end with :latest.</li>
+    <li>a message: what the user sees when it denies.</li>
+  </ol>
+  <div class="cols">
+    <div class="editor fx-pill wrapcl" data-file="manifests/92-admission-deny-example.yaml"><pre>
+apiVersion: policies.kyverno.io/v1beta1
+kind: ValidatingPolicy
+metadata:
+  name: no-latest-tag
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["apps"]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["deployments"]
+  validations:
+  - expression: &gt;-
+      object.spec.template.spec.containers.all(c, !c.image.endsWith(':latest'))
+    message: "pin your image tags please , :latest is not reproducible"
+</pre></div>
+    <div>
+      <div class="evcard fx-pill"><span class="row"><span class="v">admission webhook "vpol.validate.kyverno.svc-fail" denied the request: Policy no-latest-tag failed: pin your image tags please , :latest is not reproducible</span></span></div>
+      <p class="caption">verbatim suffix from the earlier lab1 exercise; local-path prefix omitted. captures/40-admission-deny-example.txt:1 <span class="tier exec">EXECUTED</span></p>
+      <p class="caption">policy source, verbatim: manifests/92-admission-deny-example.yaml:1-16 <span class="tier ver">VERIFIED</span></p>
+    </div>
+  </div>
+  <p class="scope">This condition rejects explicit :latest tags. It does not require a tag or digest.</p>
+</section>
+
+<section class="slide" id="k2" data-fxmode="popPills">
+  <h2>kyverno can also edit things that already exist</h2>
+  <div class="inset"><b>MutatingPolicy</b> can patch stored objects in mutate-existing mode. Here, <b>spec.suspend=true</b> requests Job suspension.</div>
+  <ol class="beats">
+    <li>No new write to the target Job is needed; background processing finds it.</li>
+    <li>The applied policy requests suspension of trainer-b in ai-team.</li>
+    <li>suspend=true was first observed about 171ms after the apply marker.</li>
+  </ol>
+  <div class="evcard fx-pill">
+    <span class="row"><span class="v">ab policy apply at 2026-09-14T17:36:45.289935</span></span>
+    <span class="row"><span class="v">mutatingpolicy.policies.kyverno.io/ab-suspend-no-gctx created</span></span>
+    <span class="row"><span class="v">t+1 17:36:45.461 trainer-b suspend=true</span></span>
+  </div>
+  <p class="caption">captures/09-ab-test.txt:1-3 <span class="tier exec">EXECUTED</span> - about 171ms, computed from printed timestamps; t+1 is a poll label, not one elapsed second</p>
+  <div class="timeline">
+    <span class="chip c-plain fx-pill">policy applied</span>
+    <span class="arr">-&gt;</span>
+    <span class="chip c-sus fx-pill">trainer-b suspend=true</span>
+  </div>
+  <p class="scope">First observation, not executor latency. No metrics condition here; part 4 revisits this same recorded comparison policy.</p>
+</section>
+
+<section class="slide" id="k3" data-fxmode="popPills">
+  <h2>how the background half runs</h2>
+  <div class="inset"><b>UpdateRequest (UR)</b>: Kyverno's persisted work item for background policy processing; one item can cover multiple targets.</div>
+  <ol class="beats">
+    <li>For these policies, creation, spec changes and periodic ticks enqueue policy work.</li>
+    <li>A policy worker submits a UR; a background worker processes its targets.</li>
+    <li>The worker evaluates target conditions and attempts eligible mutations.</li>
+    <li>The UR controller deletes Completed work items. Completion is not proof of a target change.</li>
+  </ol>
+  <div class="pipe">
+    <div class="stage fx-pill"><h4>policy queue</h4><p>creation, spec change or tick</p></div>
+    <div class="stage fx-pill"><h4>UpdateRequest</h4><p>one work item</p></div>
+    <div class="stage fx-pill"><h4>evaluate + patch</h4><p>conditions per target</p></div>
+    <div class="stage fx-pill"><h4>UR deleted</h4><p>when state is Completed</p></div>
+  </div>
+  <p class="caption">Kyverno v1.19.1: pkg/policy/policy_controller.go:645-655,699-705; pkg/policy/mpol.go:91-98; pkg/background/update_request_controller.go:268-289 <span class="tier ver">VERIFIED</span></p>
+  <p class="scope">Lab tick: 60s <span class="tier part">OPERATOR-REPORTED</span>. Triggers are not one-to-one with new URs. The live watch appears in part 4.</p>
+</section>
+<section class="slide" id="b4" data-fxmode="popTimelines">
+  <h2>what suspend means, and why anyone does it</h2>
+  <div class="inset"><b>spec.suspend</b>: a field on a Job. true parks it; false lets it run.</div>
+  <ol class="beats">
+    <li>suspend=true: the controller deletes active Pods of an unfinished Job.</li>
+    <li>suspend=false: the controller can create replacement Pods for remaining work.</li>
+    <li>Suspending releases the active Pods; it does not save application progress.</li>
+    <li>In this lab, the user resumed Jobs by setting that field back to false.</li>
+  </ol>
+  <div class="timeline">
+    <span class="chip c-run">Running</span>
+    <span class="arr">-&gt;</span>
+    <span class="chip c-sus">suspended (active Pods deleted)</span>
+    <span class="arr">-&gt;</span>
+    <span class="chip c-run">replacement Pods (after user resume)</span>
+  </div>
+  <p class="scope">part 2: descriptions give workload fields a shared meaning, then the exporter turns them into metrics.</p>
+</section>
+
+
+<section class="slide" id="b1" data-fxmode="popPills">
+  <div class="actlabel">part 2 - what the karta metrics exporter is</div>
+  <h2>what a karta is</h2>
+  <div class="inset"><b>Karta</b>: a custom resource holding a workload description. The exporter selects one usable description per root group+kind.</div>
+  <ol class="beats">
+    <li>A karta description names a root workload kind and its parts.</li>
+    <li>It can define Pod selection, status mappings and supported action fields.</li>
+    <li>Bundled catalog descriptions are fallbacks; a usable cluster Karta takes precedence.</li>
+  </ol>
+  <div class="cols">
+    <div class="editor wrapcl" data-file="src/docs/catalog/batch-job-v1.yaml"><pre>          running:
+            - byExpression:
+                expression: (.status.active // 0) &gt; 0 and (.status.ready // 0) &gt; 0
+                expectedResult: "true"
+# ... omitted fields ...
+      suspendDefinition:
+        suspendActions:
+          - path: .spec.suspend
+            value: "true"
+        resumeActions:
+          - path: .spec.suspend
+            value: "false"</pre></div>
+    <div>
+      <div class="timeline">
+        <span class="chip c-plain fx-pill">how to read status</span>
+        <span class="chip c-plain fx-pill">where the pods are</span>
+        <span class="chip c-plain fx-pill">how to suspend it</span>
+      </div>
+      <p class="caption">Two verbatim excerpts with an editorial omission comment; not a complete manifest. <span class="tier ver">VERIFIED</span></p>
+    </div>
+  </div>
+  <p class="scope">byExpression uses jq to read object JSON; expectedResult is the expected string. Source: src/docs/catalog/batch-job-v1.yaml:31-34,51-57.</p>
+</section>
+
+<section class="slide" id="b2" data-fxmode="popPills">
+  <h2>what the karta exporter is</h2>
+  <div class="inset"><b>Exporter</b>: a small service. It reads descriptions, watches the cluster, publishes metrics.</div>
+  <ol class="beats">
+    <li>It watches supported described workload kinds and their Pods.</li>
+    <li>It publishes Pod-to-workload identity and normalized workload phase values.</li>
+    <li>Where status is defined, it emits a fixed phase set; multiple phases can be true.</li>
+    <li>It also exports generation and component replica/Pod counts. GPU measurements come from other sources.</li>
+  </ol>
+  <div class="pipe">
+    <div class="stage fx-pill"><h4>descriptions</h4><p>kartas or catalog</p></div>
+    <div class="stage fx-pill"><h4>karta exporter</h4><p>watches workloads + pods</p></div>
+    <div class="stage fx-pill"><h4>metrics</h4><p>karta_workload_status{phase="Running"} 1</p></div>
+  </div>
+  <p class="scope">Prometheus scrapes and stores metric samples; queries can join series by labels. Exporter metrics: src/exporter/pkg/collector/collector.go:45-62,98-123.</p>
 </section>
 
 <section class="slide" id="s3" data-fxmode="popPills">
-  <div class="actlabel">act 1 - inside the exporter</div>
   <h2>connecting pods to workloads</h2>
   <div class="inset"><b>Workload</b>: the described application object containing those parts.</div>
   <ol class="beats">
@@ -731,7 +866,7 @@ h2{font-size:34px;line-height:1.12;font-weight:750;letter-spacing:-.01em;margin-
   </div>
   <p class="caption">source example <span class="tier ver">VERIFIED</span>; captures/02-metrics-raw.txt:101-101 <span class="tier exec">EXECUTED</span></p>
   <p class="scope">VERIFIED source example. Quiet input may leave the marker unchanged; skipped kinds are outside the sync check.</p>
-  <p class="note">now put the exported Running series into a policy condition.</p>
+  <p class="note">part 3: put the exported Running series into a Kyverno policy condition.</p>
   <script type="application/json" class="fx-steps">
   [
     [0,[],{"activity":"no event shown","evaluation":"initial sync complete"}],
@@ -743,13 +878,40 @@ h2{font-size:34px;line-height:1.12;font-weight:750;letter-spacing:-.01em;margin-
   </script>
 </section>
 
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2026 NVIDIA Corporation -->
-<!-- act 2 slides in file order: s12, s19, s14, s13, s15, s16, s17, s17b, s18, s18a -->
-<style>.wrapcl .ebody .cl{white-space:pre-wrap;word-break:break-all}</style>
+<section class="slide" id="s2" data-fxmode="popPills">
+  <div class="actlabel">part 3 - how we used kyverno + the exporter together</div>
+  <h2>what we built and ran</h2>
+  <div class="inset"><b>karta description</b>: a recipe for reading a workload kind, its parts, status and supported action fields.</div>
+  <ol class="beats">
+    <li>The exporter exposes workload identity and status.</li>
+    <li>Prometheus stores samples for both consumers.</li>
+    <li>Runtime Rules (RR, kep-0003) is a proposal. Its separate lab prototype is previewed here and demonstrated in part 5.</li>
+    <li>Reported setup: lab1 Kubernetes v1.34.0; lab2 v1.34.3; both Kyverno v1.19.1. <span class="tier part">OPERATOR-REPORTED</span></li>
+  </ol>
+  <div class="card">
+    <div class="timeline" style="align-items:center">
+      <span class="chip c-plain fx-pill">karta exporter</span>
+      <span class="arr">-&gt;</span>
+      <span class="chip c-plain fx-pill">Prometheus</span>
+      <span class="arr">-&gt;</span>
+      <span style="display:inline-flex;flex-direction:column;gap:8px">
+        <span class="chip c-plain fx-pill">Kyverno</span>
+        <span class="chip c-plain fx-pill">RR lab prototype (part 5)</span>
+      </span>
+    </div>
+    <p class="caption">key: lab1=kind-kyverno-lab, lab2=kind-kyverno-lab2; architecture from source <span class="tier ver">VERIFIED</span></p>
+    <div class="evcard">
+      <span class="row v">time=2026-09-14T17:24:06.783Z level=INFO msg="karta exporter started" metricsAddr=:8080 fullPodCache=false useCatalog=true</span>
+      <span class="row k">&#8943;</span>
+      <span class="row v">customresourcedefinition.apiextensions.k8s.io/kartas.run.ai created</span>
+    </div>
+    <p class="caption">above: captures/03-exporter-watchers.txt:1-1; below: captures/01-crd.txt:2-2 <span class="tier exec">EXECUTED</span></p>
+  </div>
+  <p class="scope">Sleep Jobs; no GPU benchmark. RR reads local files, not a RuntimeRule CRD. Versions are reported setup, not saved server-query output.</p>
+  <p class="note">now use the exported facts in a Kyverno background condition.</p>
+</section>
 
 <section class="slide dense3" id="s12" data-fxmode="popPills">
-  <div class="actlabel">act 2 - kyverno consumes the facts</div>
   <h2>the rule we wanted</h2>
   <div class="inset"><b>mutate-existing</b> edits stored objects. CEL (Common Expression Language) evaluates conditions; PromQL queries metrics. Admission handles incoming API writes.</div>
   <ol class="beats">
@@ -804,9 +966,104 @@ h2{font-size:34px;line-height:1.12;font-weight:750;letter-spacing:-.01em;margin-
     </div>
   </div>
   <p class="scope">Existing samples only; no full-window guarantee. matchConditions does not gate these background targets.</p>
-  <p class="note">first, the fact source needed to be reachable.</p>
+  <p class="note">two tested paths bring the Prometheus result into the background condition.</p>
 </section>
 
+<section class="slide" id="s18" data-fxmode="popPills">
+  <h2>two working paths</h2>
+  <div class="inset"><b>GlobalContextEntry (GCE)</b> configures a cache. A <b>projection</b> is a named extracted result; <b>globalContext.Get</b> reads it. The earlier mistake appears in part 4.</div>
+  <ol class="beats">
+    <li>Direct HTTP condition: suspension first observed 644ms after apply on lab1.</li>
+    <li>Declared GCE projection: trainer-gce first observed suspended about 2.5 minutes after setup.</li>
+    <li>Both working paths consumed the exporter/Prometheus fact source.</li>
+  </ol>
+  <div class="card fx-pill" style="margin-top:12px;padding:12px 16px">
+    <h3>http.Get condition - metric-suspend-running <span class="tier exec">EXECUTED</span></h3>
+    <div class="evcard" style="padding:8px 12px">
+<pre style="white-space:pre-wrap;word-break:break-word;margin:0">v2 apply at 17:45:19.049 UTC
+mutatingpolicy.policies.kyverno.io/metric-suspend-running configured
+t+1 17:45:19.693 trainer-a suspend=true</pre>
+    </div>
+    <div class="caption">captures/10-v2-http-timeline.txt:1-3 - lab1; time origin is the apply marker: 17:45:19.693 - 17:45:19.049 = 644ms, a first observation, not executor latency</div>
+  </div>
+  <div class="card fx-pill" style="margin-top:10px;padding:12px 16px">
+    <h3>declared GCE projection - gce-test namespace <span class="tier exec">EXECUTED</span></h3>
+    <div class="evcard" style="padding:8px 12px">
+<pre style="white-space:pre-wrap;word-break:break-word;margin:0">gce-test setup at 2026-09-14T18:07:28.165+00:00
+18:08:25 still suspend=false
+18:09:26 still suspend=false
+18:09:59 trainer-gce suspend=true - GCE PATH WORKS (projection declared)</pre>
+    </div>
+    <div class="caption">captures/19-gce-corrected.txt:1-4 - time origin is the 18:07:28.165 setup marker; first true observation 18:09:59 at whole-second precision: about 2.5 minutes</div>
+  </div>
+  <p class="scope">EXECUTED observations, not executor latency. gce-test is a namespace. Exact triggering evaluations were not captured.</p>
+</section>
+
+<section class="slide dense1" id="s18a" data-fxmode="popPills">
+  <h2>shared polling or direct reads</h2>
+  <div class="inset"><b>Scrape</b> collects samples; refresh updates cached results. A background scan tick queues eligible policy work.</div>
+  <ol class="beats">
+    <li>Configured facts: Prometheus scrape 5s; GCE refresh 15s.</li>
+    <li>GCE refresh updates a per-process cache; it does not queue a mutation.</li>
+    <li>For these policies, creation, spec changes and background scan ticks enqueue policy work.</li>
+    <li>Background scan tick: 60s operator-reported; source default: 1h.</li>
+  </ol>
+  <div class="cols" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:10px">
+    <div class="card fx-pill" style="padding:10px 14px">
+      <h3>clock: Prometheus scrape - 5s <span class="tier ver">VERIFIED</span></h3>
+      <div class="editor" data-file="manifests/02-prometheus.yaml">
+<pre>    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+    scrape_configs:
+      - job_name: karta-exporter
+        static_configs:
+          - targets: ["karta-exporter.karta-system.svc:8080"]</pre>
+      </div>
+      <div class="caption">SOURCE manifests/02-prometheus.yaml:16-22 - collects samples; queues no policy work</div>
+    </div>
+    <div class="card fx-pill" style="padding:10px 14px">
+      <h3>clock: GCE refresh - 15s <span class="tier ver">VERIFIED</span></h3>
+      <div class="editor" data-file="manifests/04b-kyverno-gce-projected.yaml">
+<pre>    refreshInterval: 15s
+  projections:
+    - name: workloads
+      jmesPath: data.result[].metric.workload</pre>
+      </div>
+      <div class="caption">SOURCE manifests/04b-kyverno-gce-projected.yaml:14-17 - updates a per-process cache; queues no mutation</div>
+    </div>
+  </div>
+  <div class="cols" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:10px">
+    <div class="card fx-pill" style="padding:10px 14px">
+      <h3>work: background scan tick</h3>
+      <p>60s in this lab <span class="tier part">OPERATOR-REPORTED</span>; source default 1h <span class="tier ver">VERIFIED</span>. Ticks enqueue eligible policies; policy workers submit UR work. Creation and spec changes also enqueue.</p>
+      <div class="caption">implemented by forceReconciliation - K cmd/background-controller/main.go:191-199; INTEGRATION-LOG.md:6-9</div>
+    </div>
+    <div class="card fx-pill" style="padding:10px 14px">
+      <h3>work: http.Get during evaluation <span class="tier ver">VERIFIED</span></h3>
+      <p>reads Prometheus when the target evaluation reaches that condition; an earlier false predicate skips it. Reporting has its own scheduler.</p>
+      <div class="caption">K pkg/cel/compiler/http.go:19-43; K cmd/reports-controller/main.go:210,321</div>
+    </div>
+  </div>
+  <p class="scope">A background scan tick does not guarantee action. HTTP reads during evaluation; reporting has its own scheduler.</p>
+  <p class="note">part 4: the configuration, diagnostics and resume problems encountered around these working paths.</p>
+</section>
+
+<section class="slide dense1" id="b5" data-fxmode="popPills">
+  <div class="actlabel">part 4 - problems in the kyverno + exporter lab</div>
+  <h2>what went wrong in the lab</h2>
+  <ol class="beats">
+    <li>Configuration mistakes, missing diagnostics and a platform defect are separate findings.</li>
+  </ol>
+  <div class="evcard">
+    <span class="row fx-pill"><span class="k">karta exporter</span> <span class="v">captured workload metrics supplied the facts (capture 02).</span> <span class="tier exec">EXECUTED</span> <span class="v">Stalled status mapping to Running=0 is inferred, not a captured metric trace (s22).</span> <span class="tier inf">INFERRED</span></span>
+    <span class="row fx-pill"><span class="k">lab configuration</span> <span class="v">query string used as a projection name.</span> <span class="tier ver">VERIFIED</span> <span class="v">Declared-projection run acted (capture 19).</span> <span class="tier exec">EXECUTED</span></span>
+    <span class="row fx-pill"><span class="k">kyverno diagnostics</span> <span class="v">four URs reached Completed; no policy match in the selected log query. Metrics and reporting Events recorded results (capture 31).</span> <span class="tier exec">EXECUTED</span></span>
+    <span class="row fx-pill"><span class="k">repeat actions</span> <span class="v">one re-suspension by the tested policy (capture 30).</span> <span class="tier exec">EXECUTED</span> <span class="v">Further repetition while eligible is inferred (s20).</span> <span class="tier inf">INFERRED</span></span>
+    <span class="row fx-pill"><span class="k">kubernetes</span> <span class="v">stalled resume status on lab1; reset accepted on lab2 (captures 13, 30).</span> <span class="tier exec">EXECUTED</span> <span class="v">Symptoms match #134521.</span> <span class="tier inf">INFERRED</span> <span class="v">Fix shipped in v1.34.2 (s21).</span> <span class="tier ver">VERIFIED</span></span>
+  </div>
+  <p class="scope">Capture numbers refer to captures/; details follow. The Kyverno issue draft still needs its declared comparison controls executed.</p>
+</section>
 <section class="slide" id="s19" data-fxmode="popPills">
   <h2>an earlier rule reached the metrics service</h2>
   <div class="inset"><b>GeneratingPolicy</b> creates resources. This earlier rule is separate from the Job-mutating policy.</div>
@@ -1153,91 +1410,7 @@ kyverno_mutating_policy_execution_duration_seconds_count{execution_cause="backgr
   <p class="scope">Separate policy and run. Its trainer-a target condition does not scope the target=false reporting scan.</p>
 </section>
 
-<section class="slide" id="s18" data-fxmode="popPills">
-  <h2>two ways that do work</h2>
-  <ol class="beats">
-    <li>Direct HTTP condition: suspension first observed 644ms after apply on lab1.</li>
-    <li>Corrected GCE projection: trainer-gce suspended about 2.5 minutes after setup.</li>
-    <li>Both working paths consumed the exporter/Prometheus fact source.</li>
-  </ol>
-  <div class="card fx-pill" style="margin-top:12px;padding:12px 16px">
-    <h3>http.Get condition - metric-suspend-running <span class="tier exec">EXECUTED</span></h3>
-    <div class="evcard" style="padding:8px 12px">
-<pre style="white-space:pre-wrap;word-break:break-word;margin:0">v2 apply at 17:45:19.049 UTC
-mutatingpolicy.policies.kyverno.io/metric-suspend-running configured
-t+1 17:45:19.693 trainer-a suspend=true</pre>
-    </div>
-    <div class="caption">captures/10-v2-http-timeline.txt:1-3 - lab1; time origin is the apply marker: 17:45:19.693 - 17:45:19.049 = 644ms, a first observation, not executor latency</div>
-  </div>
-  <div class="card fx-pill" style="margin-top:10px;padding:12px 16px">
-    <h3>declared GCE projection - gce-test namespace <span class="tier exec">EXECUTED</span></h3>
-    <div class="evcard" style="padding:8px 12px">
-<pre style="white-space:pre-wrap;word-break:break-word;margin:0">gce-test setup at 2026-09-14T18:07:28.165+00:00
-18:08:25 still suspend=false
-18:09:26 still suspend=false
-18:09:59 trainer-gce suspend=true - GCE PATH WORKS (projection declared)</pre>
-    </div>
-    <div class="caption">captures/19-gce-corrected.txt:1-4 - time origin is the 18:07:28.165 setup marker; first true observation 18:09:59 at whole-second precision: about 2.5 minutes</div>
-  </div>
-  <p class="scope">EXECUTED observations, not executor latency. gce-test is a namespace. Exact triggering evaluations were not captured.</p>
-</section>
-
-<section class="slide dense1" id="s18a" data-fxmode="popPills">
-  <h2>shared polling or direct reads</h2>
-  <div class="inset"><b>Scrape</b> collects samples; refresh updates cached results. A background scan tick queues eligible policy work.</div>
-  <ol class="beats">
-    <li>Configured facts: Prometheus scrape 5s; GCE refresh 15s.</li>
-    <li>GCE refresh updates a per-process cache; it does not queue a mutation.</li>
-    <li>For these policies, creation, spec changes and background scan ticks enqueue policy work.</li>
-    <li>Background scan tick: 60s operator-reported; source default: 1h.</li>
-  </ol>
-  <div class="cols" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:10px">
-    <div class="card fx-pill" style="padding:10px 14px">
-      <h3>clock: Prometheus scrape - 5s <span class="tier ver">VERIFIED</span></h3>
-      <div class="editor" data-file="manifests/02-prometheus.yaml">
-<pre>    global:
-      scrape_interval: 5s
-      evaluation_interval: 5s
-    scrape_configs:
-      - job_name: karta-exporter
-        static_configs:
-          - targets: ["karta-exporter.karta-system.svc:8080"]</pre>
-      </div>
-      <div class="caption">SOURCE manifests/02-prometheus.yaml:16-22 - collects samples; queues no policy work</div>
-    </div>
-    <div class="card fx-pill" style="padding:10px 14px">
-      <h3>clock: GCE refresh - 15s <span class="tier ver">VERIFIED</span></h3>
-      <div class="editor" data-file="manifests/04b-kyverno-gce-projected.yaml">
-<pre>    refreshInterval: 15s
-  projections:
-    - name: workloads
-      jmesPath: data.result[].metric.workload</pre>
-      </div>
-      <div class="caption">SOURCE manifests/04b-kyverno-gce-projected.yaml:14-17 - updates a per-process cache; queues no mutation</div>
-    </div>
-  </div>
-  <div class="cols" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:10px">
-    <div class="card fx-pill" style="padding:10px 14px">
-      <h3>work: background scan tick</h3>
-      <p>60s in this lab <span class="tier part">OPERATOR-REPORTED</span>; source default 1h <span class="tier ver">VERIFIED</span>. Ticks enqueue eligible policies; policy workers submit UR work. Creation and spec changes also enqueue.</p>
-      <div class="caption">implemented by forceReconciliation - K cmd/background-controller/main.go:191-199; INTEGRATION-LOG.md:6-9</div>
-    </div>
-    <div class="card fx-pill" style="padding:10px 14px">
-      <h3>work: http.Get during evaluation <span class="tier ver">VERIFIED</span></h3>
-      <p>reads Prometheus when the target evaluation reaches that condition; an earlier false predicate skips it. Reporting has its own scheduler.</p>
-      <div class="caption">K pkg/cel/compiler/http.go:19-43; K cmd/reports-controller/main.go:210,321</div>
-    </div>
-  </div>
-  <p class="scope">A background scan tick does not guarantee action. HTTP reads during evaluation; reporting has its own scheduler.</p>
-  <p class="note">next came resume; first, separate the earlier cluster defect.</p>
-</section>
-
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2026 NVIDIA Corporation -->
-<!-- act 3 slides in file order: s21, s22, s20, s23 -->
-
 <section class="slide dense2" id="s21" data-fxmode="popPills">
-  <div class="actlabel">act 3 - a clean resume and another action</div>
   <h2>the old cluster rejected resume status</h2>
   <div class="inset">The Job controller writes status; Kubernetes API validation checks that proposed update.</div>
   <ol class="beats">
@@ -1348,7 +1521,7 @@ E0914 18:09:00.202431       1 job_controller.go:652] "Unhandled Error" err="sync
         <span class="tmark" style="left:81%">+123.947s</span>
       </div>
     </div>
-    <div class="lane" style="opacity:.45"><div class="lhead"><span class="lname">second lane reserved - a separate rr-poc run follows in act 4; no events shown here</span></div></div>
+    <div class="lane" style="opacity:.45"><div class="lhead"><span class="lname">second lane reserved - a separate rr-poc run follows in part 5; no events shown here</span></div></div>
     <div style="margin:12px 0 6px;font-family:var(--mono);font-size:12px;color:var(--dim)">the applied policy sets no allowance cap <span class="tier ver">VERIFIED</span> <span style="color:var(--faint);font-size:11px">manifests/05b-kyverno-metric-suspend-http.yaml:10-36</span></div>
     <div class="evcard"><pre style="white-space:pre-wrap;word-break:break-word;margin:0">[18:21:10.688 UTC] K2: USER RESUMES trainer-a
 [18:21:10.783 UTC] healthy resume on v1.34.3: active=1 after 0.0s (startTime reset to 2026-09-14T18:21:10Z)
@@ -1426,14 +1599,11 @@ No resources found in kyverno namespace.</pre><div class="caption" style="margin
   </div>
   <div class="caption">captures/17-kyverno-forensics.txt:2-15,17-25 - verbatim cells, each labeled with its line range; rows ordered by the beats, not file order. line 22 header "(TTL-bound, not action-coupled)" is recorder commentary; Event expiry was not captured.</div>
   <p class="scope">Logs, metrics, API audit and external sinks were not inspected. Event expiry and post-delete policy status were not captured.</p>
-  <div class="note">the prototype makes resume allowance and an action record explicit.</div>
+  <div class="note">part 5: the RR lab prototype makes action allowance and receipts explicit.</div>
 </section>
 
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2026 NVIDIA Corporation -->
-
 <section class="slide" id="s24" data-fxmode="popTimelines">
-  <div class="actlabel">act 4 - the runtime rules lab prototype</div>
+  <div class="actlabel">part 5 - runtime rules actions in the lab prototype</div>
   <h2>one action and no renewed allowance</h2>
   <div class="inset"><b>Allowance epoch:</b> a numbered part of the rule/UID history. Advancing it does not renew this rule's allowance.</div>
   <ol class="beats">
@@ -1455,7 +1625,7 @@ No resources found in kyverno namespace.</pre><div class="caption" style="margin
     <p class="caption">state key: suspend-running-2m:&lt;workload UID&gt;  |  reArmOnResume: false - rr-poc/rules.yaml:21 SOURCE  |  state and configuration semantics <span class="tier ver">VERIFIED</span></p>
   </div>
   <p class="scope">VERIFIED for retained state and this configuration. Detection uses weSuspended plus suspend=false, not an authenticated actor.</p>
-  <p class="note">before spending that allowance, persist the intended action.</p>
+  <p class="note">The prototype bounds repeat actions and records decisions; it does not repair the platform defect. Next: persist intent before acting.</p>
 </section>
 
 <section class="slide" id="s25" data-fxmode="popTimelines">
@@ -1754,7 +1924,7 @@ rr-33e597e6-e0-obs-4   WouldAct</pre></div>
 </section>
 
 <section class="slide" id="s32" data-fxmode="popPills">
-  <div class="actlabel">act 5 - the next build</div>
+  <div class="actlabel">the ending - pick the build</div>
   <h2>build the action protocol</h2>
   <div class="inset">Composition connects the systems through shared facts or explicit requests.</div>
   <ol class="beats">

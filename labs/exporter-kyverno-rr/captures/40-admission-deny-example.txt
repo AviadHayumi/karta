@@ -1,0 +1,1 @@
+Error from server: error when creating "/Users/ahayumi/conductor/workspaces/karta/amarillo/.context/kyverno-research/kyverno-mastery-deck/demos/d1-bad-deploy.yaml": admission webhook "vpol.validate.kyverno.svc-fail" denied the request: Policy no-latest-tag failed: pin your image tags please , :latest is not reproducible

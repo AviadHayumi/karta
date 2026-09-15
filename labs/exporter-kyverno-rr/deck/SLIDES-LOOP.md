@@ -1438,3 +1438,78 @@ intentional. No slide was added, removed or reordered.
 No spec blocker remains. The builder can proceed from this file.
 
 SPEC GATE: SIGN-OFF
+
+
+## round 16 - restructure (codex)
+
+### changes
+
+- Kept all 46 slides in the supplied file order. Historical IDs and every
+  animation mode/JSON block are unchanged. The labels now describe the
+  five requested parts. Part 5 explicitly names the lab prototype.
+- Fixed the hook and b4 handoffs. s11b now hands to part 3; s18a to
+  part 4; s23 to part 5. Removed the stale act-2 and act-4 references.
+  s2 no longer sends the audience back through exporter internals.
+- Introduced CEL on k1 and spec.suspend on k2. Added a short inset on
+  s18 defining GlobalContextEntry, projection and globalContext.Get.
+  s2 marks RR as a preview of the separate part-5 prototype. All changed
+  definition insets stay within 25 words.
+- k1 now embeds manifests/92-admission-deny-example.yaml:1-16 verbatim,
+  including the previously missing apiVersions. The deny text is an exact
+  suffix of captures/40-admission-deny-example.txt:1. Its caption states
+  that the local-path prefix was omitted and the run came from the earlier
+  lab1 exercise. The condition rejects explicit :latest; it does not
+  require a tag or digest. VERIFIED manifest; EXECUTED captured denial.
+- k2 keeps captures/09-ab-test.txt:1-3 unchanged. The two timestamps differ
+  by 171.065ms, displayed as about 171ms. This is first observation after
+  the apply marker, not executor latency. t+1 is a poll label. The example
+  needs no new target write and has no metrics condition. Part 4 reuses
+  this same comparison run. VERIFIED: manifests/91-ab-twin-no-gctx.yaml:1-25.
+- k3 now distinguishes policy queueing, UR submission and target
+  processing. Completed work items are deleted; completion does not prove
+  a patch. A trigger is not a guarantee of one new UR. VERIFIED at Kyverno
+  v1.19.1: pkg/policy/policy_controller.go:234-246,302-319,645-655,699-705;
+  pkg/policy/mpol.go:17-25,91-98; pkg/background/mpol/processor.go:111-145;
+  pkg/background/update_request_controller.go:268-289. The lab's 60s tick
+  remains OPERATOR-REPORTED.
+- b4 scopes suspension to active Pods of unfinished Jobs and describes
+  replacement Pods on resume. The field does not preserve application
+  progress. VERIFIED: Kubernetes v1.34.1
+  pkg/controller/job/job_controller.go:1653-1663,1666-1685,1718-1747.
+- Fixed two introductory contradictions in b1/b2. Karta resource count is
+  not restricted to one per kind; the exporter selects a description.
+  Replaced the invalid abbreviated YAML with literal catalog excerpts
+  (:31-34,51-57), separated by a labeled editorial omission comment.
+  Source: src/docs/catalog/batch-job-v1.yaml. Removed the unpinned catalog
+  count and the single-status/identity-and-status-only claims. VERIFIED:
+  src/exporter/pkg/registry/registry.go:157-200 and
+  src/exporter/pkg/collector/collector.go:45-62,98-125. Introduced Prometheus
+  in one plain line. Both corrected YAML displays wrap long lines.
+- b5 now separates its evidence tiers. Metrics supplied facts; the
+  stalled-status-to-Running=0 mapping remains INFERRED. The declared GCE
+  run acted. The minimal repro's selected log query found no policy match,
+  while metrics and reporting Events recorded results. One re-suspension
+  was EXECUTED; further repetition is INFERRED. Lab1 status failure and
+  lab2 reset acceptance are captured; attribution to #134521 is INFERRED
+  and its v1.34.2 fix is VERIFIED. Removed the blanket bug-free claim,
+  indefinite measured duration and unsupported v1.34.1 execution claim.
+  Evidence: captures/02-metrics-raw.txt:125;
+  captures/19-gce-corrected.txt:1-4; captures/31-cel-error-repro.txt:8-40;
+  captures/30-lab2-kyverno-phase.txt:5-8; s21/s22's pinned source and captures.
+- The scoreboard states that the Kyverno draft's declared controls still
+  need execution. Part 5 bounds its promise to action allowance and
+  records; it does not claim to repair the platform defect.
+
+### checks and flags
+
+- Reassembled index.html from the edited n*.html files. The existing
+  assembler passed script syntax, referenced-ID and external-asset checks.
+  Captures, manifests, source checkouts and engine scripts are unchanged.
+- Checked exact snippet text, unique IDs, unchanged order and 15 unchanged
+  animation JSON blocks. Each editor has one pre block, as required by
+  buildEditors. Part files are ASCII and have no restricted-text or
+  private-path hits. Titles remain lowercase.
+- No remaining restructure/content blocker. Browser layout was not
+  reassessed in this pass; this is not a rendered-layout sign-off.
+
+RESTRUCTURE: SIGN-OFF
