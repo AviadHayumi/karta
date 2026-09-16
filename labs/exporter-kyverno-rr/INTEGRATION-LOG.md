@@ -711,3 +711,10 @@ Manifest 05d adds `and count_over_time(...[2m]) >= 22` to the 05b query. Same
 setup as the 8-second kill (brand-new job, policy applied as soon as the pod
 ran): no suspension at 8s, the window filled 6/12/18/24 samples, suspension at
 164s after creation (window full at about 120s, next scan tick after that).
+
+Follow-up: capture 65 is the happy path rerun with the coverage rule (05d) and
+the work items watched throughout. Brand-new job, policy applied as soon as the
+pod ran: the window filled 1/7/13/19/24 samples, four work-item rounds ran (one
+per pass), the first three completed without touching the job, the fourth
+suspended it at 167s. Two "mutation is not applied" warnings fired at t+14s and
+t+44s, while the window was still filling.

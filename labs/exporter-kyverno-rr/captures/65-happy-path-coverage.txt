@@ -1,0 +1,50 @@
+# capture 65 - the happy path with the coverage rule (05d): brand-new job, policy applied as soon as the pod runs, work items watched
+# 2026-09-16T22:38:09Z lab2 (kyverno 3.9.1, 60s scan, prom scrape 5s)
+
+job.batch/trainer-new created
+22:38:10 trainer-new created
+pod/trainer-new-vwq88 condition met
+22:38:12 pod Running; coverage policy (05d, scoped to trainer-new) applied:
+mutatingpolicy.policies.kyverno.io/metric-suspend-new created
+
+--- timeline: samples in the 2m window, and the job ---
+22:38:12 t+2s  samples=1  suspend=false
+22:38:42 t+32s  samples=7  suspend=false
+22:39:12 t+62s  samples=13  suspend=false
+22:39:42 t+92s  samples=19  suspend=false
+22:40:12 t+122s  samples=24  suspend=false
+22:40:42 t+152s  samples=24  suspend=false
+22:40:57 t+167s  trainer-new suspend=true
+
+--- the work items (kubectl get updaterequests -n kyverno -w --output-watch-events) ---
+EVENT      NAME       POLICY               RULETYPE     RESOURCEKIND   RESOURCENAME   RESOURCENAMESPACE   STATUS   AGE
+ADDED      ur-fjjd4   metric-suspend-new   cel-mutate                                                              0s
+MODIFIED   ur-fjjd4   metric-suspend-new   cel-mutate                                                     Pending   0s
+MODIFIED   ur-fjjd4   metric-suspend-new   cel-mutate                                                     Completed   0s
+DELETED    ur-fjjd4   metric-suspend-new   cel-mutate                                                     Completed   0s
+ADDED      ur-4q2pz   metric-suspend-new   cel-mutate                                                                 0s
+MODIFIED   ur-4q2pz   metric-suspend-new   cel-mutate                                                     Pending     0s
+MODIFIED   ur-4q2pz   metric-suspend-new   cel-mutate                                                     Completed   0s
+DELETED    ur-4q2pz   metric-suspend-new   cel-mutate                                                     Completed   0s
+ADDED      ur-pbbrx   metric-suspend-new   cel-mutate                                                                 0s
+MODIFIED   ur-pbbrx   metric-suspend-new   cel-mutate                                                     Pending     0s
+MODIFIED   ur-pbbrx   metric-suspend-new   cel-mutate                                                     Completed   0s
+DELETED    ur-pbbrx   metric-suspend-new   cel-mutate                                                     Completed   0s
+ADDED      ur-qvjmt   metric-suspend-new   cel-mutate                                                                 0s
+MODIFIED   ur-qvjmt   metric-suspend-new   cel-mutate                                                     Pending     0s
+MODIFIED   ur-qvjmt   metric-suspend-new   cel-mutate                                                     Completed   0s
+DELETED    ur-qvjmt   metric-suspend-new   cel-mutate                                                     Completed   0s
+
+--- the job now ---
+suspend=true active=
+
+--- events on the job ---
+LAST SEEN   TYPE      REASON             OBJECT            MESSAGE
+2m53s       Warning   PolicyViolation    job/trainer-new   policy metric-suspend-new/ fail: mutation is not applied
+2m23s       Warning   PolicyViolation    job/trainer-new   policy metric-suspend-new/ fail: mutation is not applied
+2m55s       Normal    SuccessfulCreate   job/trainer-new   Created pod: trainer-new-vwq88
+8s          Normal    SuccessfulDelete   job/trainer-new   Deleted pod: trainer-new-vwq88
+8s          Normal    Suspended          job/trainer-new   Job suspended
+
+--- cleanup: policy deleted, job left suspended ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-new" deleted
