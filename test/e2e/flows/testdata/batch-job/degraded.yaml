@@ -23,3 +23,4 @@ spec:
           command: ["sh", "-c", "if [ \"$JOB_COMPLETION_INDEX\" = \"0\" ]; then true; else sleep infinity; fi"]
           resources:
             requests: {cpu: 50m, memory: 32Mi}
+            limits: {cpu: 50m, memory: 32Mi}
