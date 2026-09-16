@@ -1,0 +1,77 @@
+# capture 60 - real DynamoGraphDeployment on karta-e2e, real dynamo operator 1.2.1, exporter run locally
+# 2026-09-16T17:38:48Z cluster kind-karta-e2e (k8s v1.34.0)
+# DGD applied from hack/e2e/operators/dynamo/smoke.yaml (DYNAMO_VERSION=1.2.1)
+
+$ kubectl get dgd,pods -n default
+NAME                                            READY   BACKEND   AGE
+dynamographdeployment.nvidia.com/dynamo-smoke   True              2m6s
+
+NAME                                                READY   STATUS    RESTARTS   AGE
+pod/dynamo-smoke-decode-a7fcd167-6d77c98bfd-hc859   1/1     Running   0          2m5s
+pod/dynamo-smoke-frontend-59d8d4c776-t7c86          1/1     Running   0          2m5s
+pod/milvus-smoke-etcd-0                             1/1     Running   0          5h6m
+pod/milvus-smoke-minio-6b6f757488-9qw2j             1/1     Running   0          6h53m
+
+$ kubectl get dgd dynamo-smoke -o jsonpath={.status.state}
+successful
+
+$ curl -s localhost:8085/metrics | grep dynamo-smoke  # exporter: /tmp/karta-exporter --use-catalog vs kind-karta-e2e
+karta_pod_workload_info{component="component",component_instance="Frontend",namespace="default",pod="dynamo-smoke-frontend-59d8d4c776-t7c86",replica="",uid="12c21a6c-b81c-4068-ac42-70259d8850bf",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_pod_workload_info{component="component",component_instance="decode",namespace="default",pod="dynamo-smoke-decode-a7fcd167-6d77c98bfd-hc859",replica="",uid="915e31ba-924b-4930-b6ed-746bd1fe327b",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_pods{component="component",component_instance="Frontend",namespace="default",phase="Failed",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="component",component_instance="Frontend",namespace="default",phase="Pending",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="component",component_instance="Frontend",namespace="default",phase="Running",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_pods{component="component",component_instance="Frontend",namespace="default",phase="Succeeded",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="component",component_instance="Frontend",namespace="default",phase="Unknown",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="component",component_instance="decode",namespace="default",phase="Failed",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="component",component_instance="decode",namespace="default",phase="Pending",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="component",component_instance="decode",namespace="default",phase="Running",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_pods{component="component",component_instance="decode",namespace="default",phase="Succeeded",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="component",component_instance="decode",namespace="default",phase="Unknown",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Failed",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Failed",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Pending",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Pending",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Running",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Running",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Succeeded",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Succeeded",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Unknown",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_pods{component="deployment",component_instance="",namespace="default",phase="Unknown",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_component_replicas{component="component",component_instance="Frontend",namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_replicas{component="component",component_instance="decode",namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="default",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_component_replicas{component="deployment",component_instance="",namespace="default",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_generation{namespace="default",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_generation{namespace="default",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="default",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="apps-deployment-v1",namespace="default",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment",workload_version="v1"} 1
+karta_workload_info{karta="nvidia-com-dynamographdeployment-v1beta1",namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment",workload_version="v1beta1"} 1
+karta_workload_status{namespace="default",phase="Completed",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Completed",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Completed",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Degraded",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Failed",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Initializing",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Resuming",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Running",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_status{namespace="default",phase="Running",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="default",phase="Running",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 1
+karta_workload_status{namespace="default",phase="Suspended",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Suspended",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspended",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Suspending",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="dynamo-smoke-decode-a7fcd167",workload_group="apps",workload_kind="Deployment"} 0
+karta_workload_status{namespace="default",phase="Undefined",workload="dynamo-smoke-frontend",workload_group="apps",workload_kind="Deployment"} 0

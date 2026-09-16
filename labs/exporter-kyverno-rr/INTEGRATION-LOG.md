@@ -672,3 +672,14 @@ allowance slices are reachable with disciplined authoring; what no
 authoring supplies is the protocol as a product - pre-action persisted
 intent, receipts that gate actions, authenticated human intent,
 escalation, and diagnostics on the acting path itself.
+
+## 10. The real dynamo run (2026-09-16)
+
+The KEP rewrite needed the exporter shown on a real distributed workload, not a
+batch job. The karta-e2e kind cluster still had the dynamo platform 1.2.1
+(operator, etcd, nats) from the e2e suite, so we applied the suite's own smoke
+DynamoGraphDeployment (Frontend + a Llama-3.1-8B mocker decode worker), let the
+real operator drive it to state successful, and ran the exporter locally against
+the cluster with --use-catalog. Both pods were attributed to their component
+instances (Frontend, decode) through the real owner chain, and the workload
+normalized to Running from .status.state=successful. Full scrape: capture 60.
