@@ -688,3 +688,11 @@ Follow-up: the run was repeated with a third service, prefill, added to the
 smoke DGD (the mocker supports disaggregated mode; the prefill service runs
 --is-prefill-worker). The operator drove all three services to successful and
 the exporter attributed all three pods (Frontend, decode, prefill). Capture 61.
+
+Follow-up: capture 62 records one clean happy-path run on lab2 (fresh job
+trainer-hp, the 05b policy scoped to it, UR watch running): applied 19:56:09,
+suspended 19:56:26, work items filed-Pending-Completed-deleted, job controller
+wrote Suspended. Notable: the report scanner emitted "mutation is not applied"
+during this healthy run too, in the window between apply and patch, the same
+message the broken rule produces (capture 31). The epoch policies from section 9
+were removed before this run.

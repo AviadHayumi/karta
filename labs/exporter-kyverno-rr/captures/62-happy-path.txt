@@ -1,0 +1,38 @@
+# capture 62 - the happy path: one successful metric-driven suspension, machinery visible
+# 2026-09-16T19:53:51Z lab2 (k8s v1.34.3, kyverno 3.9.1, 60s scan, prom scrape 5s)
+
+--- fresh job ---
+job.batch/trainer-hp created
+pod/trainer-hp-bf2j5 condition met
+pod ready at 19:53:52.3N, waiting 135s for a full 2m Running history in prometheus
+
+--- the policy (05b scoped to trainer-hp) applied at 19:56:09.3N ---
+mutatingpolicy.policies.kyverno.io/metric-suspend-hp created
+t+ 19:56:26.3N trainer-hp suspend=true
+
+--- the work item lifecycle (kubectl get updaterequests -n kyverno -w --output-watch-events) ---
+EVENT      NAME       POLICY              RULETYPE     RESOURCEKIND   RESOURCENAME   RESOURCENAMESPACE   STATUS   AGE
+ADDED      ur-g6lxv   metric-suspend-hp   cel-mutate                                                              0s
+MODIFIED   ur-g6lxv   metric-suspend-hp   cel-mutate                                                     Pending   0s
+MODIFIED   ur-g6lxv   metric-suspend-hp   cel-mutate                                                     Completed   0s
+DELETED    ur-g6lxv   metric-suspend-hp   cel-mutate                                                     Completed   0s
+ADDED      ur-hcs9k   metric-suspend-hp   cel-mutate                                                                 0s
+MODIFIED   ur-hcs9k   metric-suspend-hp   cel-mutate                                                     Pending     0s
+MODIFIED   ur-hcs9k   metric-suspend-hp   cel-mutate                                                     Completed   0s
+DELETED    ur-hcs9k   metric-suspend-hp   cel-mutate                                                     Completed   0s
+
+--- the job now ---
+suspend=true active=
+
+--- events on the job ---
+LAST SEEN   TYPE      REASON             OBJECT           MESSAGE
+24s         Warning   PolicyViolation    job/trainer-hp   policy metric-suspend-hp/ fail: mutation is not applied
+2m43s       Normal    SuccessfulCreate   job/trainer-hp   Created pod: trainer-hp-bf2j5
+9s          Normal    SuccessfulDelete   job/trainer-hp   Deleted pod: trainer-hp-bf2j5
+9s          Normal    Suspended          job/trainer-hp   Job suspended
+
+--- policy status ---
+
+
+--- cleanup: policy deleted, job left suspended ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-hp" deleted
