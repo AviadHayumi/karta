@@ -1,0 +1,50 @@
+# capture 66 - interval-free fix for the new-job early pass: offset 2m instead of a sample count
+#   min_over_time(karta_workload_status{namespace="ai-team",phase="Running",workload_kind="Job"}[2m])==1 and karta_workload_status{namespace="ai-team",phase="Running",workload_kind="Job"} offset 2m == 1
+# 2026-09-16T22:56:37Z lab2 (kyverno 3.9.1, 60s scan, prom scrape 5s). brand-new job trainer-off, policy applied as soon as the pod runs, work items watched.
+
+job.batch/trainer-off created
+22:56:37 trainer-off created
+pod/trainer-off-cznnj condition met
+22:56:39 pod Running; offset policy (05e, scoped to trainer-off) applied:
+mutatingpolicy.policies.kyverno.io/metric-suspend-off created
+
+--- timeline: the series value 2 minutes ago, and the job ---
+22:56:39 t+2s  value 2m ago=no-series  min[2m]=no-series  suspend=false
+22:57:09 t+32s  value 2m ago=no-series  min[2m]=1  suspend=false
+22:57:39 t+62s  value 2m ago=no-series  min[2m]=1  suspend=false
+22:58:09 t+92s  value 2m ago=no-series  min[2m]=1  suspend=false
+22:58:39 t+122s  value 2m ago=no-series  min[2m]=1  suspend=false
+22:58:57 t+140s  trainer-off suspend=true
+
+--- the work items (kubectl get updaterequests -n kyverno -w --output-watch-events) ---
+EVENT      NAME       POLICY               RULETYPE     RESOURCEKIND   RESOURCENAME   RESOURCENAMESPACE   STATUS   AGE
+ADDED      ur-xrpmw   metric-suspend-off   cel-mutate                                                              0s
+MODIFIED   ur-xrpmw   metric-suspend-off   cel-mutate                                                     Pending   0s
+MODIFIED   ur-xrpmw   metric-suspend-off   cel-mutate                                                     Completed   0s
+DELETED    ur-xrpmw   metric-suspend-off   cel-mutate                                                     Completed   0s
+ADDED      ur-hqmhc   metric-suspend-off   cel-mutate                                                                 0s
+MODIFIED   ur-hqmhc   metric-suspend-off   cel-mutate                                                     Pending     0s
+MODIFIED   ur-hqmhc   metric-suspend-off   cel-mutate                                                     Completed   0s
+DELETED    ur-hqmhc   metric-suspend-off   cel-mutate                                                     Completed   0s
+ADDED      ur-s9s7k   metric-suspend-off   cel-mutate                                                                 0s
+MODIFIED   ur-s9s7k   metric-suspend-off   cel-mutate                                                     Pending     0s
+MODIFIED   ur-s9s7k   metric-suspend-off   cel-mutate                                                     Completed   0s
+DELETED    ur-s9s7k   metric-suspend-off   cel-mutate                                                     Completed   0s
+ADDED      ur-bkrcz   metric-suspend-off   cel-mutate                                                                 0s
+MODIFIED   ur-bkrcz   metric-suspend-off   cel-mutate                                                     Pending     0s
+MODIFIED   ur-bkrcz   metric-suspend-off   cel-mutate                                                     Completed   0s
+DELETED    ur-bkrcz   metric-suspend-off   cel-mutate                                                     Completed   0s
+
+--- the job now ---
+suspend=true active=
+
+--- events on the job ---
+LAST SEEN   TYPE      REASON             OBJECT            MESSAGE
+2m26s       Warning   PolicyViolation    job/trainer-off   policy metric-suspend-off/ fail: mutation is not applied
+116s        Warning   PolicyViolation    job/trainer-off   policy metric-suspend-off/ fail: mutation is not applied
+2m28s       Normal    SuccessfulCreate   job/trainer-off   Created pod: trainer-off-cznnj
+8s          Normal    SuccessfulDelete   job/trainer-off   Deleted pod: trainer-off-cznnj
+8s          Normal    Suspended          job/trainer-off   Job suspended
+
+--- cleanup: policy deleted, job left suspended ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-off" deleted

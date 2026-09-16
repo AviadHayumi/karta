@@ -718,3 +718,11 @@ pod ran: the window filled 1/7/13/19/24 samples, four work-item rounds ran (one
 per pass), the first three completed without touching the job, the fourth
 suspended it at 167s. Two "mutation is not applied" warnings fired at t+14s and
 t+44s, while the window was still filling.
+
+Follow-up: the sample-count fix (05d) couples the rule to the scrape interval:
+at a 15s interval a 2-minute window holds 8 samples and `>= 22` never fires.
+Manifest 05e replaces it with an interval-free age check, `and
+karta_workload_status{...phase="Running"} offset 2m == 1` (the job must already
+have been Running two minutes ago). Capture 66, same setup as 63 and 65: the
+offset value stayed absent until about t+122s while min[2m] was already 1 from
+t+32s, four work-item rounds ran, the job was suspended at t+140s.
