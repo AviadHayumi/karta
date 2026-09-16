@@ -696,3 +696,12 @@ wrote Suspended. Notable: the report scanner emitted "mutation is not applied"
 during this healthy run too, in the window between apply and patch, the same
 message the broken rule produces (capture 31). The epoch policies from section 9
 were removed before this run.
+
+Follow-up: capture 63 measures the two-minute window from both sides on lab2.
+A resumed job (trainer-hp, suspended earlier by the rule) kept
+min_over_time[2m]=0 while the window still held samples from the suspended
+period, flipped to 1 at 122s, and was re-suspended at 129s after the resume.
+A brand-new job (trainer-young) with the same rule already in place was
+suspended 8 seconds after creation: its series held only 1s, so the query was
+satisfied on the first sample. The window is real for a resume and not for a
+new job; only a coverage check closes that.

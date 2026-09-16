@@ -1,0 +1,35 @@
+# capture 63 - does a resumed job really get 2 minutes before the rule re-suspends it ? and does a brand-new job pass early ?
+# 2026-09-16T22:18:45Z lab2 (kyverno 3.9.1, 60s scan, prom scrape 5s), query: min_over_time(karta_workload_status{phase=Running}[2m])==1
+
+=== A. resume test: trainer-hp (suspended earlier by the rule) ===
+22:18:45 policy A (scoped to trainer-hp) applied:
+mutatingpolicy.policies.kyverno.io/metric-suspend-hp created
+22:18:48 RESUME trainer-hp: suspend=false
+job.batch/trainer-hp patched
+
+=== B. young-series test: brand-new job trainer-young, policy applied right away ===
+job.batch/trainer-young created
+22:18:49 trainer-young created
+pod/trainer-young-zmvjg condition met
+22:18:50 trainer-young pod Running; policy B (scoped to trainer-young) applied now:
+mutatingpolicy.policies.kyverno.io/metric-suspend-young created
+
+=== timeline (every 0.5s check, prometheus min_over_time every 30s) ===
+22:18:50 prom: trainer-hp min_over_time[2m]=0 (t+2s)   trainer-young min_over_time[2m]=no-series (t+1s)
+22:18:57 trainer-young SUSPENDED, 8s after creation
+22:19:20 prom: trainer-hp min_over_time[2m]=0 (t+32s)   trainer-young min_over_time[2m]=0 (t+31s)
+22:19:50 prom: trainer-hp min_over_time[2m]=0 (t+62s)   trainer-young min_over_time[2m]=0 (t+61s)
+22:20:20 prom: trainer-hp min_over_time[2m]=0 (t+92s)   trainer-young min_over_time[2m]=0 (t+91s)
+22:20:50 prom: trainer-hp min_over_time[2m]=1 (t+122s)   trainer-young min_over_time[2m]=0 (t+121s)
+22:20:57 trainer-hp RE-SUSPENDED, 129s after the resume
+
+=== events on trainer-hp ===
+101s        Warning   PolicyViolation    job/trainer-hp   policy metric-suspend-hp/ fail: mutation is not applied
+2m8s        Normal    SuccessfulCreate   job/trainer-hp   Created pod: trainer-hp-6hjjt
+2m8s        Normal    Resumed            job/trainer-hp   Job resumed
+0s          Normal    SuccessfulDelete   job/trainer-hp   Deleted pod: trainer-hp-6hjjt
+0s          Normal    Suspended          job/trainer-hp   Job suspended
+
+--- cleanup: both policies deleted, jobs left as they are ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-hp" deleted
+mutatingpolicy.policies.kyverno.io "metric-suspend-young" deleted
