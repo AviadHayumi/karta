@@ -705,3 +705,9 @@ A brand-new job (trainer-young) with the same rule already in place was
 suspended 8 seconds after creation: its series held only 1s, so the query was
 satisfied on the first sample. The window is real for a resume and not for a
 new job; only a coverage check closes that.
+
+Follow-up: capture 64 shows the new-job early pass is fixable inside the rule.
+Manifest 05d adds `and count_over_time(...[2m]) >= 22` to the 05b query. Same
+setup as the 8-second kill (brand-new job, policy applied as soon as the pod
+ran): no suspension at 8s, the window filled 6/12/18/24 samples, suspension at
+164s after creation (window full at about 120s, next scan tick after that).

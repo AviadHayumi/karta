@@ -1,0 +1,21 @@
+# capture 64 - can the rule itself fix the new-job early pass ? same query plus a coverage clause:
+#   min_over_time(karta_workload_status{namespace="ai-team",phase="Running",workload_kind="Job"}[2m])==1 and count_over_time(karta_workload_status{namespace="ai-team",phase="Running",workload_kind="Job"}[2m])>=22
+# 2026-09-16T22:30:13Z lab2 (kyverno 3.9.1, 60s scan, prom scrape 5s). brand-new job trainer-cov, policy applied as soon as the pod runs.
+
+job.batch/trainer-cov created
+22:30:13 trainer-cov created
+pod/trainer-cov-9vz5l condition met
+22:30:14 pod Running; policy applied now:
+mutatingpolicy.policies.kyverno.io/metric-suspend-cov created
+
+=== timeline ===
+22:30:14 t+1s  samples in window=no-series  min=no-series  suspend=false
+22:30:44 t+31s  samples in window=6  min=1  suspend=false
+22:31:14 t+61s  samples in window=12  min=1  suspend=false
+22:31:44 t+91s  samples in window=18  min=1  suspend=false
+22:32:14 t+121s  samples in window=24  min=1  suspend=false
+22:32:44 t+151s  samples in window=24  min=1  suspend=false
+22:32:57 trainer-cov SUSPENDED, 164s after creation
+
+--- cleanup: policy deleted, job left as is ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-cov" deleted
