@@ -733,3 +733,31 @@ value was absent for two minutes, then pointed at the pre-pod 0 sample, then 1),
 manual resume at 23:11:02, second suspension at r+175s (min[2m] held the
 suspended-time 0s until r+120, the offset value pointed into the suspended
 period at r+120 and cleared at r+150). Seven work-item rounds, all identical.
+
+## 11. Are the gaps solvable with a different Kyverno? (2026-09-16)
+
+Upstream has a fix PR for gap 1: kyverno/kyverno#17063 (issue #17062), open
+since 2026-08-11, CI green, no review. Its GeneratingPolicy twin #17061 merged
+the same day. We rebuilt the background controller from v1.19.1 with that
+commit cherry-picked and reran the broken rule (capture 68): the policy-event
+work item still completed silently, but every scan-tick work item went Failed
+with the real CEL error in status.message ("type conversion error from 'string'
+to 'int'"), cycling Failed -> Pending -> Failed with a retry count, and the
+controller log gained ERR lines carrying the same text. The job stayed
+untouched, the policy stayed ready: true, and no new event appeared; the only
+events were still the report scanner's "mutation is not applied". The healthy
+offset rule still applied on the patched controller (capture 70, re-suspended
+at r+169s). Controller restored to stock v1.19.1 afterwards.
+
+Gap 3 with every opt-in on (capture 69): generateSuccessEvents=true plus the
+chart-default reporting.mutateExisting. Before deleting the job there was one
+PolicyReport entry for the action, result pass, message "success", owned by the
+job, and no Kyverno event on the job at all. After deleting the job: zero
+reports, zero work items, only the job controller's own events. The scanner's
+"mutation is not applied" warning also fired for trainer-h, a job the policy
+never targeted (targetMatchConditions are not applied on the report path).
+
+Gap 2: no issue or change in any version asks for act-once or for respecting a
+manual change; #16214 covers only periodic re-evaluation (already merged as
+#16255), and #17284 (silent write drops on shared targets) is open with no
+comments.

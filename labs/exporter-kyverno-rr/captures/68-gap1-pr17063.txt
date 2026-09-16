@@ -1,0 +1,71 @@
+# capture 68 - gap 1 rerun on kyverno 1.19.1 + PR 17063 (background-controller rebuilt from v1.19.1 with commit c22e49168 cherry-picked)
+# 2026-09-16T23:40:23Z lab2. same broken rule as capture 31: int(object.metadata.name) > 0 on job cel-error-job
+
+--- background controller image ---
+background-controller:v1.19.1-pr17063
+kyverno-background-controller-6b57bb7bb7-c9gkh   true   2026-09-16T23:40:12Z
+
+namespace/rr-cel-error created
+job.batch/cel-error-job created
+pod/cel-error-job-dvmrd condition met
+23:40:25 broken policy applied:
+mutatingpolicy.policies.kyverno.io/rr-cel-runtime-error created
+23:40:25 watching for 150s (policy event + 2 scan ticks) ...
+
+--- the work items, as they changed (kubectl get ur -w, with status message) ---
+NAME       STATE    RETRY    MESSAGE
+ur-vgwsj   <none>   <none>   <none>
+ur-vgwsj   Pending   <none>   <none>
+ur-vgwsj   Completed   <none>   <none>
+ur-rsz6b   <none>      <none>   <none>
+ur-rsz6b   Pending     <none>   <none>
+ur-rsz6b   Failed      1        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-rsz6b   Pending     1        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-rsz6b   Failed      2        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-rsz6b   Pending     2        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-rsz6b   Failed      3        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-rsz6b   Pending     3        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-rsz6b   Failed      4        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-rsz6b   Pending     4        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   <none>      <none>   <none>
+ur-8bt74   Pending     <none>   <none>
+ur-8bt74   Failed      1        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   Pending     1        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   Failed      2        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   Pending     2        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   Failed      3        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   Pending     3        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   Failed      4        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8bt74   Pending     4        mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'
+
+--- snapshots of live work items every 5s (deduplicated) ---
+
+--- the job ---
+suspend=false
+
+--- policy status ---
+{"autogen":{},"conditionStatus":{"conditions":[{"lastTransitionTime":"2026-09-16T23:40:25Z","message":"Policy is ready for reporting.","reason":"Succeeded","status":"True","type":"RBACPermissionsGranted"}],"message":"","ready":true},"generated":false}
+
+
+--- events in rr-cel-error ---
+<nil>                  Warning   PolicyViolation    cel-error-job         policy rr-cel-runtime-error/ fail: mutation is not applied
+<nil>                  Warning   PolicyViolation    cel-error-job         policy rr-cel-runtime-error/ fail: mutation is not applied
+2026-09-16T23:40:23Z   Normal    SuccessfulCreate   cel-error-job         Created pod: cel-error-job-dvmrd
+
+--- background controller log lines naming the policy ---
+[90m2026-09-16T23:40:26Z[0m [34mTRC[0m [1mtmp/kyverno-1191-pr17063/pkg/policy/policy_controller.go:237[0m[36m >[0m policy created [36mkind=[0mMutatingPolicy [36mlogger=[0mPolicyController [36mname=[0mrr-cel-runtime-error [36mnamespace=[0m [36muid=[0m37378d8c-78ce-4065-ae02-cc212317dfb9 [36mv=[0m2
+[90m2026-09-16T23:41:26Z[0m [31mERR[0m [1mtmp/kyverno-1191-pr17063/pkg/background/mpol/processor.go:248[0m[36m >[0m [1mfailed to evaluate mpol rule[0m [36merror=[0m[31m[1m"mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'"[0m[0m [36mlogger=[0mbackground.mutatingpolicies [36mmpol=[0mrr-cel-runtime-error [36m
+[90m2026-09-16T23:41:26Z[0m [31mERR[0m [1mtmp/kyverno-1191-pr17063/pkg/background/mpol/processor.go:248[0m[36m >[0m [1mfailed to evaluate mpol rule[0m [36merror=[0m[31m[1m"mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'"[0m[0m [36mlogger=[0mbackground.mutatingpolicies [36mmpol=[0mrr-cel-runtime-error [36m
+[90m2026-09-16T23:41:26Z[0m [31mERR[0m [1mtmp/kyverno-1191-pr17063/pkg/background/mpol/processor.go:248[0m[36m >[0m [1mfailed to evaluate mpol rule[0m [36merror=[0m[31m[1m"mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'"[0m[0m [36mlogger=[0mbackground.mutatingpolicies [36mmpol=[0mrr-cel-runtime-error [36m
+[90m2026-09-16T23:41:26Z[0m [31mERR[0m [1mtmp/kyverno-1191-pr17063/pkg/background/mpol/processor.go:248[0m[36m >[0m [1mfailed to evaluate mpol rule[0m [36merror=[0m[31m[1m"mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'"[0m[0m [36mlogger=[0mbackground.mutatingpolicies [36mmpol=[0mrr-cel-runtime-error [36m
+[90m2026-09-16T23:41:26Z[0m [31mERR[0m [1mtmp/kyverno-1191-pr17063/pkg/background/mpol/processor.go:248[0m[36m >[0m [1mfailed to evaluate mpol rule[0m [36merror=[0m[31m[1m"mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'"[0m[0m [36mlogger=[0mbackground.mutatingpolicies [36mmpol=[0mrr-cel-runtime-error [36m
+[90m2026-09-16T23:42:26Z[0m [31mERR[0m [1mtmp/kyverno-1191-pr17063/pkg/background/mpol/processor.go:248[0m[36m >[0m [1mfailed to evaluate mpol rule[0m [36merror=[0m[31m[1m"mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'"[0m[0m [36mlogger=[0mbackground.mutatingpolicies [36mmpol=[0mrr-cel-runtime-error [36m
+[90m2026-09-16T23:42:26Z[0m [31mERR[0m [1mtmp/kyverno-1191-pr17063/pkg/background/mpol/processor.go:248[0m[36m >[0m [1mfailed to evaluate mpol rule[0m [36merror=[0m[31m[1m"mpol rr-cel-runtime-error rule evaluation error: failed to evaluate policy: type conversion error from 'string' to 'int'"[0m[0m [36mlogger=[0mbackground.mutatingpolicies [36mmpol=[0mrr-cel-runtime-error [36m
+(end of log lines)
+
+--- the error counter ---
+kyverno_mutating_policy_execution_duration_seconds_count{execution_cause="background_scan",otel_scope_name="kyverno",otel_scope_schema_url="",otel_scope_version="",policy_background_mode="true",policy_name="rr-cel-runtime-error",policy_namespace="",resource_kind="Job",result="error"} 10
+kyverno_mutating_policy_execution_duration_seconds_count{execution_cause="background_scan",otel_scope_name="kyverno",otel_scope_schema_url="",otel_scope_version="",policy_background_mode="true",policy_name="rr-cel-runtime-error",policy_namespace="",resource_kind="Job",result="skip"} 80
+
+--- cleanup: policy deleted, job left ---
+mutatingpolicy.policies.kyverno.io "rr-cel-runtime-error" deleted

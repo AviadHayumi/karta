@@ -1,0 +1,23 @@
+# capture 70 - regression check: the healthy offset rule (05e) on the patched background controller (1.19.1 + PR 17063)
+# 2026-09-16T23:43:35Z lab2. resume trainer-hp by hand, expect the rule to suspend it again after its window
+
+23:43:35 image: background-controller:v1.19.1-pr17063
+mutatingpolicy.policies.kyverno.io/metric-suspend-hp created
+23:43:37 resume trainer-hp by hand
+job.batch/trainer-hp patched
+23:46:26 r+169s  trainer-hp suspend=true  <- suspended again by the rule
+
+--- work items for this policy ---
+NAME       POLICY              STATE    MESSAGE
+ur-z6krr   metric-suspend-hp   <none>   <none>
+ur-z6krr   metric-suspend-hp   Pending   <none>
+ur-z6krr   metric-suspend-hp   Completed   <none>
+ur-tkrv6   metric-suspend-hp   <none>      <none>
+ur-tkrv6   metric-suspend-hp   Pending     <none>
+ur-tkrv6   metric-suspend-hp   Completed   <none>
+ur-zvtgn   metric-suspend-hp   <none>      <none>
+ur-zvtgn   metric-suspend-hp   Pending     <none>
+ur-zvtgn   metric-suspend-hp   Completed   <none>
+
+--- cleanup: policy deleted ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-hp" deleted

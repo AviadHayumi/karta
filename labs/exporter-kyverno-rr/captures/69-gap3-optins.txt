@@ -1,0 +1,46 @@
+# capture 69 - gap 3 with every opt-in on: generateSuccessEvents=true, reporting.mutateExisting (chart default true). suspend by rule, then delete the job, then look for what survived
+# 2026-09-16T23:36:35Z lab2 (kyverno 3.9.1, 60s scan)
+
+23:36:35 configmap: generateSuccessEvents=true
+23:36:35 policy (05e scoped to trainer-one) applied:
+mutatingpolicy.policies.kyverno.io/metric-suspend-one created
+23:36:38 resume trainer-one by hand
+job.batch/trainer-one patched
+23:38:57 trainer-one suspend=true  <- suspended by the rule
+
+=== BEFORE deleting the job: what exists about this action ===
+--- events on the job ---
+2026-09-16T23:11:02Z   Normal    SuccessfulCreate   job-controller   Created pod: trainer-one-9h7mp
+2026-09-16T23:13:57Z   Normal    SuccessfulDelete   job-controller   Deleted pod: trainer-one-9h7mp
+2026-09-16T23:36:38Z   Normal    Resumed            job-controller   Job resumed
+2026-09-16T23:36:38Z   Normal    SuccessfulCreate   job-controller   Created pod: trainer-one-fnm8h
+2026-09-16T23:38:57Z   Normal    Suspended          job-controller   Job suspended
+2026-09-16T23:38:57Z   Normal    SuccessfulDelete   job-controller   Deleted pod: trainer-one-fnm8h
+--- events on the policy ---
+<nil>   Warning   PolicyViolation   Job ai-team/trainer-one: fail; mutation is not applied
+<nil>   Warning   PolicyViolation   Job ai-team/trainer-h: fail; mutation is not applied
+<nil>   Warning   PolicyViolation   Job ai-team/trainer-h: fail; mutation is not applied
+<nil>   Warning   PolicyViolation   Job ai-team/trainer-one: fail; mutation is not applied
+--- reports mentioning the job (ephemeral + policy reports) ---
+PolicyReport e7c2bfb4-895d-4814-becc-879535c6c9c1 owner=trainer-one policy=metric-suspend-one rule= result=pass msg=success
+--- updaterequests ---
+       0
+
+=== DELETE the job ===
+job.batch "trainer-one" deleted from ai-team namespace
+
+=== AFTER deletion: what survived ===
+--- events on the job ---
+2026-09-16T23:11:02Z   Normal    SuccessfulCreate   job-controller   Created pod: trainer-one-9h7mp
+2026-09-16T23:13:57Z   Normal    SuccessfulDelete   job-controller   Deleted pod: trainer-one-9h7mp
+2026-09-16T23:36:38Z   Normal    Resumed            job-controller   Job resumed
+2026-09-16T23:36:38Z   Normal    SuccessfulCreate   job-controller   Created pod: trainer-one-fnm8h
+2026-09-16T23:38:57Z   Normal    Suspended          job-controller   Job suspended
+2026-09-16T23:38:57Z   Normal    SuccessfulDelete   job-controller   Deleted pod: trainer-one-fnm8h
+--- reports mentioning the job ---
+reports still referencing the job: 0
+--- updaterequests ---
+       0
+
+--- cleanup: policy deleted ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-one" deleted
