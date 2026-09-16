@@ -683,3 +683,8 @@ real operator drive it to state successful, and ran the exporter locally against
 the cluster with --use-catalog. Both pods were attributed to their component
 instances (Frontend, decode) through the real owner chain, and the workload
 normalized to Running from .status.state=successful. Full scrape: capture 60.
+
+Follow-up: the run was repeated with a third service, prefill, added to the
+smoke DGD (the mocker supports disaggregated mode; the prefill service runs
+--is-prefill-worker). The operator drove all three services to successful and
+the exporter attributed all three pods (Frontend, decode, prefill). Capture 61.
