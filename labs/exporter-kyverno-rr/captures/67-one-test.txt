@@ -1,0 +1,77 @@
+# capture 67 - one test, one log: new job, offset rule applied right away, suspended, resumed by hand, suspended again
+# 2026-09-16T23:08:00Z lab2 (kyverno 3.9.1, 60s scan, prom scrape 5s), rule 05e (min_over_time[2m]==1 and offset 2m == 1)
+
+job.batch/trainer-one created
+23:08:00 trainer-one created
+pod/trainer-one-49wl8 condition met
+23:08:02 pod Running; policy created now (05e, scoped to trainer-one):
+mutatingpolicy.policies.kyverno.io/metric-suspend-one created
+
+--- part 1: waiting for the first suspension ---
+23:08:03 t+2s  value 2m ago=no-series  min[2m]=0  suspend=false
+23:08:32 t+32s  value 2m ago=no-series  min[2m]=0  suspend=false
+23:09:02 t+62s  value 2m ago=no-series  min[2m]=0  suspend=false
+23:09:32 t+92s  value 2m ago=no-series  min[2m]=0  suspend=false
+23:10:02 t+122s  value 2m ago=0  min[2m]=1  suspend=false
+23:10:32 t+152s  value 2m ago=1  min[2m]=1  suspend=false
+23:10:57 t+177s  trainer-one suspend=true   <- suspended by the rule
+
+--- part 2: a human resumes it ---
+23:11:02 kubectl patch job trainer-one --type=merge -p '{"spec":{"suspend":false}}'
+job.batch/trainer-one patched
+23:11:03 r+0s  value 2m ago=1  min[2m]=0  suspend=false
+23:11:32 r+30s  value 2m ago=1  min[2m]=0  suspend=false
+23:12:02 r+60s  value 2m ago=1  min[2m]=0  suspend=false
+23:12:32 r+90s  value 2m ago=1  min[2m]=0  suspend=false
+23:13:02 r+120s  value 2m ago=0  min[2m]=1  suspend=false
+23:13:32 r+150s  value 2m ago=1  min[2m]=1  suspend=false
+23:13:57 r+175s  trainer-one suspend=true   <- suspended again by the rule
+
+--- the work items, whole run (kubectl get updaterequests -n kyverno -w --output-watch-events) ---
+EVENT      NAME       POLICY               RULETYPE     RESOURCEKIND   RESOURCENAME   RESOURCENAMESPACE   STATUS   AGE
+ADDED      ur-2z87p   metric-suspend-one   cel-mutate                                                              0s
+MODIFIED   ur-2z87p   metric-suspend-one   cel-mutate                                                     Pending   0s
+MODIFIED   ur-2z87p   metric-suspend-one   cel-mutate                                                     Completed   0s
+DELETED    ur-2z87p   metric-suspend-one   cel-mutate                                                     Completed   0s
+ADDED      ur-vnqrn   metric-suspend-one   cel-mutate                                                                 0s
+MODIFIED   ur-vnqrn   metric-suspend-one   cel-mutate                                                     Pending     0s
+MODIFIED   ur-vnqrn   metric-suspend-one   cel-mutate                                                     Completed   0s
+DELETED    ur-vnqrn   metric-suspend-one   cel-mutate                                                     Completed   0s
+ADDED      ur-bgbhd   metric-suspend-one   cel-mutate                                                                 0s
+MODIFIED   ur-bgbhd   metric-suspend-one   cel-mutate                                                     Pending     0s
+MODIFIED   ur-bgbhd   metric-suspend-one   cel-mutate                                                     Completed   0s
+DELETED    ur-bgbhd   metric-suspend-one   cel-mutate                                                     Completed   0s
+ADDED      ur-96p67   metric-suspend-one   cel-mutate                                                                 0s
+MODIFIED   ur-96p67   metric-suspend-one   cel-mutate                                                     Pending     0s
+MODIFIED   ur-96p67   metric-suspend-one   cel-mutate                                                     Completed   0s
+DELETED    ur-96p67   metric-suspend-one   cel-mutate                                                     Completed   0s
+ADDED      ur-7rfp9   metric-suspend-one   cel-mutate                                                                 0s
+MODIFIED   ur-7rfp9   metric-suspend-one   cel-mutate                                                     Pending     0s
+MODIFIED   ur-7rfp9   metric-suspend-one   cel-mutate                                                     Completed   0s
+DELETED    ur-7rfp9   metric-suspend-one   cel-mutate                                                     Completed   0s
+ADDED      ur-x2hmh   metric-suspend-one   cel-mutate                                                                 0s
+MODIFIED   ur-x2hmh   metric-suspend-one   cel-mutate                                                     Pending     0s
+MODIFIED   ur-x2hmh   metric-suspend-one   cel-mutate                                                     Completed   0s
+DELETED    ur-x2hmh   metric-suspend-one   cel-mutate                                                     Completed   0s
+ADDED      ur-5j4r7   metric-suspend-one   cel-mutate                                                                 0s
+MODIFIED   ur-5j4r7   metric-suspend-one   cel-mutate                                                     Pending     0s
+MODIFIED   ur-5j4r7   metric-suspend-one   cel-mutate                                                     Completed   0s
+DELETED    ur-5j4r7   metric-suspend-one   cel-mutate                                                     Completed   0s
+
+--- the job now ---
+suspend=true active=
+
+--- events on the job ---
+LAST SEEN   TYPE      REASON             OBJECT            MESSAGE
+6m2s        Warning   PolicyViolation    job/trainer-one   policy metric-suspend-one/ fail: mutation is not applied
+5m32s       Warning   PolicyViolation    job/trainer-one   policy metric-suspend-one/ fail: mutation is not applied
+2m38s       Warning   PolicyViolation    job/trainer-one   policy metric-suspend-one/ fail: mutation is not applied
+6m5s        Normal    SuccessfulCreate   job/trainer-one   Created pod: trainer-one-49wl8
+3m8s        Normal    SuccessfulDelete   job/trainer-one   Deleted pod: trainer-one-49wl8
+3m3s        Normal    SuccessfulCreate   job/trainer-one   Created pod: trainer-one-9h7mp
+3m3s        Normal    Resumed            job/trainer-one   Job resumed
+8s          Normal    Suspended          job/trainer-one   Job suspended
+8s          Normal    SuccessfulDelete   job/trainer-one   Deleted pod: trainer-one-9h7mp
+
+--- cleanup: policy deleted, job left suspended ---
+mutatingpolicy.policies.kyverno.io "metric-suspend-one" deleted

@@ -726,3 +726,10 @@ karta_workload_status{...phase="Running"} offset 2m == 1` (the job must already
 have been Running two minutes ago). Capture 66, same setup as 63 and 65: the
 offset value stayed absent until about t+122s while min[2m] was already 1 from
 t+32s, four work-item rounds ran, the job was suspended at t+140s.
+
+Follow-up: capture 67 folds the story into one run with the 05e rule: new job,
+policy created as soon as the pod ran, first suspension at t+177s (the offset
+value was absent for two minutes, then pointed at the pre-pod 0 sample, then 1),
+manual resume at 23:11:02, second suspension at r+175s (min[2m] held the
+suspended-time 0s until r+120, the offset value pointed into the suspended
+period at r+120 and cleared at r+150). Seven work-item rounds, all identical.
