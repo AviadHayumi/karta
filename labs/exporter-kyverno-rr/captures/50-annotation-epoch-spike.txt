@@ -1,0 +1,8 @@
+[16:55:50.671 UTC] SPIKE: pure-policy allowance state machine. creating trainer-h
+job.batch/trainer-h created
+[16:55:50.745 UTC] phase 1: wait for the metric suspension (policy epoch-suspend)
+[16:58:27.068 UTC] SUSPENDED by policy. suspend-state=we-suspended
+[16:58:52.073 UTC] phase 2: HUMAN RESUMES trainer-h (spec.suspend=false, nothing else)
+[16:59:26.652 UTC] policy epoch-mark-resume consumed the allowance 34.5s after the resume (suspend-state=user-resumed)
+[17:05:53.694 UTC] 7 minutes after the resume: suspend=false suspend-state=user-resumed active=1
+[17:05:53.694 UTC] the metric window refilled ~2m after resume, ticks kept coming - and the job is STILL RUNNING. allowance held.

@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# The annotation-epoch spike: can pure policy authoring encode "act once,
+# respect a human resume" ? Two mutate-existing policies form a state
+# machine on one job annotation (suspend-state):
+#   (none) --metric--> we-suspended --user resume--> user-resumed (terminal)
+# Policy A suspends and stamps; policy B detects the human resume and
+# consumes the allowance; A refuses terminal-state jobs.
+apiVersion: policies.kyverno.io/v1beta1
+kind: MutatingPolicy
+metadata:
+  name: epoch-suspend
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  evaluation:
+    admission: {enabled: false}
+    mutateExisting: {enabled: true}
+  targetMatchConditions:
+    - name: in-ai-team
+      expression: "object.metadata.namespace == 'ai-team'"
+    - name: not-already-suspended
+      expression: "!object.spec.?suspend.orValue(false)"
+    - name: allowance-not-consumed
+      expression: >-
+        object.metadata.?annotations[?'suspend-state'].orValue('') != 'user-resumed'
+    - name: exporter-says-running-2m
+      expression: >-
+        object.metadata.name in
+        http.Get('http://prometheus.monitoring.svc:9090/api/v1/query?query=min_over_time%28karta_workload_status%7Bnamespace%3D%22ai-team%22%2Cphase%3D%22Running%22%2Cworkload_kind%3D%22Job%22%7D%5B2m%5D%29%3D%3D1')
+        .data.result.map(r, r.metric.workload)
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          [JSONPatch{op: 'add', path: '/spec/suspend', value: true},
+           JSONPatch{op: 'add', path: '/metadata/annotations/suspend-state', value: 'we-suspended'}]
+---
+apiVersion: policies.kyverno.io/v1beta1
+kind: MutatingPolicy
+metadata:
+  name: epoch-mark-resume
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  evaluation:
+    admission: {enabled: false}
+    mutateExisting: {enabled: true}
+  targetMatchConditions:
+    - name: in-ai-team
+      expression: "object.metadata.namespace == 'ai-team'"
+    - name: unsuspended-but-we-suspended-it
+      expression: >-
+        !object.spec.?suspend.orValue(false) &&
+        object.metadata.?annotations[?'suspend-state'].orValue('') == 'we-suspended'
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          [JSONPatch{op: 'replace', path: '/metadata/annotations/suspend-state', value: 'user-resumed'}]

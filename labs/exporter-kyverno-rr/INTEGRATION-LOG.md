@@ -621,3 +621,54 @@ different engines without either knowing about the other.
   The drafts separate those surfaces, label the minimal int-cast test as
   unexecuted, and mark the Kubernetes draft as a known, fixed duplicate.
   No cluster changes or upstream posts were made in this review.
+
+## 9. The workaround hunt (round 17): closing gaps without changing Kyverno
+
+Question asked: can the executed gaps be closed with config, authoring
+patterns, or existing CRDs only? Own code pass + Codex r17
+(codex-notes-r17.md) + one new executed spike.
+
+EXECUTED - the annotation-epoch spike (captures/50-annotation-epoch-spike.txt,
+manifests/07-annotation-epoch.yaml, rebuilt lab2): two mutate-existing
+policies form a state machine on one Job annotation. epoch-suspend stamps
+we-suspended when it suspends; epoch-mark-resume flips it to user-resumed
+when it sees an unsuspended job carrying we-suspended; epoch-suspend
+refuses user-resumed jobs. Result: suspension + stamp at 16:58:27, human
+resume 16:58:52, allowance consumed 34.5s later, and seven minutes of
+refilled metric windows and ticks later the job was still running. The
+resume-trap allowance IS expressible in pure policy for this reduced
+contract. Codex caveats accepted: the executed predicate has an A/B race
+window that the metric refill masked here (fix: an explicit armed state);
+the background write path can overwrite a late resume between evaluation
+and its refetch+PUT; user-resumed is a label, not authenticated intent;
+no escalation record, no re-arm semantics, state dies with the object.
+
+VERIFIED, previously missed (own pass): the LEGACY mutate-existing engine
+emits PolicyError events on failure (pkg/background/mutate/mutate.go:250,
+event.NewBackgroundFailedEvent); only the new CEL MutatingPolicy path
+drops errors silently. Authoring acting rules as legacy ClusterPolicy is
+a deprecated-but-real visibility workaround for gap 1.
+
+VERIFIED (r17): kyverno_mutating_policy_results_total{result="error",
+policy_name} exists on the background controller - an alertable counter
+with policy identity (no target, no message). And a paired Audit
+ValidatingPolicy canary running the same expression DOES surface CEL
+errors as report result "error" with the message (offline CLI check
+executed: 'error: type conversion error from string to int').
+
+Per-gap verdicts without Kyverno code changes (full table in r17):
+silent errors PARTIALLY (alert + canary + legacy engine; no flag restores
+per-target acting diagnostics); resume trap PARTIALLY (executed spike,
+race-hardening authored, no supplied protocol); receipts PARTIALLY
+(GeneratingPolicy can persist unsynchronized ConfigMaps; async, cannot
+gate the action on the record); wedge detection CLOSABLE externally (the
+exporter's own series disagree - alert recipe, not executed); per-policy
+timer NOT native (time/token gates and external schedulers are authoring
+alternatives); Experiment E scoping CLOSABLE (targetMatchConditions,
+executed earlier).
+
+The honest bottom line stands but sharpens: the FACTS and one-shot
+allowance slices are reachable with disciplined authoring; what no
+authoring supplies is the protocol as a product - pre-action persisted
+intent, receipts that gate actions, authenticated human intent,
+escalation, and diagnostics on the acting path itself.
