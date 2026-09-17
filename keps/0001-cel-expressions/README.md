@@ -16,28 +16,68 @@ For example, the controller asks to change the predictor's image. Karta finds th
 
 ## CRD
 
-The old `podTemplateSpecPath: .spec.template` did two jobs: read the template and locate it for writes. The new definition states each job separately:
+The old jq path did two jobs: read a value and locate it for writes. Now `expression` reads; `pathWrite` or `pathWriteExpression` locates the write. The patch and new value stay in Go.
+
+These are the new building blocks. A Karta only needs the ones its workload uses:
+
+| In the Karta | Why it exists | Example |
+| --- | --- | --- |
+| `expression` | Read a workload value with CEL | Read a worker's template. |
+| `pathWrite` | Write at a fixed JSON path | `/spec/suspend` |
+| `pathWriteExpression` | Calculate a path from the workload | Find the template belonging to `gpu`. |
+| `spec.variables` | Reuse a CEL calculation | Give the worker list a shared name. |
+| `component.fields` | Expose an operator-specific setting | Ray's `rayVersion`, which has no built-in SDK field. |
+| `instanceIds.expression` | Read repeated component IDs | `gpu` and `cpu` worker groups. |
+| `suspendDefinition` | Declare how suspend/resume writes work | Set `spec.suspend` to true/false. |
+
+<details>
+<summary>One complete Karta showing these fields together: Ray workers</summary>
+
+This teaching definition uses real RayCluster fields. It adds a named `rayVersion` accessor to show custom fields; that accessor is not in the shipped Ray catalog. It covers workers, not Ray's head Pod. The expressions expect `spec.rayVersion` and `spec.workerGroupSpecs` to be present.
 
 ```yaml
 apiVersion: run.ai/v1alpha1
 kind: Karta
 metadata:
-  name: job
+  name: ray-example
 spec:
+  variables:
+    - name: workerGroups
+      expression: object.spec.workerGroupSpecs
   structureDefinition:
     rootComponent:
-      name: job
-      kind: {group: batch, version: v1, kind: Job}
+      name: raycluster
+      kind: {group: ray.io, version: v1, kind: RayCluster}
       statusDefinition: {statusMappings: {}}
-      specDefinition:
-        podTemplateSpec:
-          expression: 'object[?"spec"][?"template"].orValue(null)'
-          pathWrite: /spec/template
       suspendDefinition:
         pathWrite: /spec/suspend
+      fields:
+        rayVersion:
+          expression: object.spec.rayVersion
+          pathWrite: /spec/rayVersion
+    childComponents:
+      - name: worker
+        kind: {group: "", version: v1, kind: Pod}
+        ownerRef: raycluster
+        instanceIds:
+          expression: variables.workerGroups.map(g, g.groupName)
+        specDefinition:
+          podTemplateSpec:
+            expression: variables.workerGroups.map(g, g.template)
+            pathWriteExpression: '"/spec/workerGroupSpecs/" + string(index) + "/template"'
+        podSelector:
+          componentTypeSelector:
+            expression: 'object.metadata.labels["ray.io/node-type"]'
+            value: worker
+          componentInstanceSelector:
+            expression: 'object.metadata.labels["ray.io/group"]'
 ```
 
-Use `pathWrite` or `pathWriteExpression`, not both. Without either, the field is read-only. Patch format, merge policy, and new values belong in the SDK call.
+`variables.workerGroups` is the workload's list. `instanceIds` reads its names; the template expression reads its templates. The SDK supplies `index` for the requested name, as explained below. The Pod selectors associate actual Pods with these worker groups; they are not write destinations.
+
+Use `pathWrite` or `pathWriteExpression`, not both. Without either, the field is read-only. Nothing here supplies the desired version, scheduler, or other new value: the controller passes that through the SDK.
+
+</details>
 
 <details>
 <summary>expression: read a value from the workload</summary>
@@ -251,7 +291,38 @@ specDefinition:
           dyn(null)
 ```
 
-One match gives `/spec/predictor/model` or `/spec/predictor/sklearn`. No match fails the write. Multiple matches fail instead of choosing a model by accident. The `replace` calls escape `~` and `/` inside a key.
+Read it with this workload fragment beside it:
+
+```yaml
+spec:
+  predictor:
+    minReplicas: 1
+    model:
+      image: inference:v1
+      storageUri: s3://example-bucket/model
+```
+
+| Part of the query | What it does on this input |
+| --- | --- |
+| `object[?"spec"][?"predictor"].orValue(null)` | Reads the predictor object. Missing fields give null instead of a failed lookup. |
+| `[dyn(...)].filter(v, type(v) == map)` | Keeps that value only if it is an object. `dyn` lets CEL check its type at runtime. |
+| `+ [{}]` followed by `[0]` | Adds an empty-object fallback, then takes the first object. Missing predictor becomes `{}`. |
+| `.map(k, string(k)).sort()` | Lists the object keys in a stable order: `["minReplicas", "model"]`. |
+| `.filter(k, ...)` | Keeps object-valued entries with a non-null, non-false `storageUri`: `["model"]`. The number `minReplicas` is not a model. |
+
+That last list is `variables.containerKeys`. The two accessors then do different jobs:
+
+```text
+Read expression       -> {image: inference:v1, storageUri: s3://example-bucket/model}
+Write-path expression -> /spec/predictor/model
+SDK Value             -> {image: inference:v2}, supplied later by the controller
+```
+
+`condition ? a : b` means "use a when the condition is true; otherwise use b." One match reads that model and returns its path. No matches give null, so there is no write target. Several matches do not pick the first: the read produces a list that the singular Container reader rejects, and the write path is null.
+
+The URI check selects candidates; it does not validate a URI. For compatibility with the old catalog, an empty string still counts, while null and false do not.
+
+The two `replace` calls encode a key for a JSON Pointer. For a key named `example.com/model`, the path ends in `example.com~1model`. The key in the workload does not change. Ordinary keys such as `model` stay exactly the same.
 
 Write expressions can read `object`, `variables`, available `references`, and the current `instance` / `index`. They do not receive the new value. The SDK checks the returned pointer before writing.
 
@@ -288,27 +359,44 @@ This does not add a field to the RayCluster. It also does not supply a new value
 <details>
 <summary>component.fields: add a field without changing the SDK</summary>
 
-Suppose an App stores a setting at `d.d.c`, and the controller should call it `exampleos`. Add this to the App's Karta root component:
+KServe stores the model's location in `storageUri`. Kubernetes' `corev1.Container` has no such field, and Karta has no built-in `tree.StorageUri` constant. A model rollout controller still needs a way to change it by name.
+
+Extend the KServe catalog's predictor component with this named field. This is a proposed catalog extension using a real KServe field, not a field the shipped catalog already exposes. It reuses `containerKeys` from the KServe example above:
 
 ```yaml
-name: app
+# Under spec.structureDefinition.childComponents[name=predictor].
 fields:
-  exampleos:
-    expression: object.d.d.c
-    pathWrite: /d/d/c
+  storageUri:
+    expression: >-
+      variables.containerKeys.size() == 1 ?
+      object.spec.predictor[variables.containerKeys[0]].storageUri : dyn(null)
+    pathWriteExpression: >-
+      variables.containerKeys.size() == 1 ?
+      "/spec/predictor/" +
+      variables.containerKeys[0].replace("~", "~0").replace("/", "~1") +
+      "/storageUri" : dyn(null)
 ```
 
-After opening that Karta and workload with `tree.Open`, the controller writes by name:
+Open the workload with this extended Karta, then write the new model location:
 
 ```go
 if err := editor.Mutate(ctx, tree.Write{
-    Component: "app", Field: tree.Field("exampleos"), Value: "new",
+    Component: "predictor", Field: tree.Field("storageUri"),
+    Value: "s3://example-bucket/model-v2",
 }); err != nil {
     return err
 }
 ```
 
-`d.d.c: old` becomes `d.d.c: new`. Other fields under `d.d` stay. `tree.Field("exampleos")` accepts the name from the Karta definition. Adding a setting does not require adding a Go constant or teaching the controller its JSON path.
+| Model field | Before | After |
+| --- | --- | --- |
+| `storageUri` | `s3://example-bucket/model-v1` | `s3://example-bucket/model-v2` |
+| `image` | `inference:v1` | `inference:v1` |
+| `modelFormat` | `{name: sklearn}` | `{name: sklearn}` |
+
+The same call works whether KServe keeps this model under `model` or `sklearn`. The Karta author handles that difference once. The controller names the setting; it does not need the JSON path or a new SDK release.
+
+Because this accessor also has `expression`, the extracted predictor instance's `Fields["storageUri"]` contains its current value. Without that read expression, it would be write-only through this named field.
 
 </details>
 
@@ -347,7 +435,15 @@ The Karta author defines how to find the groups once. Controllers using `kartas.
 
 Read `.map(g, g.groupName)` as "for each group `g`, take its `groupName`." On this workload, it returns `["gpu", "cpu"]`. These are the names already in the RayCluster. Karta does not create them.
 
-The template expression reads each group's template in the same order. To write to `gpu`, the SDK finds its position, `0`, and gives that number to `pathWriteExpression` as `index`. The result is `/spec/workerGroupSpecs/0/template`.
+The template expression reads each group's template in the same order. `index` is not a field in the RayCluster and the controller does not pass it. The SDK supplies it:
+
+```text
+Controller asks for Instance: "gpu"
+  -> SDK evaluates instanceIds: ["gpu", "cpu"]
+  -> SDK finds "gpu" at position 0 (counting starts at zero)
+  -> CEL receives instance = "gpu", index = 0
+  -> pathWriteExpression returns /spec/workerGroupSpecs/0/template
+```
 
 The controller does not calculate that path. With the RayCluster loaded into `workload`, it calls:
 
@@ -374,6 +470,24 @@ if err != nil {
 
 Here, `Component` selects the worker definition, `Instance` selects the `gpu` group, and `Field` selects its template. `Value` supplies the part of that template to change.
 
+<details>
+<summary>Why are these names not all enums?</summary>
+
+`tree.PodTemplateSpec` already is a typed constant. The other names belong to the Karta or workload, not to a fixed list in Go:
+
+| SDK field | Type | Why |
+| --- | --- | --- |
+| `Component` | `string` | The Karta author chose `worker`; another Karta can choose `trainer`. |
+| `Instance` | `string` | A user can create a Ray group called `gpu`, `cpu`, or `nightly`. |
+| `Field` | `tree.Field`, a string type | Use built-in constants or a custom name such as `tree.Field("storageUri")`. |
+| `Value` | `any` | The desired value can be a string, number, map, or list. Here it is part of a Pod template. |
+
+A closed enum would need an SDK release for every new component, group name, or custom field. Unknown component, instance, and field names still return errors; using strings does not mean every name is accepted.
+
+`"spec"` and `"schedulerName"` inside `Value` are actual PodTemplateSpec JSON keys. Karta finds the template, but this call still needs to know the shape of the value it sends. It does not discover a scheduler field universally across all catalogs.
+
+</details>
+
 The default Merge keeps the rest of the template, including containers and their images. In `updated`:
 
 | Worker group | Scheduler before | Scheduler after |
@@ -397,7 +511,19 @@ The same `Instance: "gpu"` call still selects `gpu`. A group is called an "insta
 
 IDs must be unique, nonempty strings and are read-only. Keep the ID and template reads in the same order. For example, sorting only `["gpu", "cpu"]` to `["cpu", "gpu"]` would attach the name `cpu` to the first group's template.
 
-The tree may sort names for display. The SDK uses their positions in the workload when finding write paths, not the display order. It returns an error if the requested ID does not exist.
+| Bad input or definition | Where it is caught |
+| --- | --- |
+| Both write-path forms, or a malformed fixed pointer | Karta CRD validation and the Go definition validator. |
+| IDs such as `["gpu", "gpu"]`, `[""]`, `[7]`, or null | SDK instance extraction rejects them. It does not turn `7` into a name. |
+| Two IDs but only one extracted template, or a template of the wrong type | SDK extraction / tree construction returns an error. |
+| A write changes valid data into invalid extracted data | The editor re-extracts before publishing; a failed `Mutate` or draft commit leaves the editor unchanged. |
+| Two valid string IDs sorted differently from their two templates | Not automatically detectable. Both lists look valid; the Karta author must keep them aligned. |
+
+There is no `karta validate` CLI command today. Definition validation also cannot inspect a future RayCluster or prove what arbitrary CEL will return. CEL compilation/evaluation and the data checks above happen in the SDK; the workload's own CRD checks its schema when Kubernetes admits it.
+
+For example, the Ray catalog treats a missing or non-list worker list as an empty list. Once its expression returns `[]`, the SDK cannot tell which input produced it. The Ray CRD, or a stricter catalog expression, must reject an incorrectly shaped source list. These checks are not a replacement for the workload's schema.
+
+The tree may sort names for display. `index` uses the ID expression's order, not the display order. In the Ray catalog that is also the workload array order. If an author sorts or filters the IDs, the write expression must find the original array position by `instance` instead of assuming `index` still matches it. A missing requested ID returns an error.
 
 These short expressions require the shown list and fields. The catalog also handles missing lists. `instanceIds.expression` replaces jq's `instanceIdPath`; identifying groups is not a new capability.
 
@@ -451,41 +577,59 @@ Spec and scale reads use the same accessor shape as the replicas example. `group
 
 Neither writes to Kubernetes. The controller saves the result with its Kubernetes client. A simple image update needs only the editor; it does not need a draft or either `Snapshot` call.
 
-<details>
-<summary>A controller example: fetch a KServe CR, change its image, save it</summary>
+### Start with a Deployment controller
 
-This controller watches InferenceServices. For this example, the user supplies the desired image through an annotation:
+A platform wants this Deployment to use `batch-scheduler`. The only workload change should be:
 
 ```yaml
-metadata:
-  annotations:
-    example.com/desired-image: inference:v2
+# Before: spec.template.spec
+schedulerName: default-scheduler
+containers: [{name: api, image: 'api:v1'}]
+
+---
+# After: spec.template.spec
+schedulerName: batch-scheduler
+containers: [{name: api, image: 'api:v1'}]
 ```
 
-That annotation is an input convention for this example, not a Karta or KServe API field. In a platform controller, the value could instead come from a parent CR or a policy.
+Karta locates the template. The controller supplies just its new scheduler setting. The built-in Deployment Karta already declares:
 
-The reconcile loop fetches the CR, edits a local copy, and saves only when the result differs:
+```yaml
+specDefinition:
+  podTemplateSpec:
+    expression: 'object[?"spec"][?"template"].orValue(null)'
+    pathWrite: /spec/template
+```
+
+<details>
+<summary>The reconcile: fetch, edit with Karta, save</summary>
+
+`SchedulerReconciler` embeds `client.Client`. Its `DesiredScheduler` setting is `"batch-scheduler"`. Imports and watch setup are omitted; these are the calls that use Karta:
 
 ```go
-func (r *ImageReconciler) Reconcile(
+func (r *SchedulerReconciler) Reconcile(
     ctx context.Context, req ctrl.Request,
 ) (ctrl.Result, error) {
-    workload := r.workload()
+    workload := &appsv1.Deployment{}
     if err := r.Get(ctx, req.NamespacedName, workload); err != nil {
         return ctrl.Result{}, client.IgnoreNotFound(err)
     }
-    image := workload.GetAnnotations()["example.com/desired-image"]
-    if image == "" {
+    if workload.Spec.Template.Spec.SchedulerName == r.DesiredScheduler {
         return ctrl.Result{}, nil
     }
+    workload.SetGroupVersionKind(
+        appsv1.SchemeGroupVersion.WithKind("Deployment"),
+    )
 
-    editor, err := tree.Open(ctx, kartas.KServe(), workload)
+    editor, err := tree.Open(ctx, kartas.Deployment(), workload)
     if err != nil {
         return ctrl.Result{}, err
     }
     if err := editor.Mutate(ctx, tree.Write{
-        Component: "predictor", Field: tree.Container,
-        Value: map[string]any{"image": image},
+        Component: "deployment", Field: tree.PodTemplateSpec,
+        Value: map[string]any{
+            "spec": map[string]any{"schedulerName": r.DesiredScheduler},
+        },
     }); err != nil {
         return ctrl.Result{}, err
     }
@@ -493,83 +637,77 @@ func (r *ImageReconciler) Reconcile(
     if err != nil {
         return ctrl.Result{}, err
     }
-    before, err := json.Marshal(workload)
-    if err != nil {
-        return ctrl.Result{}, fmt.Errorf("encode original workload: %w", err)
-    }
-    after, err := json.Marshal(updated)
-    if err != nil {
-        return ctrl.Result{}, fmt.Errorf("encode updated workload: %w", err)
-    }
-    if bytes.Equal(before, after) {
-        return ctrl.Result{}, nil
-    }
     return ctrl.Result{}, r.Update(ctx, updated)
 }
 ```
 
-The Karta tells `Open` how to read this workload and find its writable fields. `Mutate` receives only the new image. `GetResource` returns the changed CR, with its Kubernetes identity and resource version. `r.Update` is the only line that saves the edit to Kubernetes.
+`Open` reads the workload using the catalog. `Mutate` merges the supplied setting into its local template. `GetResource` returns the full changed Deployment. Only `r.Update` sends it to Kubernetes.
 
-With `image: inference:v1` and the annotation above, the model ends with `image: inference:v2`; `storageUri` and `modelFormat` stay. On the next reconcile, the JSON is unchanged, so the controller makes no update request. JSON comparison avoids differences caused only by Go number types.
+The early comparison prevents an update on every reconcile. Setting the kind supplies the identity Karta needs: a typed client fetch can leave `apiVersion` and `kind` empty.
 
-If another controller updated the CR meanwhile, the API rejects the stale resource version. Returning that error lets controller-runtime retry; the next reconcile fetches the CR again and recomputes the edit. Do not keep the old editor across retries.
-
-<details>
-<summary>Imports, reconciler type, and watch setup</summary>
-
-Use the method above with this controller boilerplate in the same Go file:
-
-```go
-package controller
-
-import (
-    "bytes"
-    "context"
-    "encoding/json"
-    "fmt"
-
-    "github.com/run-ai/karta/pkg/catalog/kartas"
-    "github.com/run-ai/karta/pkg/tree"
-    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-    "k8s.io/apimachinery/pkg/runtime/schema"
-    ctrl "sigs.k8s.io/controller-runtime"
-    "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-// +kubebuilder:rbac:groups=serving.kserve.io,resources=inferenceservices,verbs=get;list;watch;update
-type ImageReconciler struct {
-    client.Client
-}
-
-func (*ImageReconciler) workload() *unstructured.Unstructured {
-    workload := &unstructured.Unstructured{}
-    workload.SetGroupVersionKind(schema.GroupVersionKind{
-        Group: "serving.kserve.io", Version: "v1beta1", Kind: "InferenceService",
-    })
-    return workload
-}
-
-func (r *ImageReconciler) SetupWithManager(mgr ctrl.Manager) error {
-    return ctrl.NewControllerManagedBy(mgr).
-        For(r.workload()).
-        Complete(r)
-}
-```
-
-Register `ImageReconciler{Client: mgr.GetClient()}` through `SetupWithManager` in the controller's existing manager setup. The KServe CRD and the generated RBAC must be installed. Image validation and which users may request a change belong to the controller's policy.
-
-The watch is KServe-specific because it chooses which resource triggers this controller. Finding the model's location is Karta's job. A different workload uses its corresponding Karta definition.
+If Kubernetes rejects an outdated resource version, returning the error lets controller-runtime retry. The next reconcile fetches again and opens a new editor. Do not reuse the old editor across retries.
 
 </details>
 
-To use a draft in this controller, replace the `editor.Mutate` block with the draft helper below and check its error. Keep the same `GetResource`, unchanged-result check, and `r.Update` steps. The other examples are small helpers for that part of a reconcile loop; use the workload's matching Karta when opening its editor.
+<details>
+<summary>How this same update worked with jq</summary>
+
+The old Karta used one jq path for reading and writing:
+
+```yaml
+specDefinition:
+  podTemplateSpecPath: .spec.template
+```
+
+The controller read complete Go templates, changed them, and sent them back. This helper used the historical API:
+
+```go
+func setSchedulerJQ(
+    ctx context.Context, workload resource.KubernetesObject, scheduler string,
+) (resource.KubernetesObject, error) {
+    factory := resource.NewComponentFactoryFromObject(
+        kartas.Deployment(), workload,
+    )
+    component, err := factory.GetRootComponent()
+    if err != nil {
+        return nil, err
+    }
+    templates, err := component.GetPodTemplateSpec(ctx)
+    if err != nil {
+        return nil, err
+    }
+    for id, template := range templates {
+        template.Spec.SchedulerName = scheduler
+        templates[id] = template
+    }
+    if err := component.UpdatePodTemplateSpec(ctx, templates); err != nil {
+        return nil, err
+    }
+    return factory.GetResource()
+}
+```
+
+The old extracted tree was read-only; writes went through `resource.Component`. The new editor combines the local workload and its tree, and accepts a partial value:
+
+```go
+err := editor.Mutate(ctx, tree.Write{
+    Component: "deployment", Field: tree.PodTemplateSpec,
+    Value: map[string]any{"spec": map[string]any{"schedulerName": scheduler}},
+})
+```
+
+Both examples produce the same scheduler change on this Deployment. The difference is what the controller sends back: the old call resends the Go template; the new call can send only `schedulerName`. Neither version saves to Kubernetes until the controller calls its client.
 
 </details>
 
 <details>
 <summary>Editor, draft, and why there are two Snapshot calls</summary>
 
-Use `editor.Snapshot()` to inspect the editor's current tree. For example, after opening a Deployment with one container:
+Most updates need neither snapshot. The Deployment controller above already knows what to write. A snapshot is useful when the controller needs to inspect the tree before deciding.
+
+`editor` is the local workload being edited. A `draft` holds changes that have not reached that editor yet. A `Snapshot` is just a detached read view, not another editor.
+
+For example, a controller can use the editor's tree to inspect a Deployment's current image:
 
 ```go
 view := editor.Snapshot()
@@ -579,7 +717,43 @@ fmt.Println(template.Spec.Containers[0].Image) // api:v1
 
 The tree gives the controller Go values to inspect. It is not the original CR: for example, a Deployment's `spec.template` appears as `PodTemplateSpec`. Changing `template.Spec.Containers[0].Image` here only changes this returned copy. To write, use `Mutate` or a draft.
 
-`tree.BeginEdit(ctx, editor)` creates a draft from the editor's current workload. Use `draft.Snapshot()` if the edit needs to inspect the tree as it was at that moment. For example, a controller can decide which worker groups to edit from one fixed view, even while building several changes.
+Why would a draft need its own snapshot? Suppose a rollout should change every container starting on `api:v1`, but leave the `metrics:v1` sidecar alone. A helper receiving only `*tree.Draft` can inspect its starting tree, choose the matching containers, and stage their image edits. It does not need the editor passed in as a second argument.
+
+<details>
+<summary>Example: choose containers by their starting image</summary>
+
+Inside an open Deployment draft with one extracted Pod template, this is the selection and edit loop. The caller commits after the helper succeeds:
+
+```go
+start := draft.Snapshot()
+if start == nil {
+    return tree.ErrDraftClosed
+}
+pod := start.Root.Instances[0].ExtractedInstance.PodTemplateSpec
+template, err := draft.Target(ctx, tree.Target{
+    Component: "deployment", Field: tree.PodTemplateSpec,
+})
+if err != nil {
+    return err
+}
+containers := template.At("spec", "containers")
+for _, original := range pod.Spec.Containers {
+    if original.Image != "api:v1" {
+        continue
+    }
+    item, err := containers.Match("name", original.Name)
+    if err != nil {
+        return err
+    }
+    if err := item.At("image").Set("api:v2"); err != nil {
+        return err
+    }
+}
+```
+
+Before: `api: api:v1`, `metrics: metrics:v1`. After commit: `api: api:v2`, `metrics: metrics:v1`. The typed snapshot helped make the decision; the cursor changes only the chosen image in raw JSON.
+
+</details>
 
 The two snapshots answer different questions:
 
@@ -599,7 +773,7 @@ Suppose the image starts as `api:v1`. Each snapshot column below means a new cal
 
 `draft.Snapshot()` is not a preview of pending edits. Draft reads use the starting values, so an earlier write cannot change what a later selection matches. After a successful commit, call `editor.Snapshot()` or `editor.GetResource()` to read the result. A previously returned snapshot stays unchanged.
 
-Most simple controllers do not need `draft.Snapshot()`. It lets a helper that receives only the draft inspect its starting tree without also receiving the editor. It is a convenience for those helpers, not a required step in every edit.
+Use the editor snapshot to inspect the current result, or the draft snapshot to make decisions from the starting tree. Calling both is not a required sequence.
 
 </details>
 
@@ -637,9 +811,18 @@ if err != nil {
 <details>
 <summary>Why send only image, instead of the whole Container?</summary>
 
-KServe's model has fields that `corev1.Container` cannot hold: `storageUri` and `modelFormat`. Reading into that Go type and replacing the whole model can remove them.
+`corev1.Container` is Kubernetes' Go struct for a Pod container. It knows fields such as `Name`, `Image`, and `Resources`. KServe's model object also has `storageUri` and `modelFormat`, which that struct cannot hold:
 
-The call above sends only `{"image": "inference:v2"}`. Default Merge keeps the other map fields. This fixes the broad typed-write problem; changing jq to CEL or choosing JSONPatch alone does not fix it.
+```text
+Raw KServe model (map[string]any)       Read as corev1.Container
+image: inference:v1                    Image: "inference:v1"
+storageUri: s3://example-bucket/model   No Go field for this
+modelFormat: {name: sklearn}           No Go field for this
+```
+
+Reading this typed view does not delete anything. The loss happens if the controller turns that smaller struct back into JSON and replaces the entire model with it. This was possible with the old jq typed-write flow too.
+
+The new call supplies a `map[string]any` containing only `{"image": "inference:v2"}`. Default Merge leaves the other raw keys alone. A draft's `*tree.Cursor` can also edit just `image`. Changing jq to CEL, or choosing JSONPatch while still replacing the whole model, would not fix the typed-write problem.
 
 </details>
 
@@ -665,17 +848,25 @@ Resolve again after a workload change. For example, a list item may have moved t
 </details>
 
 <details>
-<summary>Choose Merge or Replace, JSONPatch or MergePatch</summary>
+<summary>Write options: what to keep, how to patch, and missing parents</summary>
 
-Replace all predictor labels with the supplied map:
+These answer three separate questions. They are SDK options, not new Karta CR fields:
+
+| Option | Question | Default for Mutate |
+| --- | --- | --- |
+| `Strategy` | Keep unmentioned map keys, or replace the selected value? | `resource.Merge` |
+| `PatchType` | Which patch format should the SDK generate? | `resource.PatchTypeMergePatch` |
+| `Parents` | May the SDK create missing containing objects? | `resource.CreateMapParents` |
+
+For example, replace all predictor labels with the controller's complete desired map:
 
 ```go
 if err := editor.Mutate(ctx, tree.Write{
     Component: "predictor", Field: tree.LabelsField,
     Value: map[string]any{"team": "platform"},
     Options: resource.MutationOptions{
-        PatchType: resource.PatchTypeJSONPatch,
         Strategy:  resource.Replace,
+        PatchType: resource.PatchTypeJSONPatch,
         Parents:   resource.RequireParents,
     },
 }); err != nil {
@@ -683,25 +874,126 @@ if err := editor.Mutate(ctx, tree.Write{
 }
 ```
 
-Starting labels: `{team: ml, owner: alice}`. Input: `{team: platform}`.
+<details>
+<summary>Merge or Replace: does the controller own one label or all labels?</summary>
 
-| Strategy | Result | Use when |
+Before, the KServe CR contains:
+
+```yaml
+spec:
+  predictor:
+    labels: {team: ml, owner: alice}
+```
+
+The controller supplies `Value: map[string]any{"team": "platform"}`.
+
+| Strategy | After at spec.predictor.labels | Why choose it? |
 | --- | --- | --- |
-| `Merge` | `{team: platform, owner: alice}` | Updating some map fields. |
-| `Replace` | `{team: platform}` | The supplied map is the complete desired value. |
+| `Merge` | `{team: platform, owner: alice}` | This controller changes team; it should not remove someone else's owner label. |
+| `Replace` | `{team: platform}` | This controller owns the complete labels map; anything it omitted should disappear. |
 
-Both patch formats support these SDK strategies. Arrays always replace; neither merges containers by name.
+Both patch formats support these strategies in the Karta SDK. JSONPatch itself has no recursive Merge setting: Karta computes the merged value before generating its operations.
 
-`PatchTypeMergePatch` is convenient for partial maps. `{"owner": null}` deletes `owner`. With `PatchTypeJSONPatch`, the same input stores a literal null. Use that for fields whose workload schema allows null.
-
-Defaults are MergePatch, Merge, and CreateMapParents. In this call, `RequireParents` needs `spec.predictor` to exist; `labels` itself may be missing. `CreateMapParents` can create missing parent maps, never arrays. These are SDK options, not fields in the Karta CR.
+Lists are different. Starting with containers `[api, metrics]`, supplying `[api]` replaces the list under either strategy. Neither option guesses that containers should merge by name. To edit one existing container and keep its siblings, use a draft and `Match("name", "api")`.
 
 </details>
 
 <details>
-<summary>Edit inside the model with a draft</summary>
+<summary>MergePatch or JSONPatch: deleting a field versus storing null</summary>
 
-Use a draft when the edit needs to work inside the selected value. This helper performs the same image change as `Mutate` above:
+For an ordinary image string or label update, either format works. MergePatch describes a partial object. JSONPatch describes operations on paths. The SDK builds them; CEL only finds the destination.
+
+For the team-label Merge above, the intent can be represented as:
+
+```json
+{"spec":{"predictor":{"labels":{"team":"platform"}}}}
+```
+
+Or as an operation list (assuming labels already exists):
+
+```json
+[{"op":"add","path":"/spec/predictor/labels/team","value":"platform"}]
+```
+
+Those are equivalent patch examples, not a promise that the SDK emits exactly those bytes.
+
+One meaningful difference is null. Suppose a custom workload permits a nullable `note` field, and its Karta exposes the containing settings object:
+
+```yaml
+fields:
+  settings:
+    pathWrite: /spec/settings
+```
+
+Before: `spec.settings: {note: temporary, owner: alice}`. The SDK input is `Value: map[string]any{"note": nil}`, with strategy `Merge`:
+
+| Format | After at spec.settings | Meaning |
+| --- | --- | --- |
+| `PatchTypeMergePatch` | `{owner: alice}` | A null entry means delete this key. |
+| `PatchTypeJSONPatch` | `{note: null, owner: alice}` | Store an actual null while keeping the key. |
+
+Do not try the null example on Kubernetes labels: their values must be strings. A draft makes this distinction explicit with `Remove()` versus `Set(nil)`.
+
+JSONPatch can express both deletion and assignment; MergePatch is not needed for an operation JSONPatch cannot express. Keeping both gives callers the two formats' familiar semantics, especially partial objects and null-as-delete.
+
+</details>
+
+<details>
+<summary>Parent policy: what if nodeSelector does not exist yet?</summary>
+
+Suppose a platform exposes a named region setting on a Deployment. This is an example extension to its Karta, not a built-in catalog field:
+
+```yaml
+# Under the Deployment Karta's rootComponent.
+fields:
+  region:
+    pathWrite: /spec/template/spec/nodeSelector/region
+```
+
+The controller calls `Mutate` with `Component: "deployment", Field: tree.Field("region"), Value: "west"`. The Karta supplies the path, but the workload has no `nodeSelector`:
+
+```yaml
+# Before: spec.template.spec
+containers: [{name: api, image: 'api:v1'}]
+```
+
+`nodeSelector` is the parent object that must hold `region`.
+
+| Parents option | Result |
+| --- | --- |
+| `RequireParents` | Error; the editor stays unchanged. Useful when an absent object means the controller selected the wrong shape. |
+| `CreateMapParents` | Creates `nodeSelector` and writes region. Useful for an optional map that has never been set. |
+
+After the successful write:
+
+```yaml
+# After: spec.template.spec
+containers: [{name: api, image: 'api:v1'}]
+nodeSelector: {region: west}
+```
+
+An absent leaf is fine with either option if its parents exist. Neither option creates a missing array or turns a string into an object.
+
+Drafts are stricter by default: `BeginEdit(ctx, editor)` requires parents. To allow missing map parents for `template.At("spec", "nodeSelector", "region").Set("west")`, begin with:
+
+```go
+draft, err := tree.BeginEdit(
+    ctx, editor, tree.WithEditParents(resource.CreateMapParents),
+)
+```
+
+Existing null is a separate case in this implementation. `Mutate` with CreateMapParents treats a null parent as an object to create. A draft still rejects an existing null parent, even with this option; it only creates absent maps. Use `Replace` on that null value explicitly if replacing it is intended.
+
+</details>
+
+</details>
+
+<details>
+<summary>When a partial value is not enough: edit with a draft</summary>
+
+Suppose an edit needs to copy an existing label, find the container named `main`, or move an init container without rebuilding the list. Sending a new map alone does not describe those selections. A draft lets the controller select raw values, read them, and stage several edits before committing them together.
+
+For an image-only update, `Mutate` above is enough. Here is the smallest draft example so the three steps are visible: begin, select and edit, commit.
 
 ```go
 func setImageWithDraft(ctx context.Context, editor tree.Editable, image string) error {
@@ -724,13 +1016,32 @@ func setImageWithDraft(ctx context.Context, editor tree.Editable, image string) 
 }
 ```
 
-In `Reconcile`, replace the `editor.Mutate` call with `setImageWithDraft(ctx, editor, image)` and return any error. For this one-field change, either approach works. A draft becomes useful when the next step needs to read a sibling field or select a list item.
+`tree.BeginEdit` returns `*tree.Draft`, a pending edit of this editor. `draft.Target` returns `*tree.Cursor`, a handle to the model selected by the Karta. `model.At("image")` selects its image; `Set` stages the new string. No caller needs to know whether KServe uses `model` or `sklearn`.
 
-`model` points into the draft's raw JSON. It is not a `corev1.Container`. `At("image")` selects one child field, so `storageUri` and `modelFormat` stay in the saved model.
+With `image = "inference:v2"`:
+
+```yaml
+# Before at spec.predictor.model
+image: inference:v1
+storageUri: s3://example-bucket/model
+modelFormat: {name: sklearn}
+
+---
+# After draft.Commit(ctx), in the local editor
+image: inference:v2
+storageUri: s3://example-bucket/model
+modelFormat: {name: sklearn}
+```
+
+The cursor is not a `corev1.Container`. It keeps the raw JSON, including fields a Go Container cannot represent. Only its selected image changes.
+
+Yes, `defer draft.Abort()` is intentional. If a later step returns an error, it discards pending work. After a successful `Commit`, it is a harmless no-op; it does not undo the image change.
 
 ![The Karta finds the model; the draft changes image and keeps model data](accessor-model.png)
 
 `Commit` updates the editor's local CR and tree together. If an edit fails, none of the draft is published. If the editor changed after `BeginEdit`, start a new draft rather than overwrite newer work.
+
+In a reconcile, call this helper instead of `editor.Mutate`, check its error, then use the same `GetResource` and client save steps. Committing a draft still does not send a Kubernetes request.
 
 Drafts use explicit operations instead of a merge policy: `Set` changes a scalar or null, `Replace` replaces an object/list, and `Remove` deletes it. Reads and selectors use the starting snapshot. Missing parents fail by default; pass `tree.WithEditParents(resource.CreateMapParents)` to `BeginEdit` to allow missing maps.
 
