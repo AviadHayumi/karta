@@ -27,3 +27,4 @@ spec:
               command: ["false"]
           resources:
             requests: {cpu: 50m, memory: 32Mi}
+            limits: {cpu: 50m, memory: 32Mi}
