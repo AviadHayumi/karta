@@ -761,3 +761,29 @@ Gap 2: no issue or change in any version asks for act-once or for respecting a
 manual change; #16214 covers only periodic re-evaluation (already merged as
 #16255), and #17284 (silent write drops on shared targets) is open with no
 comments.
+
+## 12. Extending Kyverno without a fork: the intent-object seam (2026-09-17)
+
+A design bakeoff (six proposals, ten reviewers, a six-repo council, a chair)
+converged on one shape: Kyverno decides, a Karta component acts and remembers.
+The metric rule moves from MutatingPolicy mutate-existing to a
+GeneratingPolicy whose only write is a Karta ActionRequest, created with CEL
+resource.Post from the generate expression; a small executor spends the
+request once. Prototype on stock Kyverno 1.19.1 (manifests 08, 09, 10;
+rr-poc/ar_executor.py):
+
+- Capture 71: request created on the tick after the 2m window, executor
+  Intended -> patch with uid and resourceVersion tests -> Executed, one patch.
+  Manual resume recorded 1.4s later; the job stayed resumed through 300s of
+  60s scans with no second request and no second patch. Job deleted: both
+  requests and their receipt chains remained. Kyverno never wrote the job.
+- Capture 72: the broken rule (int(object.metadata.name) > 0 as the whole
+  generate expression) went Failed from the first work item with the trigger
+  named and the CEL error text, retried 1-4, a fresh Failed one every tick,
+  PolicyError events on the policy with the job as related, ERR log lines at
+  generate_controller.go:172. Job untouched, zero requests. Residual: the
+  policy still reports ready: true.
+- Lesson recorded in 71: CEL's && absorbs an evaluation error when its other
+  operand is false, so `int(name) > 0 && dyn(Get) != null ? a : b` silently
+  took the else branch while no request existed and only surfaced the error
+  once one did. Keep fallible calls out of && chains in generate expressions.

@@ -1,0 +1,66 @@
+# capture 72 - clean broken-rule control on the GeneratingPolicy path, stock kyverno 1.19.1
+# 2026-09-17T01:37:29Z lab2. policy pa-broken2: the generate expression is only int(object.metadata.name) > 0, nothing for CEL to absorb it into
+
+job.batch/cel-error-pa2 created
+pod/cel-error-pa2-9fcc7 condition met
+01:37:31 pa-broken2 applied:
+generatingpolicy.policies.kyverno.io/pa-broken2 created
+01:37:31 watching 150s (policy event + 2 scan ticks) ...
+
+--- work items (kubectl get ur -n kyverno -w, with retry count and message) ---
+NAME       POLICY       STATE    RETRY    MESSAGE
+ur-vpgdb   pa-broken2   <none>   <none>   <none>
+ur-vpgdb   pa-broken2   Pending   <none>   <none>
+ur-vpgdb   pa-broken2   Failed    1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-vpgdb   pa-broken2   Pending   1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-vpgdb   pa-broken2   Failed    2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-vpgdb   pa-broken2   Pending   2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-vpgdb   pa-broken2   Failed    3        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-vpgdb   pa-broken2   Pending   3        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-vpgdb   pa-broken2   Failed    4        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-vpgdb   pa-broken2   Pending   4        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   <none>    <none>   <none>
+ur-bd7qj   pa-broken2   Pending   <none>   <none>
+ur-bd7qj   pa-broken2   Failed    1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   Pending   1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   Failed    2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   Pending   2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   Failed    3        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   Pending   3        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   Failed    4        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-bd7qj   pa-broken2   Pending   4        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   <none>    <none>   <none>
+ur-6gn8h   pa-broken2   Pending   <none>   <none>
+ur-6gn8h   pa-broken2   Failed    1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   Pending   1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   Failed    2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   Pending   2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   Failed    3        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   Pending   3        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   Failed    4        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-6gn8h   pa-broken2   Pending   4        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8wzqp   pa-broken2   <none>    <none>   <none>
+ur-8wzqp   pa-broken2   Pending   <none>   <none>
+ur-8wzqp   pa-broken2   Failed    1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8wzqp   pa-broken2   Pending   1        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8wzqp   pa-broken2   Failed    2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-8wzqp   pa-broken2   Pending   2        gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed to evaluate policy: type conversion error from 'string' to 'int'
+
+--- the job ---
+suspend=false
+--- requests created for it ---
+0
+--- policy status ---
+true 
+--- events naming the policy or the job ---
+<nil>   default   pa-broken2   cel-error-pa2   policy pa-broken2/pa-broken2 error: failed to evaluate policy: type conversion error from 'string' to 'int'
+<nil>   default   pa-broken2   cel-error-pa2   policy pa-broken2/pa-broken2 error: failed to evaluate policy: type conversion error from 'string' to 'int'
+<nil>   default   pa-broken2   cel-error-pa2   policy pa-broken2/pa-broken2 error: failed to evaluate policy: type conversion error from 'string' to 'int'
+<nil>   default   pa-broken2   cel-error-pa2   policy pa-broken2/pa-broken2 error: failed to evaluate policy: type conversion error from 'string' to 'int'
+--- background controller log lines naming pa-broken2 with an error ---
+[90m2026-09-17T01:37:31Z[0m [31mERR[0m [1mgithub.com/kyverno/kyverno/pkg/background/gpol/generate_controller.go:172[0m[36m >[0m [1mfailed to generate resources for gpol[0m [36merror=[0m[31m[1m"gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed 
+[90m2026-09-17T01:37:31Z[0m [31mERR[0m [1mgithub.com/kyverno/kyverno/pkg/background/gpol/generate_controller.go:172[0m[36m >[0m [1mfailed to generate resources for gpol[0m [36merror=[0m[31m[1m"gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed 
+[90m2026-09-17T01:37:31Z[0m [31mERR[0m [1mgithub.com/kyverno/kyverno/pkg/background/gpol/generate_controller.go:172[0m[36m >[0m [1mfailed to generate resources for gpol[0m [36merror=[0m[31m[1m"gpol pa-broken2 rule pa-broken2 error for trigger batch/v1/Job/ai-team/cel-error-pa2: failed 
+
+--- cleanup: policy deleted, job left ---
+generatingpolicy.policies.kyverno.io "pa-broken2" deleted

@@ -1,0 +1,152 @@
+# capture 71 - prototype: kyverno perceives (GeneratingPolicy + resource.Post), karta acts (ActionRequest executor)
+# 2026-09-17T01:28:36Z lab2, stock kyverno reg.kyverno.io/kyverno/background-controller:v1.19.1, 60s scan, prom scrape 5s
+# manifests: 08-actionrequest-crd.yaml 09-actionrequest-rbac.yaml 10-gpol-actionrequest.yaml, executor rr-poc/ar_executor.py (ENFORCE=1)
+
+=== A. happy path ===
+job.batch/trainer-pa created
+01:28:37 trainer-pa created
+pod/trainer-pa-689hg condition met
+01:28:38 pod Running; GeneratingPolicy pa-suspend applied:
+generatingpolicy.policies.kyverno.io/pa-suspend created
+
+=== B. broken-rule control (in parallel): job cel-error-pa + policy pa-broken with int(object.metadata.name) > 0 in the generate expression ===
+job.batch/cel-error-pa created
+generatingpolicy.policies.kyverno.io/pa-broken created
+01:28:38 pa-broken applied
+
+--- A timeline ---
+01:28:38 t+1s  suspend=false  requests=0  phase=
+01:29:08 t+31s  suspend=false  requests=0  phase=
+01:29:39 t+62s  suspend=false  requests=0  phase=
+01:30:09 t+92s  suspend=false  requests=0  phase=
+01:30:39 t+122s  suspend=false  requests=0  phase=
+01:31:02 t+145s  trainer-pa suspend=true   <- suspended by the executor (request phase: Executed Executed)
+
+--- the request after the action ---
+name: suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a
+spec.target: {"generation": 1, "group": "batch", "kind": "Job", "name": "trainer-pa", "namespace": "ai-team", "uid": "236bdf2a-a87d-4272-8557-966c0bf8d60a", "version": "v1"}
+spec.evidence: {"query": "min_over_time(karta_workload_status{namespace=\"ai-team\",phase=\"Running\",workload_kind=\"Job\"}[2m])==1 and karta_workload_status{namespace=\"ai-team\",phase=\"Running\",workload_kind=\"Job\"} offset 2m == 1", "sampleTime": "1.78960866145e+09", "value": "1"}
+status.phase: Executed attempts: 1
+status.patch: [{"op": "test", "path": "/metadata/uid", "value": "236bdf2a-a87d-4272-8557-966c0bf8d60a"}, {"op": "test", "path": "/metadata/resourceVersion", "value": "107919"}, {"op": "add", "path": "/spec/suspend", "value": true}]
+  receipt 2026-09-17T01:31:01.641Z Intended claiming the single attempt against resourceVersion 107919
+  receipt 2026-09-17T01:31:01.766Z Executed patch accepted: /spec/suspend=true
+name: suspend-pa-7050a32f-932e-4ca2-b64a-735f2799e62a
+spec.target: {"generation": 1, "group": "batch", "kind": "Job", "name": "cel-error-pa", "namespace": "ai-team", "uid": "7050a32f-932e-4ca2-b64a-735f2799e62a", "version": "v1"}
+spec.evidence: {"query": "min_over_time(karta_workload_status{namespace=\"ai-team\",phase=\"Running\",workload_kind=\"Job\"}[2m])==1 and karta_workload_status{namespace=\"ai-team\",phase=\"Running\",workload_kind=\"Job\"} offset 2m == 1", "sampleTime": "1.789608661451e+09", "value": "1"}
+status.phase: Executed attempts: 1
+status.patch: [{"op": "test", "path": "/metadata/uid", "value": "7050a32f-932e-4ca2-b64a-735f2799e62a"}, {"op": "test", "path": "/metadata/resourceVersion", "value": "107922"}, {"op": "add", "path": "/spec/suspend", "value": true}]
+  receipt 2026-09-17T01:31:01.883Z Intended claiming the single attempt against resourceVersion 107922
+  receipt 2026-09-17T01:31:02.012Z Executed patch accepted: /spec/suspend=true
+
+--- a human resumes trainer-pa ---
+01:31:07 kubectl patch job trainer-pa suspend=false
+job.batch/trainer-pa patched
+01:31:07 waiting 300s: kyverno keeps scanning every 60s; does anything re-suspend the job ?
+01:31:07 r+0s  suspend=false  requests=2  phase=Executed Executed
+01:32:08 r+61s  suspend=false  requests=2  phase=Executed Executed
+01:33:08 r+121s  suspend=false  requests=2  phase=Executed Executed
+01:34:08 r+181s  suspend=false  requests=2  phase=Executed Executed
+01:35:08 r+241s  suspend=false  requests=2  phase=Executed Executed
+01:36:08 r+301s  suspend=false  requests=2  phase=Executed Executed
+
+--- C. delete the job; does the record survive ? ---
+job.batch "trainer-pa" deleted from ai-team namespace
+request still here: suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a phase: Executed resumeDetectedAt: 2026-09-17T01:31:08.415Z
+  receipt 2026-09-17T01:31:01.641Z Intended claiming the single attempt against resourceVersion 107919
+  receipt 2026-09-17T01:31:01.766Z Executed patch accepted: /spec/suspend=true
+  receipt 2026-09-17T01:31:08.415Z Executed resume detected, allowance stays spent, not re-acting
+request still here: suspend-pa-7050a32f-932e-4ca2-b64a-735f2799e62a phase: Executed resumeDetectedAt: None
+  receipt 2026-09-17T01:31:01.883Z Intended claiming the single attempt against resourceVersion 107922
+  receipt 2026-09-17T01:31:02.012Z Executed patch accepted: /spec/suspend=true
+
+--- work items, whole run (kubectl get ur -n kyverno -w) ---
+NAME       POLICY       STATE    MESSAGE
+ur-m89c6   pa-suspend   <none>   <none>
+ur-m89c6   pa-suspend   Pending   <none>
+ur-m89c6   pa-suspend   Completed   <none>
+ur-xkd2v   pa-broken    <none>      <none>
+ur-xkd2v   pa-broken    Pending     <none>
+ur-xkd2v   pa-broken    Completed   <none>
+ur-pgfwh   pa-suspend   <none>      <none>
+ur-zkrnw   pa-broken    <none>      <none>
+ur-pgfwh   pa-suspend   Pending     <none>
+ur-zkrnw   pa-broken    Pending     <none>
+ur-zkrnw   pa-broken    Completed   <none>
+ur-pgfwh   pa-suspend   Completed   <none>
+ur-2x57v   pa-suspend   <none>      <none>
+ur-wb87l   pa-broken    <none>      <none>
+ur-wb87l   pa-broken    Pending     <none>
+ur-2x57v   pa-suspend   Pending     <none>
+ur-2x57v   pa-suspend   Completed   <none>
+ur-wb87l   pa-broken    Completed   <none>
+ur-nlj9n   pa-suspend   <none>      <none>
+ur-clp62   pa-broken    <none>      <none>
+ur-nlj9n   pa-suspend   Pending     <none>
+ur-clp62   pa-broken    Pending     <none>
+ur-clp62   pa-broken    Completed   <none>
+ur-nlj9n   pa-suspend   Completed   <none>
+ur-8cbv4   pa-suspend   <none>      <none>
+ur-r6zdv   pa-broken    <none>      <none>
+ur-r6zdv   pa-broken    Pending     <none>
+ur-8cbv4   pa-suspend   Pending     <none>
+ur-8cbv4   pa-suspend   Completed   <none>
+ur-r6zdv   pa-broken    Failed      gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-r6zdv   pa-broken    Pending     gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-nqbgb   pa-broken    <none>      <none>
+ur-nb47f   pa-suspend   <none>      <none>
+ur-nqbgb   pa-broken    Pending     <none>
+ur-nb47f   pa-suspend   Pending     <none>
+ur-nb47f   pa-suspend   Completed   <none>
+ur-nqbgb   pa-broken    Failed      gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-nqbgb   pa-broken    Pending     gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-b6xvh   pa-broken    <none>      <none>
+ur-r8chd   pa-suspend   <none>      <none>
+ur-b6xvh   pa-broken    Pending     <none>
+ur-r8chd   pa-suspend   Pending     <none>
+ur-r8chd   pa-suspend   Completed   <none>
+ur-b6xvh   pa-broken    Failed      gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-b6xvh   pa-broken    Pending     gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-gl7zj   pa-suspend   <none>      <none>
+ur-rc66n   pa-broken    <none>      <none>
+ur-gl7zj   pa-suspend   Pending     <none>
+ur-rc66n   pa-broken    Pending     <none>
+ur-rc66n   pa-broken    Failed      gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-gl7zj   pa-suspend   Completed   <none>
+ur-rc66n   pa-broken    Pending     gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-hwwf5   pa-broken    <none>      <none>
+ur-7xffs   pa-suspend   <none>      <none>
+ur-hwwf5   pa-broken    Pending     <none>
+ur-7xffs   pa-suspend   Pending     <none>
+ur-7xffs   pa-suspend   Completed   <none>
+ur-hwwf5   pa-broken    Failed      gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+ur-hwwf5   pa-broken    Pending     gpol pa-broken rule pa-broken error for trigger batch/v1/Job/ai-team/cel-error-pa: failed to evaluate policy: type conversion error from 'string' to 'int'
+
+--- requests, whole run (kubectl get ar -n karta-actions -w) ---
+NAME                                              TARGET       PHASE    MSG
+suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a   trainer-pa   <none>   <none>
+suspend-pa-7050a32f-932e-4ca2-b64a-735f2799e62a   cel-error-pa   <none>   <none>
+suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a   trainer-pa     Intended   claiming the single attempt against resourceVersion 107919
+suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a   trainer-pa     Executed   patch accepted: /spec/suspend=true
+suspend-pa-7050a32f-932e-4ca2-b64a-735f2799e62a   cel-error-pa   Intended   claiming the single attempt against resourceVersion 107922
+suspend-pa-7050a32f-932e-4ca2-b64a-735f2799e62a   cel-error-pa   Executed   patch accepted: /spec/suspend=true
+suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a   trainer-pa     Executed   resume detected, allowance stays spent, not re-acting
+
+--- B result: cel-error-pa ---
+suspend=true
+requests for it: 1
+background controller log lines naming pa-broken:
+[90m2026-09-17T01:32:01Z[0m [31mERR[0m [1mgithub.com/kyverno/kyverno/pkg/background/gpol/generate_controller.go:172[0m[36m >[0m [1mfailed to generate resources for gpol[0m [36merror=[0m[31m[1m"gpol pa-broken rule pa-broken error for trigger batch
+[90m2026-09-17T01:32:01Z[0m [31mERR[0m [1mgithub.com/kyverno/kyverno/pkg/background/gpol/generate_controller.go:172[0m[36m >[0m [1mfailed to generate resources for gpol[0m [36merror=[0m[31m[1m"gpol pa-broken rule pa-broken error for trigger batch
+[90m2026-09-17T01:32:01Z[0m [31mERR[0m [1mgithub.com/kyverno/kyverno/pkg/background/gpol/generate_controller.go:172[0m[36m >[0m [1mfailed to generate resources for gpol[0m [36merror=[0m[31m[1m"gpol pa-broken rule pa-broken error for trigger batch
+
+--- executor log ---
+[2026-09-17T01:28:01.130Z] executor start ctx=kind-kyverno-lab2 ns=karta-actions enforce=True
+[2026-09-17T01:31:01.689Z] receipt Intended: suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a claiming the single attempt against resourceVersion 107919
+[2026-09-17T01:31:01.812Z] receipt Executed: suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a patch accepted: /spec/suspend=true
+[2026-09-17T01:31:01.930Z] receipt Intended: suspend-pa-7050a32f-932e-4ca2-b64a-735f2799e62a claiming the single attempt against resourceVersion 107922
+[2026-09-17T01:31:02.062Z] receipt Executed: suspend-pa-7050a32f-932e-4ca2-b64a-735f2799e62a patch accepted: /spec/suspend=true
+[2026-09-17T01:31:08.461Z] receipt Executed: suspend-pa-236bdf2a-a87d-4272-8557-966c0bf8d60a resume detected, allowance stays spent, not re-acting
+
+--- cleanup: both policies deleted; requests and cel-error-pa left in place ---
+generatingpolicy.policies.kyverno.io "pa-suspend" deleted
+generatingpolicy.policies.kyverno.io "pa-broken" deleted
