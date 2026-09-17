@@ -139,26 +139,22 @@ co-authors. Human `Co-authored-by` trailers and the required human `Signed-off-b
 trailer remain valid. AI-assisted contributions are allowed; this check does not
 detect or prohibit AI use.
 
-The `Commit attribution` CI check uses the official
-[@commitlint/cli](https://commitlint.js.org/guides/ci-setup) with the rule in
-`commitlint.config.mjs`. It rejects `Co-authored-by` lines
+The `Commit attribution` CI check uses `hack/check-commit-attribution.sh`.
+It needs only Bash, Git, and grep. It rejects `Co-authored-by` lines
 containing Claude, ChatGPT, Copilot, Codex, Devin, Cursor, Gemini, or Anthropic,
 case-insensitively. Merge, revert, and fixup commit messages are checked too.
 This is name matching, not an identity lookup. Unlisted names are outside the
 rule's scope. Normal prose mentioning these tools is allowed.
 
 The workflow reads the full incoming range from local Git history, without an
-API page limit. For a new branch push, it checks all reachable commits. It uses
-GitHub's checkout and Node setup actions pinned to commit SHAs, an exact Node
-version, and the dependency lockfile in `.github/commitlint/`. Installation uses
-`npm ci --ignore-scripts`, which verifies package integrity against the lockfile
-and disables dependency lifecycle scripts.
+API page limit. For a new branch push, it checks all reachable commits. Invalid
+references fail the check. No dependency installation is needed.
 
-Run the same check locally with Node.js 24.21.0:
+Run the same check locally:
 
 ```bash
-npm ci --prefix .github/commitlint --ignore-scripts --no-audit --no-fund
-node .github/commitlint/node_modules/@commitlint/cli/cli.js --config commitlint.config.mjs --from origin/main --to HEAD --verbose
+bash hack/check-commit-attribution.sh origin/main HEAD
+bash hack/check-commit-attribution_test.sh
 ```
 
 If it fails, remove the AI co-author line from each reported commit message.

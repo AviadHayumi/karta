@@ -1,8 +1,0 @@
-{
-  "name": "workload-map-commitlint",
-  "private": true,
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "@commitlint/cli": "21.2.2"
-  }
-}
