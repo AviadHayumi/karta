@@ -390,9 +390,9 @@ COMMIT_HEAD ?= HEAD
 commit-attribution-check: ## Check commit attribution (COMMIT_BASE=origin/main COMMIT_HEAD=HEAD)
 	bash hack/commit-attribution/check-commit-attribution.sh "$(COMMIT_BASE)" "$(COMMIT_HEAD)"
 
-.PHONY: commit-attribution-test
-commit-attribution-test: ## Test the commit attribution policy
-	bash hack/commit-attribution/check-commit-attribution_test.sh
+.PHONY: commit-attribution-validate
+commit-attribution-validate: ## Validate the commit attribution checker
+	bash hack/commit-attribution/check-commit-attribution_validate.sh
 
 ##@ E2E
 

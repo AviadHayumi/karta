@@ -24,8 +24,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Test attribution check
-        run: make commit-attribution-test
+      - name: Validate attribution checker
+        run: make commit-attribution-validate
 
       - name: Check incoming commits
         env:
