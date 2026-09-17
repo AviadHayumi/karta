@@ -35,41 +35,45 @@ spec:
         pathWrite: /spec/suspend
 ```
 
-| Field | Use |
-| --- | --- |
-| `expression` | Read the value. The Job example returns `null` if the template is missing. |
-| `pathWrite` | Write at a fixed JSON Pointer, such as `/spec/template`. |
-| `pathWriteExpression` | Find the write path with CEL when its location varies. |
-| `spec.variables` | Give a shared expression a name, such as `variables.containerKeys`. |
-| `component.fields` | Add a field such as `exampleos` without changing the SDK. |
-| `instanceIds.expression` | Name repeated components, such as Ray worker groups `gpu` and `cpu`. |
-| `suspendDefinition` | Locate the boolean field for `Suspend` and `Resume`. |
-
-Use one write-path form. Without either, the field is read-only. Patch format, merge policy, and new values belong in the SDK call.
+Use `pathWrite` or `pathWriteExpression`, not both. Without either, the field is read-only. Patch format, merge policy, and new values belong in the SDK call.
 
 <details>
-<summary>Why separate the read from the write?</summary>
+<summary>expression: read a value from the workload</summary>
 
-jq used the same expression for both. A read can also calculate a value:
+Inside a Deployment component in Karta:
 
 ```yaml
-replicas:
-  expression: 'object[?"spec"][?"replicas"].orValue(1)'
-  pathWrite: /spec/replicas
+scaleDefinition:
+  replicas:
+    expression: 'object[?"spec"][?"replicas"].orValue(1)'
 ```
 
-If replicas is missing, the read returns `1`. That number does not tell the SDK where to write `3`. The path does.
+`object` is the workload CR. With `spec.replicas: 3`, this returns `3`. If replicas is missing, it returns `1`.
 
-`expression` is optional for write-only fields. `pathWrite: ""` selects the whole document. The CRD rejects invalid fixed pointers and both write forms on one accessor. The SDK checks computed pointers and rejects an unresolved destination.
-
-Write expressions can read `object`, `variables`, available `references`, and the current `instance` / `index`. They do not receive the new value. This keeps finding a field separate from changing it.
-
-All spec/scale accessors use this shape. Selector and condition paths become `expression`; `instanceIdPath` becomes `instanceIds.expression`; `groupByKeyPaths` becomes `groupByExpressions`. The old grouping `filters` are removed.
+This is why reads and writes are separate. A calculated value such as `1` does not tell the SDK where to write. This accessor is read-only until a write path is added.
 
 </details>
 
 <details>
-<summary>KServe: why does the container need pathWriteExpression?</summary>
+<summary>pathWrite: write to a fixed location</summary>
+
+The same Deployment accessor, now writable:
+
+```yaml
+scaleDefinition:
+  replicas:
+    expression: 'object[?"spec"][?"replicas"].orValue(1)'
+    pathWrite: /spec/replicas
+```
+
+An SDK write of `5` sets `spec.replicas: 5`. The template stays unchanged. The location is always the same, so it needs no CEL expression.
+
+`pathWrite: ""` means the whole document. Omitting `expression` makes the field write-only. The CRD rejects invalid pointers and an accessor containing both write-path forms.
+
+</details>
+
+<details>
+<summary>pathWriteExpression: find KServe's container location</summary>
 
 KServe can put model settings under `spec.predictor.model` or `spec.predictor.sklearn`. A fixed `/spec/predictor/model` path would miss the second case.
 
@@ -107,6 +111,156 @@ specDefinition:
 One match gives `/spec/predictor/model` or `/spec/predictor/sklearn`. No match fails the write. Multiple matches fail instead of choosing a model by accident. The `replace` calls escape `~` and `/` inside a key.
 
 The SDK caller uses `Component: "predictor", Field: tree.Container` in both cases. Only the Karta definition knows which path to use.
+
+Write expressions can read `object`, `variables`, available `references`, and the current `instance` / `index`. They do not receive the new value. The SDK checks the returned pointer before writing.
+
+</details>
+
+<details>
+<summary>spec.variables: reuse a calculation</summary>
+
+For Ray, the same worker list supplies both the IDs and templates. This Karta excerpt names that list once:
+
+```yaml
+spec:
+  variables:
+    - name: workerGroups
+      expression: object.spec.workerGroupSpecs
+  structureDefinition:
+    childComponents:
+      - name: worker
+        instanceIds:
+          expression: variables.workerGroups.map(g, g.groupName)
+        specDefinition:
+          podTemplateSpec:
+            expression: variables.workerGroups.map(g, g.template)
+```
+
+Both reads use `variables.workerGroups`. If the list location changes, its definition changes in one place. Variables are calculated from the CR; they are not values supplied by the SDK caller.
+
+</details>
+
+<details>
+<summary>component.fields: add a field without changing the SDK</summary>
+
+Inside an App's Karta root component:
+
+```yaml
+name: app
+fields:
+  exampleos:
+    expression: object.d.d.c
+    pathWrite: /d/d/c
+```
+
+For an editor opened with that App's Karta and workload:
+
+```go
+if err := editor.Mutate(ctx, tree.Write{
+    Component: "app", Field: tree.Field("exampleos"), Value: "new",
+}); err != nil {
+    return err
+}
+```
+
+`d.d.c: old` becomes `d.d.c: new`. Other fields under `d.d` stay. The caller uses `exampleos`; it does not need `/d/d/c` or a new SDK enum.
+
+</details>
+
+<details>
+<summary>instanceIds.expression: select Ray's gpu worker group by name</summary>
+
+A RayCluster can have several worker groups. This workload excerpt has two:
+
+```yaml
+spec:
+  workerGroupSpecs:
+    - groupName: gpu
+      template:
+        spec: {schedulerName: default-scheduler}
+    - groupName: cpu
+      template:
+        spec: {schedulerName: default-scheduler}
+```
+
+The worker component in Karta reads their names and templates in the same order:
+
+```yaml
+# Under spec.structureDefinition.childComponents.
+- name: worker
+  instanceIds:
+    expression: object.spec.workerGroupSpecs.map(g, g.groupName)
+  specDefinition:
+    podTemplateSpec:
+      expression: object.spec.workerGroupSpecs.map(g, g.template)
+      pathWriteExpression: '"/spec/workerGroupSpecs/" + string(index) + "/template"'
+```
+
+The IDs are `["gpu", "cpu"]`. They come from `groupName`; Karta does not invent them. These identify worker groups, not individual Pods.
+
+With an editor opened using `kartas.Raycluster()` and that workload, change only `gpu`:
+
+```go
+if err := editor.Mutate(ctx, tree.Write{
+    Component: "worker", Instance: "gpu", Field: tree.PodTemplateSpec,
+    Value: map[string]any{
+        "spec": map[string]any{"schedulerName": "batch-scheduler"},
+    },
+}); err != nil {
+    return err
+}
+```
+
+`gpu` now uses `batch-scheduler`. `cpu` still uses `default-scheduler`.
+
+Why an ID instead of a number? The SDK finds `gpu` in the current ID list and gives its position to the write expression as `index`:
+
+| Workload order | index for gpu | Resolved path |
+| --- | --- | --- |
+| `[gpu, cpu]` | `0` | `/spec/workerGroupSpecs/0/template` |
+| `[cpu, gpu]` | `1` | `/spec/workerGroupSpecs/1/template` |
+
+The SDK call stays the same when the groups move. The tree's display order does not decide where to write. IDs must be unique, nonempty strings and are read-only. Keep the ID and template reads in the same order; sorting only the IDs would pair them with the wrong templates.
+
+These short expressions require the shown list and fields. The catalog also handles missing lists. `instanceIds.expression` replaces jq's `instanceIdPath`; identifying groups is not a new capability.
+
+</details>
+
+<details>
+<summary>suspendDefinition: use the same suspend call for different workloads</summary>
+
+Inside a Job's Karta root component:
+
+```yaml
+suspendDefinition:
+  pathWrite: /spec/suspend
+```
+
+For an editor opened with the Job definition:
+
+| SDK call | Result |
+| --- | --- |
+| `editor.IsSuspendable()` | `true`, because the Karta declares support. |
+| `editor.Suspend(ctx)` | Sets `spec.suspend: true`. |
+| `editor.Resume(ctx)` | Sets `spec.suspend: false`. |
+
+The controller can use the same calls for another workload. Its Karta supplies the boolean field's location. A computed location can use `pathWriteExpression` instead. This changes the local spec; it does not wait for the workload to stop or resume.
+
+</details>
+
+<details>
+<summary>Other jq paths become CEL expressions</summary>
+
+Status, Pod selection, and Pod grouping keep their purpose. Their read fields now contain CEL:
+
+| Karta field | Definition value | Reads |
+| --- | --- | --- |
+| `statusDefinition.phaseDefinition.expression` | `object[?"status"][?"state"].orValue(null)` | The workload's state. |
+| `statusDefinition.conditionsDefinition.expression` | `object[?"status"][?"conditions"].orValue(null)` | The workload's conditions. |
+| `podSelector.componentTypeSelector.expression` | `object.metadata.labels["ray.io/node-type"]` | A Pod's Ray role, such as `worker`. |
+| `groupByExpressions` | `[ 'object.metadata.labels["ray.io/cluster"]' ]` | Groups Pods by Ray cluster. |
+
+Spec and scale reads use the same accessor shape as the replicas example. `groupByExpressions` replaces `groupByKeyPaths`; the old grouping `filters` are removed.
 
 </details>
 
@@ -244,30 +398,7 @@ Drafts use explicit operations instead of a merge policy: `Set` changes a scalar
 </details>
 
 <details>
-<summary>Custom fields and the remaining SDK calls</summary>
-
-An App component named `app` can expose a field the SDK has never heard of:
-
-```yaml
-fields:
-  exampleos:
-    expression: object.d.d.c
-    pathWrite: /d/d/c
-```
-
-Open that App's Karta and workload, then write:
-
-```go
-if err := editor.Mutate(ctx, tree.Write{
-    Component: "app", Field: tree.Field("exampleos"), Value: "new",
-}); err != nil {
-    return err
-}
-```
-
-`/d/d/c` changes; its neighbors stay. Adding this field needs a catalog change, not a new Go enum.
-
-For repeated components, add `Instance: "gpu"` to `Target` or `Write`. It selects the Ray worker group named `gpu` even when the source list order changes. `instanceIds.expression` supplies those IDs and cannot have a write path.
+<summary>Other SDK calls</summary>
 
 | Call | What it is for |
 | --- | --- |
