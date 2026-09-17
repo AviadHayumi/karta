@@ -460,7 +460,7 @@ record-e2e: ## Record the fixtures against the current cluster - kind from e2e-u
 .PHONY: verify-recordings
 verify-recordings: ## Fail if any recorded fixture ended with succeeded false (re-record it clean before pushing)
 	@test -d test/e2e/recorded_data || { echo "no test/e2e/recorded_data dir"; exit 1; }
-	@bad=$$(grep -rlE '^  succeeded: false' test/e2e/recorded_data --include='*.yaml'); \
+	@bad=$$(grep -rlE '^  succeeded: false' test/e2e/recorded_data real-data --include='*.yaml' 2>/dev/null); \
 	if [ -n "$$bad" ]; then echo "recordings that did not succeed:"; echo "$$bad"; exit 1; fi; \
 	echo "all recordings succeeded"
 
