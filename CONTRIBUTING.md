@@ -139,29 +139,19 @@ co-authors. Human `Co-authored-by` trailers and the required human `Signed-off-b
 trailer remain valid. AI-assisted contributions are allowed; this check does not
 detect or prohibit AI use.
 
-The `Commit attribution` CI check examines every incoming commit, including
-earlier commits in a pull request. It rejects co-author trailers with these
-known AI email addresses, regardless of the display name:
+The `Commit attribution` CI check uses
+[wagoid/commitlint-github-action](https://github.com/wagoid/commitlint-github-action)
+with the rule in `commitlint.config.mjs`. It rejects `Co-authored-by` lines
+containing Claude, ChatGPT, Copilot, Codex, Devin, Cursor, Gemini, or Anthropic,
+case-insensitively. Merge, revert, and fixup commit messages are checked too.
+This is name matching, not an identity lookup. Unlisted names are outside the
+rule's scope. Normal prose mentioning these tools is allowed.
 
-- `noreply@anthropic.com` (Claude)
-- `noreply@openai.com` (Codex)
-- `gemini-code-assist@google.com` (Gemini)
-- `cursoragent@cursor.com` (Cursor)
-- `<numeric-id>+Claude@users.noreply.github.com`
-- `<numeric-id>+Copilot@users.noreply.github.com`
+The action retrieves incoming commits from GitHub's API. Its pinned version
+reads at most 100 commits, so the workflow rejects larger ranges rather than
+checking only part of them. Split or squash a larger change before retrying.
 
-Matching is case-insensitive and limited to Git's parsed trailer block. A human
-named Claude or Devin, prose mentioning an AI tool, and quoted examples are not
-rejected. Unlisted identities are outside this check's scope.
-
-Run the check locally with Python 3 and Git:
-
-```bash
-python3 -B hack/check_ai_coauthors.py --base origin/main --head HEAD
-python3 -B -m unittest discover -s hack -p 'test_check_ai_coauthors.py' -v
-```
-
-If it fails, remove the AI co-author trailer from each reported commit message.
+If it fails, remove the AI co-author line from each reported commit message.
 Keep human attribution and DCO sign-offs. A new commit does not repair an earlier
 commit's message.
 
