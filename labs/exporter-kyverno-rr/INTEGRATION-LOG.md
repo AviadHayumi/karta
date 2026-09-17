@@ -833,3 +833,39 @@ Capture 74, manifest 11-dpol-completed.yaml.
 - Docs: KEP-0003 gained a goals section, the seventh table row, the delete
   run and the leftovers block; KEP-0004 (kep-metrics-exporter) said six
   families and now says seven with the gauge line added.
+
+## 14. Goal A live with the fake gpu operator (2026-09-17)
+
+Capture 75, manifests 02b (prometheus with dcgm scrape + chart rules),
+12 (gpu job), 13 (idle gpu MutatingPolicy). Code read of
+run-ai/fake-gpu-operator (main a3725bf): the status-updater recomputes a
+pod's utilization on every pod update from the annotation
+run.ai/simulated-gpu-utilization ("N" or "N-M"; a single number is
+constant), stores it in the per-node topology ConfigMap, and the
+status-exporter DaemonSet republishes DCGM_FI_DEV_GPU_UTIL every 10s with
+namespace, pod and container labels. So utilization is controllable at
+runtime with kubectl annotate, no pod restart.
+
+- Installed chart 0.0.72 on lab2's single node (label
+  run.ai/simulated-gpu-node-pool=default): capacity nvidia.com/gpu 2.
+- Prometheus: added a dcgm scrape job with honor_labels and the chart's
+  rendered recording rules (30s group), reloaded with SIGHUP so the TSDB
+  stayed. The chart's nvidia-dcgm-exporter Service also fronts the kwok
+  exporter pod (same app label, no series), so the scrape targets the
+  DaemonSet pod ip directly.
+- Job gpu-trainer with one gpu at 90: dcgm series with pod label,
+  karta:gpu_utilization:workload 90, join coverage 1 on the first rule
+  evaluation.
+- MutatingPolicy with the goal A query (2m window, floor 3 of 4, Running,
+  age > 120s): three ticks while busy, untouched. Annotation flipped to 1
+  at 11:07:41; raw dcgm 1 within seconds, rule 1 at 11:07:59, max over
+  2m dropped at 11:09:31, the 11:09:34 tick suspended the job. Pod gone,
+  dcgm series gone, joined rule gone, two more ticks with nothing to do.
+- Seven work items, all Completed with empty messages; the patching one
+  is indistinguishable from the others. Job events: the same
+  "mutation is not applied" warnings plus job-controller Suspended.
+- Lab state after: fake gpu operator left installed, policy removed,
+  gpu-trainer suspended, prometheus config at 02b.
+- karta-e2e note: its fake operator shows gpu capacity 0 because the
+  nodes restarted today and the device plugin registers with kubelet once
+  at start; not touched.

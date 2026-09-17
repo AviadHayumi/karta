@@ -1,0 +1,128 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# lab2 Prometheus config, second version: the karta exporter scrape plus the
+# fake dcgm exporter (honor_labels keeps its namespace/pod labels) and the
+# chart's recording rules, rendered unchanged from charts/karta (30s group
+# interval). same ConfigMap and volume as 02-prometheus.yaml, so a SIGHUP
+# reloads it without losing the TSDB.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+    rule_files:
+      - /etc/prometheus/karta-rules.yml
+    scrape_configs:
+      - job_name: karta-exporter
+        static_configs:
+          - targets: ["karta-exporter.karta-system.svc:8080"]
+      # the chart's Service also fronts the kwok exporter pod, which emits no
+      # series; scrape the DaemonSet pod directly (lab only, ip from kubectl)
+      - job_name: dcgm
+        honor_labels: true
+        static_configs:
+          - targets: ["10.244.0.46:9400"]
+  karta-rules.yml: |
+    groups:
+    - name: karta-exporter.rules
+      interval: 30s
+      rules:
+      - record: karta:gpu_utilization:workload
+        expr: "avg by (namespace, workload, workload_kind, workload_group) (\n  DCGM_FI_DEV_GPU_UTIL\n\
+          \  * on (namespace, pod) group_left (workload, workload_kind, workload_group)\
+          \ max by (namespace, pod, workload, workload_kind, workload_group) (karta_pod_workload_info)\n\
+          )\n"
+      - record: karta:gpu_memory_used_bytes:workload
+        expr: "sum by (namespace, workload, workload_kind, workload_group) (\n  (DCGM_FI_DEV_FB_USED\
+          \ * 1048576)\n  * on (namespace, pod) group_left (workload, workload_kind, workload_group)\
+          \ max by (namespace, pod, workload, workload_kind, workload_group) (karta_pod_workload_info)\n\
+          )\n"
+      - record: karta:gpu_memory_total_bytes:workload
+        expr: "sum by (namespace, workload, workload_kind, workload_group) (\n  ((DCGM_FI_DEV_FB_USED\
+          \ + DCGM_FI_DEV_FB_FREE) * 1048576)\n  * on (namespace, pod) group_left (workload,\
+          \ workload_kind, workload_group) max by (namespace, pod, workload, workload_kind,\
+          \ workload_group) (karta_pod_workload_info)\n)\n"
+      - record: karta:cpu_usage_cores:workload
+        expr: "sum by (namespace, workload, workload_kind, workload_group) (\n  rate(container_cpu_usage_seconds_total{container!=\"\
+          \"}[5m])\n  * on (namespace, pod) group_left (workload, workload_kind, workload_group)\
+          \ max by (namespace, pod, workload, workload_kind, workload_group) (karta_pod_workload_info)\n\
+          )\n"
+      - record: karta:memory_working_set_bytes:workload
+        expr: "sum by (namespace, workload, workload_kind, workload_group) (\n  container_memory_working_set_bytes{container!=\"\
+          \"}\n  * on (namespace, pod) group_left (workload, workload_kind, workload_group)\
+          \ max by (namespace, pod, workload, workload_kind, workload_group) (karta_pod_workload_info)\n\
+          )\n"
+      - record: karta:gpu_utilization:component
+        expr: "avg by (namespace, workload, workload_kind, workload_group, component)\
+          \ (\n  DCGM_FI_DEV_GPU_UTIL\n  * on (namespace, pod) group_left (workload, workload_kind,\
+          \ workload_group, component) max by (namespace, pod, workload, workload_kind,\
+          \ workload_group, component) (karta_pod_workload_info{component!=\"<unknown>\"\
+          })\n)\n"
+      - record: karta:gpu_memory_used_bytes:component
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component)\
+          \ (\n  (DCGM_FI_DEV_FB_USED * 1048576)\n  * on (namespace, pod) group_left (workload,\
+          \ workload_kind, workload_group, component) max by (namespace, pod, workload,\
+          \ workload_kind, workload_group, component) (karta_pod_workload_info{component!=\"\
+          <unknown>\"})\n)\n"
+      - record: karta:gpu_memory_total_bytes:component
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component)\
+          \ (\n  ((DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) * 1048576)\n  * on (namespace,\
+          \ pod) group_left (workload, workload_kind, workload_group, component) max by\
+          \ (namespace, pod, workload, workload_kind, workload_group, component) (karta_pod_workload_info{component!=\"\
+          <unknown>\"})\n)\n"
+      - record: karta:cpu_usage_cores:component
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component)\
+          \ (\n  rate(container_cpu_usage_seconds_total{container!=\"\"}[5m])\n  * on\
+          \ (namespace, pod) group_left (workload, workload_kind, workload_group, component)\
+          \ max by (namespace, pod, workload, workload_kind, workload_group, component)\
+          \ (karta_pod_workload_info{component!=\"<unknown>\"})\n)\n"
+      - record: karta:memory_working_set_bytes:component
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component)\
+          \ (\n  container_memory_working_set_bytes{container!=\"\"}\n  * on (namespace,\
+          \ pod) group_left (workload, workload_kind, workload_group, component) max by\
+          \ (namespace, pod, workload, workload_kind, workload_group, component) (karta_pod_workload_info{component!=\"\
+          <unknown>\"})\n)\n"
+      - record: karta:gpu_utilization:component_instance
+        expr: "avg by (namespace, workload, workload_kind, workload_group, component,\
+          \ component_instance) (\n  DCGM_FI_DEV_GPU_UTIL\n  * on (namespace, pod) group_left\
+          \ (workload, workload_kind, workload_group, component, component_instance) max\
+          \ by (namespace, pod, workload, workload_kind, workload_group, component, component_instance)\
+          \ (karta_pod_workload_info{component!=\"<unknown>\",component_instance!=\"<unknown>\"\
+          })\n)\n"
+      - record: karta:gpu_memory_used_bytes:component_instance
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component,\
+          \ component_instance) (\n  (DCGM_FI_DEV_FB_USED * 1048576)\n  * on (namespace,\
+          \ pod) group_left (workload, workload_kind, workload_group, component, component_instance)\
+          \ max by (namespace, pod, workload, workload_kind, workload_group, component,\
+          \ component_instance) (karta_pod_workload_info{component!=\"<unknown>\",component_instance!=\"\
+          <unknown>\"})\n)\n"
+      - record: karta:gpu_memory_total_bytes:component_instance
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component,\
+          \ component_instance) (\n  ((DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) * 1048576)\n\
+          \  * on (namespace, pod) group_left (workload, workload_kind, workload_group,\
+          \ component, component_instance) max by (namespace, pod, workload, workload_kind,\
+          \ workload_group, component, component_instance) (karta_pod_workload_info{component!=\"\
+          <unknown>\",component_instance!=\"<unknown>\"})\n)\n"
+      - record: karta:cpu_usage_cores:component_instance
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component,\
+          \ component_instance) (\n  rate(container_cpu_usage_seconds_total{container!=\"\
+          \"}[5m])\n  * on (namespace, pod) group_left (workload, workload_kind, workload_group,\
+          \ component, component_instance) max by (namespace, pod, workload, workload_kind,\
+          \ workload_group, component, component_instance) (karta_pod_workload_info{component!=\"\
+          <unknown>\",component_instance!=\"<unknown>\"})\n)\n"
+      - record: karta:memory_working_set_bytes:component_instance
+        expr: "sum by (namespace, workload, workload_kind, workload_group, component,\
+          \ component_instance) (\n  container_memory_working_set_bytes{container!=\"\"\
+          }\n  * on (namespace, pod) group_left (workload, workload_kind, workload_group,\
+          \ component, component_instance) max by (namespace, pod, workload, workload_kind,\
+          \ workload_group, component, component_instance) (karta_pod_workload_info{component!=\"\
+          <unknown>\",component_instance!=\"<unknown>\"})\n)\n"
+      - record: karta:join_coverage:ratio
+        expr: "count(DCGM_FI_DEV_GPU_UTIL{pod!=\"\"} * on (namespace, pod) group_left\
+          \ ()\n  max by (namespace, pod) (karta_pod_workload_info))\n/\ncount(DCGM_FI_DEV_GPU_UTIL{pod!=\"\
+          \"})\n"

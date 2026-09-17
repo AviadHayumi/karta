@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# goal A on stock kyverno: suspend a job whose gpu utilization stayed under 2
+# for the whole window. lab scale: window 2m, recording rule every 30s, floor
+# 3 of 4 samples, Running now, older than 120s. only jobs labelled goal=a.
+apiVersion: policies.kyverno.io/v1beta1
+kind: MutatingPolicy
+metadata:
+  name: gpu-idle-suspend
+spec:
+  evaluation:
+    admission: {enabled: false}
+    mutateExisting: {enabled: true}
+  matchConstraints:
+    namespaceSelector:
+      matchLabels: {kubernetes.io/metadata.name: ai-team}
+    objectSelector:
+      matchLabels: {goal: a}
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  targetMatchConditions:
+    - name: gpu-idle-for-the-window
+      expression: >-
+        object.metadata.name in
+        http.Get('http://prometheus.monitoring.svc:9090/api/v1/query?query=(max_over_time(karta%3Agpu_utilization%3Aworkload%7Bnamespace%3D%22ai-team%22%7D%5B2m%5D)%20%3C%202%20and%20count_over_time(karta%3Agpu_utilization%3Aworkload%7Bnamespace%3D%22ai-team%22%7D%5B2m%5D)%20%3E%3D%203)%20and%20on%20(namespace%2C%20workload%2C%20workload_kind%2C%20workload_group)%20karta_workload_status%7Bphase%3D%22Running%22%7D%20%3D%3D%201%20and%20on%20(namespace%2C%20workload%2C%20workload_kind%2C%20workload_group)%20(time()%20-%20karta_workload_created_timestamp_seconds)%20%3E%20120')
+        .data.result.map(r, r.metric.workload)
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: "[JSONPatch{op: 'add', path: '/spec/suspend', value: true}]"

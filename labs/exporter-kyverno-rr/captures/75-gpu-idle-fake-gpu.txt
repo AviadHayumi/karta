@@ -1,0 +1,123 @@
+# capture 75 - goal A (gpu idle) live on lab2 with the fake gpu operator feeding dcgm series
+# 2026-09-17 ~10:58Z, cluster kind-kyverno-lab2 (k8s v1.34.3, one node), prometheus 5s scrape, kyverno 1.19.1 stock,
+# karta exporter karta-exporter:lab2-created (de18d6df), fake-gpu-operator chart 0.0.72 (ghcr.io/run-ai/fake-gpu-operator)
+#
+# how the fake operator produces utilization (read from ~/workspace/fake-gpu-operator, main at a3725bf):
+#   status-updater watches gpu pods; on add it allocates a gpu in the per-node topology ConfigMap and stores
+#   podGpuUsageStatus[pod.UID] = calculateUsage(pod)   (handlers/pod/dedicated_gpu_pod_handler.go:44)
+#   on EVERY pod update it recomputes calculateUsage(pod)  (dedicated_gpu_pod_handler.go:69-75) -> annotation changes land live
+#   calculateUsage: not Running -> 0 ; name prefix runai-idle-gpu- -> 0 ; annotation run.ai/simulated-gpu-utilization
+#   "N" or "N-M" -> Range{N,M} (gpu_usage_calculator.go:51-60, 83-104) ; else podgroup type ; default 100
+#   status-exporter (DaemonSet nvidia-dcgm-exporter) republishes every 10s: DCGM_FI_DEV_GPU_UTIL{gpu,UUID,device,modelName,
+#   Hostname,container,namespace,pod} = sum of Range.Random() over pods on that gpu, capped 100 (export/metrics/exporter.go:67-90,
+#   topology/podGpuUsageStatusMap.go:14-24) ; Random() returns Min when Min == Max (topology/range.go:7-13)
+
+=== install on lab2 ===
+$ kubectl label node kyverno-lab2-control-plane run.ai/simulated-gpu-node-pool=default
+$ helm upgrade -i fake-gpu-operator oci://ghcr.io/run-ai/fake-gpu-operator/fake-gpu-operator -n gpu-operator --create-namespace --version 0.0.72 --wait
+10:58:43 start, 11:00:24 deployed
+NAME                                        READY   STATUS    AGE
+computedomain-controller-58bd687584-8l22b   1/1     Running   98s
+device-plugin-vzjrn                         1/1     Running   34s
+kwok-gpu-device-plugin-7564d8ddb7-mvhkp     1/1     Running   98s
+nvidia-dcgm-exporter-dmcwq                  1/1     Running   34s     # the DaemonSet pod, ip 10.244.0.46
+nvidia-dcgm-exporter-kwok-c69ccf75c-lt556   1/1     Running   98s     # kwok variant, same app label, no series
+status-updater-869d4cc658-jd5r5             1/1     Running   98s
+topology-server-5df875b5df-wrs27            1/1     Running   98s
+$ kubectl get node kyverno-lab2-control-plane -o jsonpath='{.status.capacity.nvidia\.com/gpu} {.status.allocatable.nvidia\.com/gpu}'
+2 2
+
+=== prometheus: dcgm scrape + the chart's recording rules (manifests/02b-prometheus-dcgm-rules.yaml) ===
+rules: exporter/test/rules/.rendered/karta-rules.yaml from de18d6df, unchanged, group karta-exporter.rules interval 30s
+scrape: job dcgm, honor_labels true. first pointed at the Service nvidia-dcgm-exporter.gpu-operator.svc:9400, but its
+        endpoints are both pods (10.244.0.42 kwok, 10.244.0.46 daemonset); repointed at 10.244.0.46:9400.
+11:00:54 apply ; file in pod after ~81s ; 11:02:18 SIGHUP
+11:03:21 apply repointed target ; synced after ~15s ; 11:03:37 SIGHUP
+$ curl -s 10.244.0.46:9400/metrics | grep ^DCGM_FI_DEV_GPU_UTIL          (11:03:40, straight from the daemonset pod)
+DCGM_FI_DEV_GPU_UTIL{Hostname="nvidia-dcgm-exporter-ba71ad",UUID="GPU-63ebeed8-0f67-5286-b87f-092950258ad2",container="",device="nvidia1",gpu="1",modelName="Tesla-K80",namespace="",pod=""} 0
+DCGM_FI_DEV_GPU_UTIL{Hostname="nvidia-dcgm-exporter-ba71ad",UUID="GPU-e85512c1-2a9e-529f-bab2-6f59d3fa0617",container="main",device="nvidia0",gpu="0",modelName="Tesla-K80",namespace="ai-team",pod="gpu-trainer-rgst6"} 90
+$ /api/v1/rules -> group karta-exporter.rules interval 30s, 16 rules
+
+=== the gpu job (manifests/12-gpu-trainer.yaml): busy first ===
+$ kubectl apply -f 12-gpu-trainer.yaml          # 11:02:23Z ; limits nvidia.com/gpu: 1 ; pod annotation run.ai/simulated-gpu-utilization: "90"
+NAME                PHASE     NODE                         STARTED                UTIL
+gpu-trainer-rgst6   Running   kyverno-lab2-control-plane   2026-09-17T11:02:23Z   90
+job created=2026-09-17T11:02:23Z uid=fe129711-7d3b-481b-8988-e060baed3832
+status-updater log:
+2026/09/17 11:02:23 Handling pod addition: gpu-trainer-rgst6
+2026/09/17 11:02:23 Requested GPUs: 1
+2026/09/17 11:02:23 GPU GPU-e85512c1-2a9e-529f-bab2-6f59d3fa0617 is free, allocating...
+2026/09/17 11:02:23 Handling pod update: gpu-trainer-rgst6
+topology cm topology-kyverno-lab2-control-plane:
+    - id: GPU-e85512c1-2a9e-529f-bab2-6f59d3fa0617
+      status:
+        allocatedBy: {namespace: ai-team, pod: gpu-trainer-rgst6, container: main}
+        podGpuUsageStatus:
+            39cec0b5-5302-4027-9ad9-0724bc2f2e7f: {utilization: {min: 90, max: 90}, fbUsed: 11441, useKnativeUtilization: false}
+
+11:04:35 prometheus: DCGM_FI_DEV_GPU_UTIL{pod="gpu-trainer-rgst6"} 90 ; karta:gpu_utilization:workload{workload="gpu-trainer"} 90 ;
+         karta:gpu_utilization:component_instance{workload="gpu-trainer"} 90 ; karta:join_coverage:ratio 1 ; dcgm target up
+
+=== the policy (manifests/13-mpol-gpu-idle.yaml): MutatingPolicy mutate-existing, jobs in ai-team with label goal=a ===
+targetMatchConditions: object.metadata.name in http.Get(prometheus,
+  (max_over_time(karta:gpu_utilization:workload{namespace="ai-team"}[2m]) < 2
+   and count_over_time(karta:gpu_utilization:workload{namespace="ai-team"}[2m]) >= 3)
+  and on (namespace, workload, workload_kind, workload_group) karta_workload_status{phase="Running"} == 1
+  and on (namespace, workload, workload_kind, workload_group) (time() - karta_workload_created_timestamp_seconds) > 120
+).data.result.map(r, r.metric.workload)
+mutation: JSONPatch add /spec/suspend true
+$ kubectl apply -f 13-mpol-gpu-idle.yaml         # 11:04:35Z ; status.conditionStatus.ready true at 11:04:36
+
+=== the flip: kubectl annotate pod -l goal=a run.ai/simulated-gpu-utilization=1 --overwrite  (11:07:41Z) ===
+status-updater log: 2026/09/17 11:07:41 Handling pod update: gpu-trainer-rgst6
+topology cm:        utilization: {min: 1, max: 1}
+raw dcgm 11:07:57:  DCGM_FI_DEV_GPU_UTIL{pod="gpu-trainer-rgst6"} 1
+
+=== timeline, sampled every 15s (annot = pod annotation, dcgm = raw series, rule = karta:gpu_utilization:workload, max2m/count2m over the rule, running = karta_workload_status Running, suspend = job spec.suspend) ===
+11:04:41  annot=90  dcgm=90  rule=90  max2m=90  count2m=2  running=1  suspend=false
+11:04:56  annot=90  dcgm=90  rule=90  max2m=90  count2m=3  running=1  suspend=false
+11:05:27  annot=90  dcgm=90  rule=90  max2m=90  count2m=4  running=1  suspend=false
+   (11:05:34 kyverno tick: ur-x4p8l Completed, job untouched)
+11:06:43  annot=90  dcgm=90  rule=90  max2m=90  count2m=4  running=1  suspend=false
+   (11:06:34 tick ur-hfz7z, 11:07:34 tick ur-dq2zz: Completed, untouched)
+11:07:29  annot=90  dcgm=90  rule=90  max2m=90  count2m=4  running=1  suspend=false
+11:07:44  annot=1   dcgm=1   rule=90  max2m=90  count2m=4  running=1  suspend=false     <- flipped at 11:07:41
+11:07:59  annot=1   dcgm=1   rule=1   max2m=90  count2m=4  running=1  suspend=false     <- rule follows on its 30s eval
+11:08:46  annot=1   dcgm=1   rule=1   max2m=90  count2m=4  running=1  suspend=false
+   (11:08:34 tick ur-zrbzd: Completed, untouched. max2m still 90)
+11:09:16  annot=1   dcgm=1   rule=1   max2m=90  count2m=4  running=1  suspend=false
+11:09:31  annot=1   dcgm=1   rule=1   max2m=1   count2m=4  running=1  suspend=false     <- last 90 left the window
+11:09:47  annot=1   dcgm=1   rule=1   max2m=1   count2m=4  running=0  suspend=true      <- 11:09:34 tick ur-645f2 suspended it
+11:10:02  annot=1   dcgm=1   rule=1   max2m=1   count2m=4  running=0  suspend=true
+11:10:17  annot=-   dcgm=-   rule=1   max2m=1   count2m=4  running=0  suspend=true      <- pod gone, dcgm series gone
+11:10:32  annot=-   dcgm=-   rule=-   max2m=1   count2m=3  running=0  suspend=true      <- joined rule gone
+11:11:33  annot=-   dcgm=-   rule=-   max2m=1   count2m=1  running=0  suspend=true
+   (11:10:34 tick ur-gwnr4, 11:11:34 tick ur-mhrt8: Completed, nothing to do)
+11:12:04  annot=-   dcgm=-   rule=-   max2m=-   count2m=-  running=0  suspend=true      <- window empty
+11:12:19  annot=-   dcgm=-   rule=-   max2m=-   count2m=-  running=0  suspend=true
+DONE suspended, 150s of aftermath recorded
+
+--- kyverno work items (kubectl get updaterequests -n kyverno -w --output-watch-events) ---
+seven rounds, one per minute 11:05:34 .. 11:11:34, every one ADDED / Pending / Completed / DELETED, message empty.
+the fifth (ur-645f2, 11:09:34) is the one that patched; nothing in the work item says so.
+
+--- job after ---
+$ kubectl -n ai-team get job gpu-trainer -o jsonpath='suspend={.spec.suspend} active={.status.active} conditions={.status.conditions[*].type}'
+suspend=true active= conditions=Suspended
+$ kubectl -n ai-team get pods -l goal=a
+No resources found in ai-team namespace.
+$ kubectl -n ai-team get events --field-selector involvedObject.name=gpu-trainer
+2026-09-17T11:02:23Z   Normal    SuccessfulCreate   job-controller   Created pod: gpu-trainer-rgst6
+<nil>                  Warning   PolicyViolation    <none>           policy gpu-idle-suspend/ fail: mutation is not applied
+<nil>                  Warning   PolicyViolation    <none>           policy gpu-idle-suspend/ fail: mutation is not applied
+2026-09-17T11:09:34Z   Normal    SuccessfulDelete   job-controller   Deleted pod: gpu-trainer-rgst6
+2026-09-17T11:09:34Z   Normal    Suspended          job-controller   Job suspended
+$ curl -s 10.244.0.46:9400/metrics | grep ^DCGM_FI_DEV_GPU_UTIL      (11:12:31, both gpus free again)
+DCGM_FI_DEV_GPU_UTIL{...,device="nvidia1",gpu="1",...,namespace="",pod=""} 0
+DCGM_FI_DEV_GPU_UTIL{...,device="nvidia0",gpu="0",...,namespace="",pod=""} 0
+status-updater: 2026/09/17 11:10:04 Handling pod deletion: gpu-trainer-rgst6
+
+--- side note, karta-e2e ---
+the fake operator there shows nvidia.com/gpu capacity 0 on both workers although the device-plugin pods registered on
+2026-09-14 (0 restarts): the nodes came back at 08:35Z today (kube-system restarts 11x), kubelet forgets device plugin
+registrations on restart and this plugin registers once. not touched, that cluster is in use.
