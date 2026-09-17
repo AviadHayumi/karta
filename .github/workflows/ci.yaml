@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+
 name: Pull Request
 
 on:
@@ -7,6 +10,29 @@ on:
     branches: [ main, v0.* ]
 
 jobs:
+  commit-attribution:
+    name: Commit attribution
+    if: github.event.deleted != true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the incoming commit history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Test attribution check
+        run: make commit-attribution-test
+
+      - name: Check incoming commits
+        env:
+          COMMIT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          COMMIT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: make commit-attribution-check
+
   ci:
     name: CI
     runs-on: ubuntu-latest

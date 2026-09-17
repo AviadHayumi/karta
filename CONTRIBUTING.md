@@ -139,7 +139,8 @@ co-authors. Human `Co-authored-by` trailers and the required human `Signed-off-b
 trailer remain valid. AI-assisted contributions are allowed; this check does not
 detect or prohibit AI use.
 
-The `Commit attribution` CI check uses `hack/check-commit-attribution.sh`.
+The `Commit attribution` job in `.github/workflows/ci.yaml` runs the Makefile
+targets backed by the scripts in `hack/commit-attribution/`.
 It needs only Bash, Git, and grep. It rejects `Co-authored-by` lines
 containing Claude, ChatGPT, Copilot, Codex, Devin, Cursor, Gemini, or Anthropic,
 case-insensitively. Merge, revert, and fixup commit messages are checked too.
@@ -153,8 +154,8 @@ references fail the check. No dependency installation is needed.
 Run the same check locally:
 
 ```bash
-bash hack/check-commit-attribution.sh origin/main HEAD
-bash hack/check-commit-attribution_test.sh
+make commit-attribution-check COMMIT_BASE=origin/main COMMIT_HEAD=HEAD
+make commit-attribution-test
 ```
 
 If it fails, remove the AI co-author line from each reported commit message.
