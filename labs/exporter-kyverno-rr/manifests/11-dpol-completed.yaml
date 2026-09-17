@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 NVIDIA Corporation
+# goal C on stock kyverno: delete a job once prometheus says it has been
+# Completed for the whole window and is older than the window. lab scale:
+# window 2m, scrape 5s, floor 23 of 24 samples, age > 120s. only jobs
+# labelled goal=c in ai-team are candidates.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: etl-done
+  namespace: ai-team
+  labels: {team: ai, goal: c}
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: main
+          image: busybox:1.36
+          command: ["sh", "-c", "echo done"]
+---
+apiVersion: policies.kyverno.io/v1
+kind: DeletingPolicy
+metadata:
+  name: goal-c-completed
+spec:
+  schedule: "*/1 * * * *"
+  matchConstraints:
+    namespaceSelector:
+      matchLabels: {kubernetes.io/metadata.name: ai-team}
+    objectSelector:
+      matchLabels: {goal: c}
+    resourceRules:
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+  variables:
+    - name: completed
+      expression: >-
+        http.Get('http://prometheus.monitoring.svc:9090/api/v1/query?query=min_over_time(karta_workload_status%7Bnamespace%3D%22ai-team%22%2Cphase%3D%22Completed%22%7D%5B2m%5D)%20%3D%3D%201%20and%20count_over_time(karta_workload_status%7Bnamespace%3D%22ai-team%22%2Cphase%3D%22Completed%22%7D%5B2m%5D)%20%3E%3D%2023%20and%20on%20(namespace%2C%20workload%2C%20workload_kind%2C%20workload_group)%20(time()%20-%20karta_workload_created_timestamp_seconds)%20%3E%20120')
+        .data.result.map(r, r.metric.workload)
+  conditions:
+    - name: completed-for-the-window
+      expression: object.metadata.name in variables.completed

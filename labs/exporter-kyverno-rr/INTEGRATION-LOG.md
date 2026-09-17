@@ -794,3 +794,42 @@ result pass, message success, source KyvernoMutatingPolicy, the scan timestamp.
 No patch, no evidence. Deleting only the policy removed it while the job stayed
 suspended; events expire on the API server's one-hour TTL. The record depends
 on the policy's life, the job's life, and the clock.
+
+## 13. The created gauge and the three goals (2026-09-17)
+
+Input: the handoff from the exporter worktree (handoff-policy-signals.md) and
+its two unpushed commits, 65f4fc44 (duration-signals research) and de18d6df
+(karta_workload_created_timestamp_seconds, three recipes, promtool fixtures).
+Capture 74, manifest 11-dpol-completed.yaml.
+
+- Rebuilt the exporter image from de18d6df, rolled it on lab2, ran the same
+  binary locally against karta-e2e with the dynamo operator. Eleven metric
+  families, seven for consumers. The new gauge equals the object's
+  creationTimestamp to the second on both clusters (trainer-h 1789577750,
+  dynamo-smoke 1789641330).
+- Same-name recreation: trainer-again 1789641426, deleted and recreated,
+  1789641529. Exporter restart: both values unchanged, 24 of 24 samples still
+  in the 2m window, up never dropped.
+- Goal B shape (Running for X) at lab scale (2m, 5s scrape, floor 23, age >
+  120s) returns trainer-h and the nightly-report CronJob only; suspended
+  trainers are absent. Goal C shape (Completed for X) returns
+  nightly-report-29826900. Goal A (gpu idle) did not run: no dcgm series with
+  pod labels anywhere (lab2 has no gpu; karta-e2e's kwok dcgm exporter emits
+  none). The promtool fixtures (tests.yaml + duration-tests.yaml, 16 rules)
+  pass.
+- Goal C on stock Kyverno 1.19.1: a DeletingPolicy (schedule every minute,
+  http.Get of the goal C query, condition name in result) removed a
+  seconds-long job at 10:41:00, the first tick where age > 120s and the
+  window was fully Completed. Kyverno's dpol compiler has the http and
+  resource libraries like mpol; the cleanup controller already had job delete
+  rights through the aggregated clusterrole.
+- What the delete left: policy status lastExecutionTime and an empty message,
+  a once-a-minute "updated deleting policy status" log line that never names
+  the job, job-controller events on a deleted object, no policy events, zero
+  reports. Gap 3 applies to deletion as it does to suspension.
+- Lab state after: DeletingPolicy removed, trainer-again and the exporter at
+  karta-exporter:lab2-created left on lab2, dynamo-smoke removed from
+  karta-e2e again.
+- Docs: KEP-0003 gained a goals section, the seventh table row, the delete
+  run and the leftovers block; KEP-0004 (kep-metrics-exporter) said six
+  families and now says seven with the gauge line added.

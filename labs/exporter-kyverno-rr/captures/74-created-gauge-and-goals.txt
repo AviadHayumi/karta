@@ -1,0 +1,171 @@
+# capture 74 - re-pull of the metrics with the created-timestamp gauge, and the three policy goals against real series
+# 2026-09-17 ~10:35Z, cluster kind-kyverno-lab2 (k8s v1.34.3), prometheus scrape 5s, kyverno 1.19.1 stock
+# exporter image karta-exporter:lab2-created built from the deep-poc-design-doc worktree at de18d6df
+#   (unpushed commits 65f4fc44 duration-signals research, de18d6df created timestamp gauge + recipes + fixtures)
+# handoff under test: .context/handoff-policy-signals.md (yeosu worktree)
+
+$ make -C <yeosu> exporter-rules-test          # promtool: chart rules + tests.yaml + duration-tests.yaml
+Checking exporter/test/rules/.rendered/karta-rules.yaml
+  SUCCESS: 16 rules found
+  SUCCESS
+  SUCCESS
+
+$ make -C exporter docker-build IMAGE=karta-exporter:lab2-created && kind load docker-image karta-exporter:lab2-created --name kyverno-lab2
+$ kubectl -n karta-system set image deploy/karta-exporter exporter=karta-exporter:lab2-created && rollout status
+deployment "karta-exporter" successfully rolled out            # new pod karta-exporter-98b9789f4-dljzm Running at ~10:35:20Z
+
+$ curl -s exporter:8080/metrics | grep '^# TYPE karta_'
+karta_exporter_kartas gauge
+karta_exporter_last_event_timestamp_seconds gauge
+karta_exporter_unattributed_pods gauge
+karta_exporter_workloads gauge
+karta_pod_workload_info gauge
+karta_workload_component_pods gauge
+karta_workload_component_replicas gauge
+karta_workload_created_timestamp_seconds gauge                 # <- new, seventh consumer metric
+karta_workload_generation gauge
+karta_workload_info gauge
+karta_workload_status gauge
+
+$ curl -s exporter:8080/metrics | grep 'workload="trainer-h"'   (zero-valued phases trimmed)
+karta_pod_workload_info{component="job",component_instance="",namespace="ai-team",pod="trainer-h-t5xx4",replica="",uid="6c5c98f6-52ea-4de1-9f76-da462f967fc2",workload="trainer-h",workload_group="batch",workload_kind="Job"} 1
+karta_pod_workload_info{component="job",component_instance="",namespace="ai-team",pod="trainer-h-w6tfd",replica="",uid="aac255cd-6680-4646-927a-9587debe962e",workload="trainer-h",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_pods{component="job",component_instance="",namespace="ai-team",phase="Running",workload="trainer-h",workload_group="batch",workload_kind="Job"} 1
+karta_workload_component_replicas{component="job",component_instance="",namespace="ai-team",workload="trainer-h",workload_group="batch",workload_kind="Job"} 1
+karta_workload_created_timestamp_seconds{namespace="ai-team",workload="trainer-h",workload_group="batch",workload_kind="Job"} 1.78957775e+09
+karta_workload_generation{namespace="ai-team",workload="trainer-h",workload_group="batch",workload_kind="Job"} 3
+karta_workload_info{karta="batch-job-v1",namespace="ai-team",workload="trainer-h",workload_group="batch",workload_kind="Job",workload_version="v1"} 1
+karta_workload_status{namespace="ai-team",phase="Running",workload="trainer-h",workload_group="batch",workload_kind="Job"} 1
+
+--- cross-check: gauge value vs the object ---
+$ kubectl -n ai-team get job trainer-h -o jsonpath='{.metadata.creationTimestamp}'
+2026-09-16T16:55:50Z
+$ date -u -j -f %Y-%m-%dT%H:%M:%SZ 2026-09-16T16:55:50Z +%s
+1789577750                                                    # == gauge 1.78957775e+09
+
+--- prometheus: karta_workload_created_timestamp_seconds, every series ---
+cel-error-pa Job 1789608518
+cel-error-pa2 Job 1789609049
+nightly-report CronJob 1789577671
+nightly-report-29826900 Job 1789614000
+trainer-a Job 1789577671
+trainer-b Job 1789577671
+trainer-cov Job 1789597813
+trainer-h Job 1789577750
+trainer-hp Job 1789588431
+trainer-new Job 1789598290
+trainer-off Job 1789599397
+trainer-young Job 1789597129
+karta-exporter Deployment 1789577671
+coredns Deployment 1789577648
+kyverno-admission-controller Deployment 1789577668
+kyverno-background-controller Deployment 1789577668
+kyverno-cleanup-controller Deployment 1789577668
+kyverno-reports-controller Deployment 1789577668
+local-path-provisioner Deployment 1789577649
+prometheus Deployment 1789577671
+cel-error-job Job 1789602023
+
+--- prometheus: (time() - karta_workload_created_timestamp_seconds) / 3600   (age in hours, 10:36Z) ---
+trainer-h Job 17.67
+nightly-report-29826900 Job 7.60
+trainer-new Job 11.96
+(rest omitted, same shape)
+
+=== the goals, lab scale (window 2m, scrape 5s, floor 23 of 24 samples, age > 120s) ===
+$ date -u +%T
+10:36:31
+
+--- goal B: running for X ---
+query: min_over_time(karta_workload_status{namespace="ai-team",phase="Running"}[2m]) == 1
+   and count_over_time(karta_workload_status{namespace="ai-team",phase="Running"}[2m]) >= 23
+   and on (namespace, workload, workload_kind, workload_group) (time() - karta_workload_created_timestamp_seconds) > 120
+nightly-report CronJob Running 1
+trainer-h Job Running 1
+(every suspended trainer-* absent: their Running series is 0)
+
+--- goal C: completed X ago ---
+query: same shape, phase="Completed"
+nightly-report-29826900 Job Completed 1
+
+--- density: count_over_time(karta_workload_status{namespace="ai-team",phase="Running"}[2m]) ---
+24 for every workload (12 series)                              # 2m / 5s = 24, no sample lost across the exporter rollout
+--- count_over_time(up{job="karta-exporter"}[5m]) ---
+60                                                            # 5m / 5s = 60, prometheus never missed the exporter
+
+--- goal A: gpu idle for X ---
+not run live: lab2 has no gpu and no dcgm, karta-e2e has no dcgm/prometheus either.
+the recipe is covered by promtool fixtures only (duration-tests.yaml: fire, gap, busy sample, Running gate, recreation) - see the SUCCESS above.
+
+=== dynamo, real operator 1.2.1 on kind-karta-e2e, exporter de18d6df run locally (--kubeconfig, --use-catalog, :8085) ===
+$ kubectl apply -f dynamo-smoke-prefill.yaml       # 10:35:30Z, Frontend + decode + prefill mockers
+$ kubectl get dgd dynamo-smoke -o jsonpath='{.metadata.creationTimestamp} gen={.metadata.generation} state={.status.state}'
+2026-09-17T10:35:30Z gen=1 state=successful          # all three pods Running at 10:36
+$ curl -s localhost:8085/metrics | grep 'workload="dynamo-smoke"'   (zero-valued phases trimmed)
+karta_pod_workload_info{component="component",component_instance="Frontend",namespace="default",pod="dynamo-smoke-frontend-59d8d4c776-8bmw8",replica="",uid="67abdc19-93fd-42ea-8eaa-dcdeda2993ff",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_pod_workload_info{component="component",component_instance="decode",namespace="default",pod="dynamo-smoke-decode-e03467c0-8568474b87-jwws2",replica="",uid="03177806-054c-4e20-a6ba-27be2e886b18",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_pod_workload_info{component="component",component_instance="prefill",namespace="default",pod="dynamo-smoke-prefill-e03467c0-7bf477dcd9-zk8s9",replica="",uid="f268a408-4e2a-4ccf-a12f-97caec6e3840",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_pods{component="component",component_instance="Frontend",namespace="default",phase="Running",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_pods{component="component",component_instance="decode",namespace="default",phase="Running",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_pods{component="component",component_instance="prefill",namespace="default",phase="Running",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_replicas{component="component",component_instance="Frontend",namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_replicas{component="component",component_instance="decode",namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_component_replicas{component="component",component_instance="prefill",namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_created_timestamp_seconds{namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1.78964133e+09
+karta_workload_generation{namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+karta_workload_info{karta="nvidia-com-dynamographdeployment-v1beta1",namespace="default",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment",workload_version="v1beta1"} 1
+karta_workload_status{namespace="default",phase="Running",workload="dynamo-smoke",workload_group="nvidia.com",workload_kind="DynamoGraphDeployment"} 1
+$ date -u -j -f %Y-%m-%dT%H:%M:%SZ 2026-09-17T10:35:30Z +%s
+1789641330                                            # == gauge 1.78964133e+09
+
+=== same-name recreation steps the gauge forward (lab2) ===
+$ kubectl apply -f trainer-again.json                 # 10:37:06Z
+created=2026-09-17T10:37:06Z uid=d52b32bc-572f-4de2-a7be-303632082521
+prometheus 10:38:20  karta_workload_created_timestamp_seconds{workload="trainer-again"}  1789641426   # == 10:37:06Z
+$ kubectl -n ai-team delete job trainer-again --wait=true && kubectl apply -f trainer-again.json    # 10:38:48Z
+created=2026-09-17T10:38:49Z uid=c7434e74-f9d1-4b9c-92dc-00d640b5e52d
+prometheus 10:39:53  karta_workload_created_timestamp_seconds{workload="trainer-again"}  1789641529   # == 10:38:49Z, stepped forward 103s
+
+=== goal C on stock kyverno 1.19.1: DeletingPolicy driven by the prometheus signal (manifests/11-dpol-completed.yaml) ===
+policy: schedule */1 * * * *, match jobs in ai-team with label goal=c,
+        variable completed = http.Get(prometheus, goal C query at lab scale).data.result.map(r, r.metric.workload)
+        condition: object.metadata.name in variables.completed
+rbac: cleanup controller already may list/delete jobs in ai-team (clusterrole kyverno:cleanup-controller:jobs, aggregated)
+
+$ kubectl apply -f 11-dpol-completed.yaml           # 10:38:51Z
+job.batch/etl-done created
+deletingpolicy.policies.kyverno.io/goal-c-completed created
+$ kubectl -n ai-team get job etl-done -o jsonpath='created={.metadata.creationTimestamp} status={.status.conditions[*].type}'
+created=2026-09-17T10:38:51Z status=SuccessCriteriaMet Complete       # pod ran "echo done"; job-controller event Completed at 10:38:54Z
+prometheus 10:39:53  karta_workload_status{workload="etl-done",phase="Completed"} 1 ; karta_workload_created_timestamp_seconds{workload="etl-done"} 1789641531 (== 10:38:51Z)
+
+$ until ! kubectl -n ai-team get job etl-done; do sleep 2; done; echo GONE at $(date -u +%T)
+GONE at 10:41:00
+# ticks: 10:39:00 age 9s no ; 10:40:00 age 69s no ; 10:41:00 age 129s, Completed since 10:38:54 (126s, about 25 samples at 5s by arithmetic, not measured at the tick) -> deleted. first eligible tick.
+
+--- what kyverno left behind ---
+$ kubectl get dpol goal-c-completed -o yaml | sed -n '/^status:/,$p'
+status:
+  conditionStatus:
+    message: ""
+  lastExecutionTime: "2026-09-17T10:41:00Z"
+$ kubectl -n kyverno logs deploy/kyverno-cleanup-controller --since=6m | grep -iE "goal-c|etl-done|deleting"
+10:38:51Z TRC deleting/controller.go:89  added kind=DeletingPolicy name=goal-c-completed
+10:39:00Z INF deleting/controller.go:341 updated deleting policy status name=goal-c-completed status={"conditionStatus":{"message":""},"lastExecutionTime":null}
+10:40:00Z INF deleting/controller.go:341 updated deleting policy status ... "lastExecutionTime":"2026-09-17T10:39:00Z"
+10:41:00Z INF deleting/controller.go:341 updated deleting policy status ... "lastExecutionTime":"2026-09-17T10:40:00Z"
+(no line names etl-done or ai-team)
+$ kubectl -n ai-team get events --field-selector involvedObject.name=etl-done
+2026-09-17T10:38:51Z   Normal   SuccessfulCreate   job-controller   Created pod: etl-done-6qs7b
+2026-09-17T10:38:54Z   Normal   Completed          job-controller   Job completed
+$ kubectl get events -A --field-selector involvedObject.name=goal-c-completed
+(none)
+$ policyreports + ephemeralreports mentioning etl-done: 0
+$ kubectl -n ai-team get job etl-done
+Error from server (NotFound): jobs.batch "etl-done" not found
+
+=== the gauge survives an exporter restart (a pure object fact, no in-memory clock) ===
+$ kubectl -n karta-system rollout restart deploy/karta-exporter      # 10:42:16Z, new pod karta-exporter-59bdbcccc7-qzmvz
+prometheus 10:43:06  karta_workload_created_timestamp_seconds{workload="trainer-h"}      1789577750   # unchanged
+prometheus 10:43:06  karta_workload_created_timestamp_seconds{workload="trainer-again"}  1789641529   # unchanged
+count_over_time(up{job="karta-exporter"}[2m]) 24 ; min_over_time(up{job="karta-exporter"}[2m]) 1    # no scrape lost across the restart
