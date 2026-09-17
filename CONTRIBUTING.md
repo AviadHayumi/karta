@@ -132,6 +132,44 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`. When p
 git commit -s -m "fix(api): validate status mapping expressions before applying them"
 ```
 
+### Commit Attribution
+
+Commit co-author trailers identify human contributors. Do not add AI tools as
+co-authors. Human `Co-authored-by` trailers and the required human `Signed-off-by`
+trailer remain valid. AI-assisted contributions are allowed; this check does not
+detect or prohibit AI use.
+
+The `Commit attribution` CI check examines every incoming commit, including
+earlier commits in a pull request. It rejects co-author trailers with these
+known AI email addresses, regardless of the display name:
+
+- `noreply@anthropic.com` (Claude)
+- `noreply@openai.com` (Codex)
+- `gemini-code-assist@google.com` (Gemini)
+- `cursoragent@cursor.com` (Cursor)
+- `<numeric-id>+Claude@users.noreply.github.com`
+- `<numeric-id>+Copilot@users.noreply.github.com`
+
+Matching is case-insensitive and limited to Git's parsed trailer block. A human
+named Claude or Devin, prose mentioning an AI tool, and quoted examples are not
+rejected. Unlisted identities are outside this check's scope.
+
+Run the check locally with Python 3 and Git:
+
+```bash
+python3 -B hack/check_ai_coauthors.py --base origin/main --head HEAD
+python3 -B -m unittest discover -s hack -p 'test_check_ai_coauthors.py' -v
+```
+
+If it fails, remove the AI co-author trailer from each reported commit message.
+Keep human attribution and DCO sign-offs. A new commit does not repair an earlier
+commit's message.
+
+Repository maintainers must require the `Commit attribution` status in branch
+protection or a ruleset to block merges. Check the final squash commit message
+as well: PR checks cannot inspect a message edited at merge time. The push check
+detects prohibited trailers after they land; it cannot undo or prevent that push.
+
 ### Making Changes
 
 1. Fork the repository
