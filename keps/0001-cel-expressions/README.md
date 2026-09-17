@@ -10,11 +10,13 @@ Copyright (c) 2026 NVIDIA Corporation
 - Created: 2026-09-10
 - Tracking issue: required before merge
 
-Replace jq reads with CEL. Karta defines where a value lives. The SDK takes the new value and applies the change.
+Replace jq reads with CEL. The Karta definition tells the SDK where to read and write. The controller supplies the new value.
+
+For example, the controller asks to change the predictor's image. Karta finds the predictor in the workload; the SDK changes its image. The controller does not need to know KServe's JSON path.
 
 ## CRD
 
-`podTemplateSpecPath: .spec.template` becomes a read expression and a write path:
+The old `podTemplateSpecPath: .spec.template` did two jobs: read the template and locate it for writes. The new definition states each job separately:
 
 ```yaml
 apiVersion: run.ai/v1alpha1
@@ -40,7 +42,7 @@ Use `pathWrite` or `pathWriteExpression`, not both. Without either, the field is
 <details>
 <summary>expression: read a value from the workload</summary>
 
-Inside a Deployment component in Karta:
+Use `expression` to tell Karta what to read. For a Deployment's replica count, put this in its Karta component:
 
 ```yaml
 scaleDefinition:
@@ -48,16 +50,18 @@ scaleDefinition:
     expression: 'object[?"spec"][?"replicas"].orValue(1)'
 ```
 
-`object` is the workload CR. With `spec.replicas: 3`, this returns `3`. If replicas is missing, it returns `1`.
+`object` means the workload passed to Karta. Here it is the Deployment, not the Karta CR.
 
-This is why reads and writes are separate. A calculated value such as `1` does not tell the SDK where to write. This accessor is read-only until a write path is added.
+With `spec.replicas: 3`, the expression returns `3`. The `?` lookups allow missing fields; `orValue(1)` returns `1` when replicas is absent. Reading that default does not add it to the Deployment.
+
+Why separate the write? A result of `1` is just a number. The SDK still needs a location before it can change replicas. That is what `pathWrite` supplies below.
 
 </details>
 
 <details>
 <summary>pathWrite: write to a fixed location</summary>
 
-The same Deployment accessor, now writable:
+To let the controller change that replica count, add its location:
 
 ```yaml
 scaleDefinition:
@@ -66,7 +70,9 @@ scaleDefinition:
     pathWrite: /spec/replicas
 ```
 
-An SDK write of `5` sets `spec.replicas: 5`. The template stays unchanged. The location is always the same, so it needs no CEL expression.
+`/spec/replicas` means "open spec, then write replicas." The controller can now use `Component: "deployment", Field: tree.Replicas, Value: 5` in `editor.Mutate`. Replicas becomes `5`; the template stays unchanged.
+
+Use this when the location is fixed. The caller chooses the new number; the Karta author defines where it goes.
 
 `pathWrite: ""` means the whole document. Omitting `expression` makes the field write-only. The CRD rejects invalid pointers and an accessor containing both write-path forms.
 
@@ -75,9 +81,21 @@ An SDK write of `5` sets `spec.replicas: 5`. The template stays unchanged. The l
 <details>
 <summary>pathWriteExpression: find KServe's container location</summary>
 
-KServe can put model settings under `spec.predictor.model` or `spec.predictor.sklearn`. A fixed `/spec/predictor/model` path would miss the second case.
+Use `pathWriteExpression` when the location depends on the workload. It returns a path string, not a patch or the new value.
 
-The catalog finds the predictor entry with `storageUri`. Both the read and write use `containerKeys` so they select the same entry:
+For example, KServe can put model settings in either of these places:
+
+| Where the model is in the workload | Path the expression returns |
+| --- | --- |
+| `spec.predictor.model` | `/spec/predictor/model` |
+| `spec.predictor.sklearn` | `/spec/predictor/sklearn` |
+
+The catalog looks for the predictor entry containing `storageUri`. The controller uses `Component: "predictor", Field: tree.Container` in either case. A fixed path would only handle one of them.
+
+<details>
+<summary>The KServe expression and its checks</summary>
+
+`containerKeys` holds the matching entry names, such as `["model"]`. Both the read and the write use this list so they select the same entry:
 
 ```yaml
 # Under spec.
@@ -110,16 +128,16 @@ specDefinition:
 
 One match gives `/spec/predictor/model` or `/spec/predictor/sklearn`. No match fails the write. Multiple matches fail instead of choosing a model by accident. The `replace` calls escape `~` and `/` inside a key.
 
-The SDK caller uses `Component: "predictor", Field: tree.Container` in both cases. Only the Karta definition knows which path to use.
-
 Write expressions can read `object`, `variables`, available `references`, and the current `instance` / `index`. They do not receive the new value. The SDK checks the returned pointer before writing.
+
+</details>
 
 </details>
 
 <details>
 <summary>spec.variables: reuse a calculation</summary>
 
-For Ray, the same worker list supplies both the IDs and templates. This Karta excerpt names that list once:
+Use a variable when two expressions need the same data. In this Ray example, one expression reads worker names and another reads their templates. Both start from `spec.workerGroupSpecs`:
 
 ```yaml
 spec:
@@ -136,14 +154,16 @@ spec:
             expression: variables.workerGroups.map(g, g.template)
 ```
 
-Both reads use `variables.workerGroups`. If the list location changes, its definition changes in one place. Variables are calculated from the CR; they are not values supplied by the SDK caller.
+`workerGroups` is a name for that list inside CEL. Each read can use `variables.workerGroups` instead of repeating its location. If the location changes, only the variable definition needs changing.
+
+This does not add a field to the RayCluster. It also does not supply a new value for a write; that still comes from `Value` in the SDK call.
 
 </details>
 
 <details>
 <summary>component.fields: add a field without changing the SDK</summary>
 
-Inside an App's Karta root component:
+Suppose an App stores a setting at `d.d.c`, and the controller should call it `exampleos`. Add this to the App's Karta root component:
 
 ```yaml
 name: app
@@ -153,7 +173,7 @@ fields:
     pathWrite: /d/d/c
 ```
 
-For an editor opened with that App's Karta and workload:
+After opening that Karta and workload with `tree.Open`, the controller writes by name:
 
 ```go
 if err := editor.Mutate(ctx, tree.Write{
@@ -163,14 +183,18 @@ if err := editor.Mutate(ctx, tree.Write{
 }
 ```
 
-`d.d.c: old` becomes `d.d.c: new`. Other fields under `d.d` stay. The caller uses `exampleos`; it does not need `/d/d/c` or a new SDK enum.
+`d.d.c: old` becomes `d.d.c: new`. Other fields under `d.d` stay. `tree.Field("exampleos")` accepts the name from the Karta definition. Adding a setting does not require adding a Go constant or teaching the controller its JSON path.
 
 </details>
 
 <details>
-<summary>instanceIds.expression: select Ray's gpu worker group by name</summary>
+<summary>instanceIds.expression: how to change gpu without changing cpu</summary>
 
-A RayCluster can have several worker groups. This workload excerpt has two:
+A RayCluster has two worker groups, `gpu` and `cpu`. Suppose only `gpu` should use a different scheduler.
+
+`Component: "worker"` alone cannot say which group to change. `instanceIds.expression` tells Karta how to read each group's name. The controller can then say `Instance: "gpu"`.
+
+The relevant part of the workload, before the change:
 
 ```yaml
 spec:
@@ -183,7 +207,7 @@ spec:
         spec: {schedulerName: default-scheduler}
 ```
 
-The worker component in Karta reads their names and templates in the same order:
+The Karta author defines how to find the groups once. Controllers using `kartas.Raycluster()` already get these rules from the catalog; they do not need to write this CEL themselves. The shortened definition is:
 
 ```yaml
 # Under spec.structureDefinition.childComponents.
@@ -196,11 +220,18 @@ The worker component in Karta reads their names and templates in the same order:
       pathWriteExpression: '"/spec/workerGroupSpecs/" + string(index) + "/template"'
 ```
 
-The IDs are `["gpu", "cpu"]`. They come from `groupName`; Karta does not invent them. These identify worker groups, not individual Pods.
+Read `.map(g, g.groupName)` as "for each group `g`, take its `groupName`." On this workload, it returns `["gpu", "cpu"]`. These are the names already in the RayCluster. Karta does not create them.
 
-With an editor opened using `kartas.Raycluster()` and that workload, change only `gpu`:
+The template expression reads each group's template in the same order. To write to `gpu`, the SDK finds its position, `0`, and gives that number to `pathWriteExpression` as `index`. The result is `/spec/workerGroupSpecs/0/template`.
+
+The controller does not calculate that path. With the RayCluster loaded into `workload`, it calls:
 
 ```go
+editor, err := tree.Open(ctx, kartas.Raycluster(), workload)
+if err != nil {
+    return err
+}
+
 if err := editor.Mutate(ctx, tree.Write{
     Component: "worker", Instance: "gpu", Field: tree.PodTemplateSpec,
     Value: map[string]any{
@@ -209,27 +240,52 @@ if err := editor.Mutate(ctx, tree.Write{
 }); err != nil {
     return err
 }
+
+updated, err := editor.GetResource()
+if err != nil {
+    return err
+}
 ```
 
-`gpu` now uses `batch-scheduler`. `cpu` still uses `default-scheduler`.
+Here, `Component` selects the worker definition, `Instance` selects the `gpu` group, and `Field` selects its template. `Value` supplies the part of that template to change.
 
-Why an ID instead of a number? The SDK finds `gpu` in the current ID list and gives its position to the write expression as `index`:
+The default Merge keeps the rest of the template, including containers and their images. In `updated`:
+
+| Worker group | Scheduler before | Scheduler after |
+| --- | --- | --- |
+| `gpu` | `default-scheduler` | `batch-scheduler` |
+| `cpu` | `default-scheduler` | `default-scheduler` |
+
+The controller still needs to save `updated` to Kubernetes. This edits the worker group's template, not its running Pods directly.
+
+Why use `gpu` instead of position `0`? If the list order changes in the workload passed to Karta, position `0` might belong to `cpu`:
 
 | Workload order | index for gpu | Resolved path |
 | --- | --- | --- |
 | `[gpu, cpu]` | `0` | `/spec/workerGroupSpecs/0/template` |
 | `[cpu, gpu]` | `1` | `/spec/workerGroupSpecs/1/template` |
 
-The SDK call stays the same when the groups move. The tree's display order does not decide where to write. IDs must be unique, nonempty strings and are read-only. Keep the ID and template reads in the same order; sorting only the IDs would pair them with the wrong templates.
+The same `Instance: "gpu"` call still selects `gpu`. A group is called an "instance" here because several groups share one `worker` definition. These IDs identify groups, not individual Pods.
+
+<details>
+<summary>Rules when writing a Karta with repeated components</summary>
+
+IDs must be unique, nonempty strings and are read-only. Keep the ID and template reads in the same order. For example, sorting only `["gpu", "cpu"]` to `["cpu", "gpu"]` would attach the name `cpu` to the first group's template.
+
+The tree may sort names for display. The SDK uses their positions in the workload when finding write paths, not the display order. It returns an error if the requested ID does not exist.
 
 These short expressions require the shown list and fields. The catalog also handles missing lists. `instanceIds.expression` replaces jq's `instanceIdPath`; identifying groups is not a new capability.
+
+</details>
 
 </details>
 
 <details>
 <summary>suspendDefinition: use the same suspend call for different workloads</summary>
 
-Inside a Job's Karta root component:
+A controller should be able to ask "can this workload be suspended?" and then suspend it. It should not need to know where each operator keeps that setting.
+
+For a Job, its Karta root component declares:
 
 ```yaml
 suspendDefinition:
@@ -244,7 +300,7 @@ For an editor opened with the Job definition:
 | `editor.Suspend(ctx)` | Sets `spec.suspend: true`. |
 | `editor.Resume(ctx)` | Sets `spec.suspend: false`. |
 
-The controller can use the same calls for another workload. Its Karta supplies the boolean field's location. A computed location can use `pathWriteExpression` instead. This changes the local spec; it does not wait for the workload to stop or resume.
+Another workload can use the same SDK calls if its Karta points to the boolean setting that controls suspension. Use `pathWriteExpression` if that location varies. These calls change the local CR; they do not save it to Kubernetes or wait for the workload to stop or resume.
 
 </details>
 
