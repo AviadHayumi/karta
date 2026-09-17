@@ -372,18 +372,30 @@ func (a *Accessor) ExtractInstanceIds(ctx context.Context, definition v1alpha1.C
 		return nil, DefinitionNotFoundError("no instance ids defined")
 	}
 
-	// The expression returns the whole id list as one value.
-	var instanceIds []string
 	results, err := a.runner.EvaluateWithVariables(ctx, definition.InstanceIds.Expression, nil)
 	if err != nil {
 		return nil, err
 	}
-	if len(results) == 1 {
-		if list, ok := results[0].([]any); ok {
-			for _, id := range list {
-				instanceIds = append(instanceIds, fmt.Sprintf("%v", id))
-			}
+	if len(results) != 1 {
+		return nil, fmt.Errorf("instance ids expression must return exactly one list, got %d results", len(results))
+	}
+	list, ok := results[0].([]any)
+	if !ok {
+		return nil, fmt.Errorf("instance ids expression must return a list, got %T", results[0])
+	}
+
+	var instanceIds []string
+	seen := make(map[string]bool, len(list))
+	for index, value := range list {
+		id, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("instance ids must be strings, got %T at index %d", value, index)
 		}
+		if seen[id] {
+			return nil, fmt.Errorf("duplicate instance id %q at index %d", id, index)
+		}
+		seen[id] = true
+		instanceIds = append(instanceIds, id)
 	}
 
 	// Validate all instance ids are not empty
