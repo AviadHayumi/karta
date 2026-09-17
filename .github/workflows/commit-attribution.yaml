@@ -11,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
   commit-attribution:
@@ -19,22 +18,30 @@ jobs:
     if: github.event.deleted != true
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the commitlint configuration
+      - name: Check out the incoming commit history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
           persist-credentials: false
 
-      # The action reads one API page of at most 100 commits.
-      - name: Reject ranges the action cannot check completely
-        run: |
-          jq -e 'if has("pull_request") then .pull_request.commits else (.commits | length) end | . > 0 and . <= 100' "$GITHUB_EVENT_PATH" > /dev/null || {
-            echo '::error::Commit attribution requires 1-100 incoming commits. Split or squash larger changes before retrying.'
-            exit 1
-          }
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24.21.0'
+          package-manager-cache: false
+
+      - name: Install locked commitlint dependencies
+        run: npm ci --prefix .github/commitlint --ignore-scripts --no-audit --no-fund
 
       - name: Check incoming commits
-        uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6.2.1
-        with:
-          configFile: commitlint.config.mjs
-          failOnErrors: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # A new branch has no previous tip; check all its reachable commits.
+          if [[ "$BASE_SHA" == 0000000000000000000000000000000000000000 ]]; then
+            node .github/commitlint/node_modules/@commitlint/cli/cli.js --config commitlint.config.mjs --to "$HEAD_SHA" --verbose
+          else
+            node .github/commitlint/node_modules/@commitlint/cli/cli.js --config commitlint.config.mjs --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+          fi

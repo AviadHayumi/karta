@@ -35,3 +35,6 @@ config/crd/_.yaml
 /karta-wasm/wasm_exec.js
 
 hack/e2e/operators/.installed-versions*
+
+# Commit attribution CI dependencies
+/.github/commitlint/node_modules/

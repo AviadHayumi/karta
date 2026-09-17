@@ -139,17 +139,27 @@ co-authors. Human `Co-authored-by` trailers and the required human `Signed-off-b
 trailer remain valid. AI-assisted contributions are allowed; this check does not
 detect or prohibit AI use.
 
-The `Commit attribution` CI check uses
-[wagoid/commitlint-github-action](https://github.com/wagoid/commitlint-github-action)
-with the rule in `commitlint.config.mjs`. It rejects `Co-authored-by` lines
+The `Commit attribution` CI check uses the official
+[@commitlint/cli](https://commitlint.js.org/guides/ci-setup) with the rule in
+`commitlint.config.mjs`. It rejects `Co-authored-by` lines
 containing Claude, ChatGPT, Copilot, Codex, Devin, Cursor, Gemini, or Anthropic,
 case-insensitively. Merge, revert, and fixup commit messages are checked too.
 This is name matching, not an identity lookup. Unlisted names are outside the
 rule's scope. Normal prose mentioning these tools is allowed.
 
-The action retrieves incoming commits from GitHub's API. Its pinned version
-reads at most 100 commits, so the workflow rejects larger ranges rather than
-checking only part of them. Split or squash a larger change before retrying.
+The workflow reads the full incoming range from local Git history, without an
+API page limit. For a new branch push, it checks all reachable commits. It uses
+GitHub's checkout and Node setup actions pinned to commit SHAs, an exact Node
+version, and the dependency lockfile in `.github/commitlint/`. Installation uses
+`npm ci --ignore-scripts`, which verifies package integrity against the lockfile
+and disables dependency lifecycle scripts.
+
+Run the same check locally with Node.js 24.21.0:
+
+```bash
+npm ci --prefix .github/commitlint --ignore-scripts --no-audit --no-fund
+node .github/commitlint/node_modules/@commitlint/cli/cli.js --config commitlint.config.mjs --from origin/main --to HEAD --verbose
+```
 
 If it fails, remove the AI co-author line from each reported commit message.
 Keep human attribution and DCO sign-offs. A new commit does not repair an earlier
