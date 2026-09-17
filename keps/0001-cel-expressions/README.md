@@ -855,7 +855,7 @@ These answer three separate questions. They are SDK options, not new Karta CR fi
 | Option | Question | Default for Mutate |
 | --- | --- | --- |
 | `Strategy` | Keep unmentioned map keys, or replace the selected value? | `resource.Merge` |
-| `PatchType` | Which patch format should the SDK generate? | `resource.PatchTypeMergePatch` |
+| `PatchType` | Which patch rules should the SDK apply? | `resource.PatchTypeMergePatch` |
 | `Parents` | May the SDK create missing containing objects? | `resource.CreateMapParents` |
 
 For example, replace all predictor labels with the controller's complete desired map:
@@ -901,7 +901,7 @@ Lists are different. Starting with containers `[api, metrics]`, supplying `[api]
 <details>
 <summary>MergePatch or JSONPatch: deleting a field versus storing null</summary>
 
-For an ordinary image string or label update, either format works. MergePatch describes a partial object. JSONPatch describes operations on paths. The SDK builds them; CEL only finds the destination.
+For an ordinary image string or label update, either format works. MergePatch describes a partial object. JSONPatch describes operations on paths. The SDK applies these rules to the local workload; CEL only finds the destination. This does not send an API patch request.
 
 For the team-label Merge above, the intent can be represented as:
 
@@ -982,7 +982,19 @@ draft, err := tree.BeginEdit(
 )
 ```
 
-Existing null is a separate case in this implementation. `Mutate` with CreateMapParents treats a null parent as an object to create. A draft still rejects an existing null parent, even with this option; it only creates absent maps. Use `Replace` on that null value explicitly if replacing it is intended.
+Existing null is a separate case in this implementation. `Mutate` with CreateMapParents treats a null parent as an object to create. A draft still rejects an existing null parent, even with this option; it only creates absent maps.
+
+If replacing `nodeSelector: null` is intended, replace that entire value explicitly:
+
+```go
+if err := template.At("spec", "nodeSelector").Replace(
+    map[string]any{"region": "west"},
+); err != nil {
+    return err
+}
+```
+
+This stages `nodeSelector: {region: west}`. Do not first replace it with `{}` and then try selecting children: draft selections still use the starting value.
 
 </details>
 
