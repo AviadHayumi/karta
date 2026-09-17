@@ -1865,17 +1865,11 @@ var _ = Describe("Accessor", func() {
 	})
 
 	Describe("ApplySuspendActions", func() {
-		It("should apply each suspend action in sequence and mutate the object", func() {
+		It("should toggle suspension and let the SDK caller add another mutation", func() {
 			reactorObject := types.NewReactorObject()
 			reactorKarta := types.ReactorKarta()
 			reactorKarta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
-				SuspendActions: []v1alpha1.PatchEntry{
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`},
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"labels": {"state": "suspended"}}}`},
-				},
-				ResumeActions: []v1alpha1.PatchEntry{
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`},
-				},
+				PathWrite: ptr.To("/spec/suspend"),
 			}
 			accessor, reactorComp := accessorForObject(reactorKarta, reactorObject, "reactor")
 
@@ -1885,6 +1879,9 @@ var _ = Describe("Accessor", func() {
 			obj, err := accessor.GetObject()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(obj["spec"].(map[string]any)["suspend"]).To(BeTrue())
+			Expect(accessor.ApplyPatch(ctx, PatchTypeMergePatch, map[string]any{"metadata": map[string]any{"labels": map[string]any{"state": "suspended"}}})).To(Succeed())
+			obj, err = accessor.GetObject()
+			Expect(err).NotTo(HaveOccurred())
 			Expect(obj["metadata"].(map[string]any)["labels"].(map[string]any)["state"]).To(Equal("suspended"))
 		})
 
@@ -1902,17 +1899,11 @@ var _ = Describe("Accessor", func() {
 	})
 
 	Describe("ApplyResumeActions", func() {
-		It("should apply each resume action in sequence and mutate the object", func() {
+		It("should toggle resumption and let the SDK caller add another mutation", func() {
 			reactorObject := types.NewReactorObject()
 			reactorKarta := types.ReactorKarta()
 			reactorKarta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
-				SuspendActions: []v1alpha1.PatchEntry{
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`},
-				},
-				ResumeActions: []v1alpha1.PatchEntry{
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`},
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"labels": {"state": "running"}}}`},
-				},
+				PathWrite: ptr.To("/spec/suspend"),
 			}
 			accessor, reactorComp := accessorForObject(reactorKarta, reactorObject, "reactor")
 
@@ -1922,6 +1913,9 @@ var _ = Describe("Accessor", func() {
 			obj, err := accessor.GetObject()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(obj["spec"].(map[string]any)["suspend"]).To(BeFalse())
+			Expect(accessor.ApplyPatch(ctx, PatchTypeMergePatch, map[string]any{"metadata": map[string]any{"labels": map[string]any{"state": "running"}}})).To(Succeed())
+			obj, err = accessor.GetObject()
+			Expect(err).NotTo(HaveOccurred())
 			Expect(obj["metadata"].(map[string]any)["labels"].(map[string]any)["state"]).To(Equal("running"))
 		})
 
@@ -1939,10 +1933,9 @@ var _ = Describe("Accessor", func() {
 	})
 })
 
-var _ = Describe("Patch writes addressed by a variable", func() {
-	// The kserve shape: the container lives under a key only a variable can name, and the
-	// write replaces it. The delete pass empties the location the variable points at, so the
-	// set pass must keep the addressing resolved against the pre-write document.
+var _ = Describe("Path writes addressed by a variable", func() {
+	// The destination depends on storageUri, which is absent from corev1.Container.
+	// Resolve that destination before replacing the selected object.
 	newKarta := func() *v1alpha1.Karta {
 		return &v1alpha1.Karta{
 			Spec: v1alpha1.KartaSpec{
@@ -1956,9 +1949,8 @@ var _ = Describe("Patch writes addressed by a variable", func() {
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
 								Container: &v1alpha1.ValueAccessor{
-									Expression:    `variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null`,
-									Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `variables.containerKey != "" ? {"spec": {"predictor": {variables.containerKey: value}}} : {}`}},
-									PatchStrategy: v1alpha1.PatchStrategyReplace,
+									Expression:          `variables.containerKey != "" ? object.spec.predictor[variables.containerKey] : null`,
+									PathWriteExpression: `variables.containerKey != "" ? "/spec/predictor/" + variables.containerKey.replace("~", "~0").replace("/", "~1") : dyn(null)`,
 								},
 							},
 						},
@@ -1968,7 +1960,7 @@ var _ = Describe("Patch writes addressed by a variable", func() {
 		}
 	}
 
-	It("should land a replace write on the key the variable named before the delete pass", func() {
+	It("should resolve the variable before replacing the selected container", func() {
 		karta := newKarta()
 		object := map[string]any{
 			"spec": map[string]any{"predictor": map[string]any{
@@ -1979,7 +1971,7 @@ var _ = Describe("Patch writes addressed by a variable", func() {
 		runner, err := cel.NewRunnerWithVariables(object,
 			[]cel.NamedExpression{{Name: karta.Spec.Variables[0].Name, Expression: karta.Spec.Variables[0].Expression}})
 		Expect(err).NotTo(HaveOccurred())
-		accessor := NewAccessor(runner)
+		accessor := NewAccessor(runner, MutationOptions{Strategy: Replace})
 		component, err := NewComponentFactory(karta, accessor).GetComponent("root")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -2002,11 +1994,9 @@ var _ = Describe("Patch writes addressed by a variable", func() {
 	})
 })
 
-var _ = Describe("Patch writes addressed by an inline object expression", func() {
-	// The same kserve shape, with the key computed inside the patch instead of a variable.
-	// The patch expression must be constructed against the pre-write document: the delete pass
-	// of a replace empties the location the expression scans for.
-	It("should land a replace write on the key the patch names before the delete pass", func() {
+var _ = Describe("Path writes addressed by an inline object expression", func() {
+	// The expression finds the destination using a field that replacement removes.
+	It("should resolve the inline path before replacing the selected container", func() {
 		karta := &v1alpha1.Karta{
 			Spec: v1alpha1.KartaSpec{
 				StructureDefinition: v1alpha1.StructureDefinition{
@@ -2015,10 +2005,8 @@ var _ = Describe("Patch writes addressed by an inline object expression", func()
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
 								Container: &v1alpha1.ValueAccessor{
-									Expression: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]).map(k, object.spec.predictor[k]) + [null])[0]`,
-									Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]) + [""])[0] != "" ?
-										{"spec": {"predictor": {(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]))[0]: value}}} : {}`}},
-									PatchStrategy: v1alpha1.PatchStrategyReplace,
+									Expression:          `(object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]).map(k, object.spec.predictor[k]) + [null])[0]`,
+									PathWriteExpression: `"/spec/predictor/" + (object.spec.predictor.map(k, string(k)).filter(k, type(object.spec.predictor[k]) == map && "storageUri" in object.spec.predictor[k]))[0].replace("~", "~0").replace("/", "~1")`,
 								},
 							},
 						},
@@ -2034,7 +2022,7 @@ var _ = Describe("Patch writes addressed by an inline object expression", func()
 		}
 		runner, err := cel.NewRunner(object)
 		Expect(err).NotTo(HaveOccurred())
-		accessor := NewAccessor(runner)
+		accessor := NewAccessor(runner, MutationOptions{Strategy: Replace})
 		component, err := NewComponentFactory(karta, accessor).GetComponent("root")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -2063,7 +2051,7 @@ var _ = Describe("UpdateFragmentedPodSpec atomicity", func() {
 					Name: "root",
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"schedulerName": value}}`}}},
+							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/schedulerName")},
 						},
 					},
 				},
@@ -2074,8 +2062,8 @@ var _ = Describe("UpdateFragmentedPodSpec atomicity", func() {
 		component, err := NewComponentFactory(karta, accessor).GetComponent("root")
 		Expect(err).NotTo(HaveOccurred())
 
-		// the scheduler write lands first and succeeds; the image has no definition, so its
-		// non-empty value aborts the update midway
+		// The scheduler is writable, but the image has no definition. The non-empty
+		// image must reject the entire update before publishing the scheduler change.
 		fragments := map[string]FragmentedPodSpec{"": {SchedulerName: "after", Image: "boom"}}
 		err = component.UpdateFragmentedPodSpec(context.Background(), fragments)
 		Expect(err).To(HaveOccurred())
@@ -2095,8 +2083,8 @@ var _ = Describe("multi-instance patch writes", func() {
 					InstanceIds: &v1alpha1.ValueAccessor{Expression: `["a", "b"]`},
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						PodSpec: &v1alpha1.ValueAccessor{
-							Expression: `[{"containers": []}, {"containers": []}]`,
-							Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/items/" + string(index) + "/x", "value": "written"}]`}},
+							Expression:          `[{"containers": []}, {"containers": []}]`,
+							PathWriteExpression: `"/spec/items/" + string(index) + "/x"`,
 						},
 					},
 				},

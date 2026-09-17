@@ -53,10 +53,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"rayClusterConfig"][?"headGroupSpec"][?"template"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"rayClusterConfig": {"headGroupSpec": {"template": value}}}}'
-            patchStrategy: Replace
+            pathWrite: /spec/rayClusterConfig/headGroupSpec/template
         scaleDefinition:
           replicas:
             expression: "1"
@@ -73,9 +70,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: ([dyn(object[?"spec"][?"rayClusterConfig"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))
-            patches:
-              - patchType: JSONPatch
-                expression: '[{"op": "add", "path": "/spec/rayClusterConfig/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
+            pathWriteExpression: '"/spec/rayClusterConfig/workerGroupSpecs/" + string(index) + "/template"'
         scaleDefinition:
           replicas:
             expression: '(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])'

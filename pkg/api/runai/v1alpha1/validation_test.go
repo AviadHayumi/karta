@@ -443,3 +443,75 @@ var _ = Describe("KartaValidator", func() {
 		})
 	})
 })
+
+var _ = Describe("References validation", func() {
+	base := func(refs ...ResourceReference) *Karta {
+		return &Karta{Spec: KartaSpec{StructureDefinition: StructureDefinition{
+			RootComponent: ComponentDefinition{
+				Name:             "root",
+				Kind:             &GroupVersionKind{Group: "batch", Version: "v1", Kind: "Job"},
+				StatusDefinition: &StatusDefinition{},
+			},
+			References: refs,
+		}}}
+	}
+	gvk := GroupVersionKind{Group: "trainer.kubeflow.org", Version: "v1alpha1", Kind: "ClusterTrainingRuntime"}
+
+	DescribeTable("rejects invalid references",
+		func(ref ResourceReference, message string) {
+			err := NewKartaValidator(base(ref)).Validate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(message))
+		},
+		Entry("both lookup and list",
+			ResourceReference{Name: "r", GVK: gvk,
+				Lookup: &LookupReference{NameExpression: "object.metadata.name"},
+				List:   &ListReference{MatchLabels: map[string]LabelValue{"a": {Value: ptr.To("b")}}}},
+			"exactly one of lookup or list"),
+		Entry("neither lookup nor list",
+			ResourceReference{Name: "r", GVK: gvk},
+			"exactly one of lookup or list"),
+		Entry("lookup without a name expression",
+			ResourceReference{Name: "r", GVK: gvk, Lookup: &LookupReference{}},
+			"empty nameExpression"),
+		Entry("list without any selector",
+			ResourceReference{Name: "r", GVK: gvk, List: &ListReference{}},
+			"must set matchLabels or matchExpressions"),
+		Entry("label value with both value and expression",
+			ResourceReference{Name: "r", GVK: gvk, List: &ListReference{MatchLabels: map[string]LabelValue{
+				"a": {Value: ptr.To("b"), Expression: ptr.To("object.metadata.name")},
+			}}},
+			"exactly one of value or expression"),
+		Entry("In requirement without values",
+			ResourceReference{Name: "r", GVK: gvk, List: &ListReference{MatchExpressions: []LabelSelectorRequirement{
+				{Key: "a", Operator: LabelSelectorOpIn},
+			}}},
+			"requires values"),
+		Entry("Exists requirement with values",
+			ResourceReference{Name: "r", GVK: gvk, List: &ListReference{MatchExpressions: []LabelSelectorRequirement{
+				{Key: "a", Operator: LabelSelectorOpExists, Values: []LabelValue{{Value: ptr.To("x")}}},
+			}}},
+			"must not set values"),
+		Entry("missing gvk kind",
+			ResourceReference{Name: "r", GVK: GroupVersionKind{Group: "g", Version: "v1"},
+				Lookup: &LookupReference{NameExpression: "object.metadata.name"}},
+			"must have version and kind"),
+	)
+
+	It("rejects duplicate reference names", func() {
+		ref := ResourceReference{Name: "r", GVK: gvk, Lookup: &LookupReference{NameExpression: "object.metadata.name"}}
+		err := NewKartaValidator(base(ref, ref)).Validate()
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("not unique"))
+	})
+
+	It("accepts a valid lookup and list pair", func() {
+		err := NewKartaValidator(base(
+			ResourceReference{Name: "runtime", GVK: gvk, Lookup: &LookupReference{NameExpression: "object.spec.runtimeRef.name"}},
+			ResourceReference{Name: "pods", GVK: GroupVersionKind{Version: "v1", Kind: "Pod"}, List: &ListReference{
+				MatchLabels: map[string]LabelValue{"job-name": {Expression: ptr.To("object.metadata.name")}},
+			}},
+		)).Validate()
+		Expect(err).NotTo(HaveOccurred())
+	})
+})

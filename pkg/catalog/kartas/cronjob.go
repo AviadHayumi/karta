@@ -27,11 +27,10 @@ func CronJob() *v1alpha1.Karta {
 						Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specJobTemplateSpecParallelism`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"jobTemplate"][?"spec"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"jobTemplate": {"spec": {"template": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"jobTemplate"][?"spec"][?"template"].orValue(null)`, PathWrite: ptr.To("/spec/jobTemplate/spec/template")},
 					},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`}},
-						ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`}},
+						PathWrite: ptr.To("/spec/suspend"),
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						StatusMappings: v1alpha1.StatusMappings{

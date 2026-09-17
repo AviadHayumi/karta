@@ -71,7 +71,7 @@ var _ = Describe("CEL runner", func() {
 	It("refuses to assign anywhere but the root", func() {
 		r, err := celpkg.NewRunner(decode(`{"spec":{}}`))
 		Expect(err).NotTo(HaveOccurred())
-		Expect(r.Assign(ctx, `.spec.replicas`, 2)).To(MatchError(ContainSubstring("writes are patches")))
+		Expect(r.Assign(ctx, `.spec.replicas`, 2)).To(MatchError(ContainSubstring("only publishes complete documents")))
 	})
 
 	It("keeps an object handed out earlier intact across a root replace", func() {

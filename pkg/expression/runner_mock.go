@@ -147,6 +147,21 @@ func (mr *MockVariableEvaluatorMockRecorder) EvaluateWithVariables(ctx, expressi
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EvaluateWithVariables", reflect.TypeOf((*MockVariableEvaluator)(nil).EvaluateWithVariables), ctx, expression, vars)
 }
 
+// EvaluateWritePath mocks base method.
+func (m *MockVariableEvaluator) EvaluateWritePath(ctx context.Context, expression string, vars map[string]any) ([]any, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EvaluateWritePath", ctx, expression, vars)
+	ret0, _ := ret[0].([]any)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EvaluateWritePath indicates an expected call of EvaluateWritePath.
+func (mr *MockVariableEvaluatorMockRecorder) EvaluateWritePath(ctx, expression, vars any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EvaluateWritePath", reflect.TypeOf((*MockVariableEvaluator)(nil).EvaluateWritePath), ctx, expression, vars)
+}
+
 // ResolveVariables mocks base method.
 func (m *MockVariableEvaluator) ResolveVariables(ctx context.Context, expressions ...string) (map[string]any, error) {
 	m.ctrl.T.Helper()
@@ -233,6 +248,21 @@ func (m *MockRunner) EvaluateWithVariables(ctx context.Context, expression strin
 func (mr *MockRunnerMockRecorder) EvaluateWithVariables(ctx, expression, vars any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EvaluateWithVariables", reflect.TypeOf((*MockRunner)(nil).EvaluateWithVariables), ctx, expression, vars)
+}
+
+// EvaluateWritePath mocks base method.
+func (m *MockRunner) EvaluateWritePath(ctx context.Context, expression string, vars map[string]any) ([]any, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EvaluateWritePath", ctx, expression, vars)
+	ret0, _ := ret[0].([]any)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EvaluateWritePath indicates an expected call of EvaluateWritePath.
+func (mr *MockRunnerMockRecorder) EvaluateWritePath(ctx, expression, vars any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EvaluateWritePath", reflect.TypeOf((*MockRunner)(nil).EvaluateWritePath), ctx, expression, vars)
 }
 
 // GetObject mocks base method.

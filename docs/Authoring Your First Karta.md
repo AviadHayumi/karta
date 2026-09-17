@@ -5,6 +5,10 @@ Copyright (c) 2026 NVIDIA Corporation
 
 # Authoring Your First Karta
 
+The write API changed after this tutorial was written. See the
+[catalog](catalog/) for current definitions and the [quickstart](examples/quickstart/)
+for SDK calls. Do not apply the old patch-list examples to this branch.
+
 This tutorial walks you through writing a Karta definition from scratch for a
 single workload type. By the end you will have a complete, valid definition for
 a Kubernetes `batch/v1` Job and you will understand the building blocks well

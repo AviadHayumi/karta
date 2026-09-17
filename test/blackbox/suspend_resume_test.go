@@ -128,27 +128,28 @@ var _ = Describe("Suspend and Resume (integration)", func() {
 		})
 	})
 
-	Describe("Multi-action SuspendDefinition", func() {
-		It("should apply all suspend actions in sequence", func() {
-			karta.Spec.StructureDefinition.RootComponent.SuspendDefinition = &v1alpha1.SuspendDefinition{
-				SuspendActions: []v1alpha1.PatchEntry{
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`},
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"annotations": {"suspended-by": "karta"}}}`},
-				},
-				ResumeActions: []v1alpha1.PatchEntry{
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`},
-					{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"metadata": {"annotations": {"suspended-by": null}}}`},
-				},
-			}
-			accessor, component = sharedSetup(karta, pyflow, "pyflow")
-
+	Describe("Caller-owned suspend side effects", func() {
+		It("should suspend and resume with annotation updates supplied by the SDK caller", func() {
 			Expect(component.Suspend(ctx)).To(Succeed())
+			Expect(accessor.ApplyPatch(ctx, resource.PatchTypeMergePatch, map[string]any{
+				"metadata": map[string]any{"annotations": map[string]any{"suspended-by": "karta"}},
+			})).To(Succeed())
 
 			obj, err := accessor.GetObject()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(obj["spec"].(map[string]any)["suspend"]).To(BeTrue())
 			annotations := obj["metadata"].(map[string]any)["annotations"].(map[string]any)
 			Expect(annotations["suspended-by"]).To(Equal("karta"))
+
+			Expect(component.Resume(ctx)).To(Succeed())
+			Expect(accessor.ApplyPatch(ctx, resource.PatchTypeMergePatch, map[string]any{
+				"metadata": map[string]any{"annotations": map[string]any{"suspended-by": nil}},
+			})).To(Succeed())
+			obj, err = accessor.GetObject()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(obj["spec"].(map[string]any)["suspend"]).To(BeFalse())
+			annotations = obj["metadata"].(map[string]any)["annotations"].(map[string]any)
+			Expect(annotations).NotTo(HaveKey("suspended-by"))
 		})
 	})
 

@@ -43,47 +43,31 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"schedulerName"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/schedulerName", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/spec/podSpec/schedulerName"'
             labels:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"labels"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/labels", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/labels"'
             annotations:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"annotations"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/annotations", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/annotations"'
             resourceClaims:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"resourceClaims"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/resourceClaims", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/spec/podSpec/resourceClaims"'
             podAffinity:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"affinity"][?"podAffinity"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/podAffinity", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/podAffinity"'
             nodeAffinity:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"affinity"][?"nodeAffinity"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/nodeAffinity", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/spec/podSpec/affinity/nodeAffinity"'
             containers:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"containers"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/containers", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/spec/podSpec/containers"'
             priorityClassName:
               expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"podSpec"][?"priorityClassName"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/template/cliques/" + string(index) + "/spec/podSpec/priorityClassName", "value": value}]'
+              pathWriteExpression: '"/spec/template/cliques/" + string(index) + "/spec/podSpec/priorityClassName"'
         scaleDefinition:
           replicas:
-            expression: '(variables.cliqueReplicas.size() > 0 ? variables.cliqueReplicas : [dyn(1.0)]).map(v, variables.specReplicasFloat * v)'
+            expression: variables.cliqueReplicas.map(v, variables.specReplicasFloat * v)
           minReplicas:
             expression: ([dyn(object[?"spec"][?"template"][?"cliques"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"spec"][?"autoScalingConfig"][?"minReplicas"].orValue(null))
           maxReplicas:
@@ -103,7 +87,7 @@ spec:
         ownerRef: podcliqueset
         scaleDefinition:
           replicas:
-            expression: '(variables.scalingGroupReplicas.size() > 0 ? variables.scalingGroupReplicas : [dyn(1.0)]).map(v, variables.specReplicasFloat * v)'
+            expression: variables.scalingGroupReplicas.map(v, variables.specReplicasFloat * v)
           minReplicas:
             expression: ([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"scaleConfig"][?"minReplicas"].orValue(null))
           maxReplicas:
@@ -144,9 +128,9 @@ spec:
     - name: scalingGroups
       expression: ([dyn(object[?"spec"][?"template"][?"podCliqueScalingGroups"].orValue(null))].filter(v, type(v) == list) + [[]])[0]
     - name: cliqueReplicas
-      expression: variables.cliques.map(c, dyn(c.?spec.?replicas.orValue(null))).filter(v, v != null && v != false)
+      expression: 'variables.cliques.map(c, c.?spec.?replicas.orValue(null) == null ? 1.0 : dyn(c.spec.replicas))'
     - name: scalingGroupReplicas
-      expression: variables.scalingGroups.map(g, dyn(g.?replicas.orValue(null))).filter(v, v != null && v != false)
+      expression: 'variables.scalingGroups.map(g, g.?replicas.orValue(null) == null ? 1.0 : dyn(g.replicas))'
     - name: statusAvailableReplicas
       expression: ([dyn(object.?status.?availableReplicas.orValue(null))].filter(v, v != null && v != false) + [0])[0]
     - name: specReplicas

@@ -10,14 +10,9 @@ import (
 	"strings"
 
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
-
-	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 )
 
-// mergePatch merges a constructed partial object into the live one, the way a
-// MutatingAdmissionPolicy applyConfiguration mutation is merged: maps merge recursively, any other
-// value replaces, and null removes the field. Both engines evaluate the patch expression; this
-// merge is shared, so an apply cannot differ between them.
+// mergePatch implements RFC 7396. It is not strategic merge or ApplyConfiguration.
 func mergePatch(live, patch any) any {
 	patchMap, ok := patch.(map[string]any)
 	if !ok {
@@ -87,23 +82,21 @@ func ensureAddParents(doc any, path string) {
 	}
 }
 
-// checkConstructedPatch checks what a patch expression built against the entry's
-// declared patchType: a map for MergePatch, a list of RFC 6902 operations for
-// JSONPatch. Anything else is an error, never a guess. An empty map or list means no
-// change, reported through the empty result.
-func checkConstructedPatch(constructed any, patchType v1alpha1.PatchType) (any, bool, error) {
+// checkConstructedPatch validates the shape of a caller-built SDK patch.
+// An empty map or list means no change, reported through the empty result.
+func checkConstructedPatch(constructed any, patchType PatchType) (any, bool, error) {
 	switch patchType {
-	case v1alpha1.PatchTypeMergePatch:
+	case PatchTypeMergePatch:
 		patch, ok := constructed.(map[string]any)
 		if !ok {
-			return nil, false, fmt.Errorf("a MergePatch expression must build a map, got %T", constructed)
+			return nil, false, fmt.Errorf("a MergePatch document must be a map, got %T", constructed)
 		}
 
 		return patch, len(patch) == 0, nil
-	case v1alpha1.PatchTypeJSONPatch:
+	case PatchTypeJSONPatch:
 		ops, ok := constructed.([]any)
 		if !ok {
-			return nil, false, fmt.Errorf("a JSONPatch expression must build a list of RFC 6902 operations, got %T", constructed)
+			return nil, false, fmt.Errorf("a JSONPatch must be a list of RFC 6902 operations, got %T", constructed)
 		}
 		for _, op := range ops {
 			entry, isMap := op.(map[string]any)
@@ -121,17 +114,14 @@ func checkConstructedPatch(constructed any, patchType v1alpha1.PatchType) (any, 
 	}
 }
 
-// applyConstructedPatch applies a checked patch by its declared type. A JSONPatch is
-// applied as RFC 6902 operations - the mechanism a MutatingAdmissionPolicy jsonPatch
-// mutation uses, and the one that can address a list element by index. A MergePatch
-// merges, applyConfiguration style.
-func applyConstructedPatch(live, constructed any, patchType v1alpha1.PatchType) (any, error) {
-	if patchType != v1alpha1.PatchTypeJSONPatch {
+// applyConstructedPatch applies a caller-built patch, without evaluating CEL.
+func applyConstructedPatch(live, constructed any, patchType PatchType) (any, error) {
+	if patchType != PatchTypeJSONPatch {
 		return mergePatch(live, constructed), nil
 	}
 	ops, ok := constructed.([]any)
 	if !ok {
-		return nil, fmt.Errorf("a JSONPatch expression must build a list of RFC 6902 operations, got %T", constructed)
+		return nil, fmt.Errorf("a JSONPatch must be a list of RFC 6902 operations, got %T", constructed)
 	}
 	liveJSON, err := json.Marshal(live)
 	if err != nil {
@@ -146,6 +136,16 @@ func applyConstructedPatch(live, constructed any, patchType v1alpha1.PatchType) 
 	}
 	for opIndex, op := range ops {
 		entry := op.(map[string]any)
+		// The pinned v4 dependency rejects root add. RFC 6902 defines root add
+		// and replace as replacing the document; implement that case explicitly.
+		if path, ok := entry["path"].(string); ok && path == "" && (entry["op"] == "add" || entry["op"] == "replace") {
+			value, exists := entry["value"]
+			if !exists {
+				return nil, fmt.Errorf("JSON patch operation %d requires value", opIndex)
+			}
+			scratch = value
+			continue
+		}
 		if entry["op"] == "add" {
 			if path, ok := entry["path"].(string); ok {
 				ensureAddParents(scratch, path)

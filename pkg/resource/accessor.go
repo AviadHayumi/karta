@@ -28,11 +28,22 @@ func (e DefinitionNotFoundError) Error() string {
 
 // Accessor implements extraction and updating of resource data through the engine contract.
 type Accessor struct {
-	runner expression.Runner
+	runner          expression.Runner
+	mutationOptions MutationOptions
 }
 
-func NewAccessor(runner expression.Runner) *Accessor {
-	return &Accessor{runner: runner}
+type fragmentedWriteField struct {
+	name string
+	via  *v1alpha1.ValueAccessor
+	get  func(FragmentedPodSpec) (any, bool)
+}
+
+func NewAccessor(runner expression.Runner, options ...MutationOptions) *Accessor {
+	a := &Accessor{runner: runner}
+	if len(options) > 0 {
+		a.mutationOptions = options[0]
+	}
+	return a
 }
 
 // GetObject returns the object as a map[string]interface{}
@@ -326,104 +337,34 @@ func (a *Accessor) extractConditions(ctx context.Context, condDef *v1alpha1.Cond
 	return conditions, nil
 }
 
-// ApplySuspendActions applies the component's SuspendActions in sequence against the manifest.
-// Each action's patch is applied to the document.
-// Returns DefinitionNotFoundError if the component has no SuspendDefinition.
+// ApplySuspendActions writes true to the declared suspend location.
 func (a *Accessor) ApplySuspendActions(ctx context.Context, definition v1alpha1.ComponentDefinition) error {
-	if definition.SuspendDefinition == nil {
-		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have suspendDefinition", definition.Name))
-	}
-	if err := a.applyActions(ctx, definition.SuspendDefinition.SuspendActions); err != nil {
-		return fmt.Errorf("suspendActions: %w", err)
-	}
-	return nil
+	return a.writeSuspended(ctx, definition, true)
 }
 
-// ApplyResumeActions applies the component's ResumeActions in sequence against the manifest.
-// Each action's patch is applied to the document.
-// Returns DefinitionNotFoundError if the component has no SuspendDefinition.
+// ApplyResumeActions writes false to the same declared location.
 func (a *Accessor) ApplyResumeActions(ctx context.Context, definition v1alpha1.ComponentDefinition) error {
+	return a.writeSuspended(ctx, definition, false)
+}
+
+func (a *Accessor) writeSuspended(ctx context.Context, definition v1alpha1.ComponentDefinition, suspended bool) error {
 	if definition.SuspendDefinition == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have suspendDefinition", definition.Name))
 	}
-	if err := a.applyActions(ctx, definition.SuspendDefinition.ResumeActions); err != nil {
-		return fmt.Errorf("resumeActions: %w", err)
-	}
-	return nil
-}
-
-// applyActions runs an ordered action list: entries whose conditions hold construct
-// their patch and apply it in sequence. An empty action list is a no-op, but a
-// non-empty list where no entry applied fails loudly: the definition said nothing
-// about this document shape.
-func (a *Accessor) applyActions(ctx context.Context, actions []v1alpha1.PatchEntry) error {
-	applied := 0
-	for i, action := range actions {
-		matched, err := a.entryMatches(ctx, action, nil)
+	target := definition.SuspendDefinition
+	via := &v1alpha1.ValueAccessor{PathWrite: target.PathWrite, PathWriteExpression: target.PathWriteExpression}
+	values := []any{suspended}
+	if definition.InstanceIds != nil && definition.InstanceIds.Expression != "" {
+		ids, err := a.ExtractInstanceIds(ctx, definition)
 		if err != nil {
-			return fmt.Errorf("[%d]: %w", i, err)
+			return err
 		}
-		if !matched {
-			continue
-		}
-		// EvaluateWithVariables, not Evaluate: a JSONPatch expression builds one list of
-		// operations, and Evaluate would spread it into one result per element.
-		results, err := a.runner.EvaluateWithVariables(ctx, action.Expression, nil)
-		if err != nil {
-			return fmt.Errorf("[%d]: evaluate patch: %w", i, err)
-		}
-		if len(results) != 1 {
-			return fmt.Errorf("[%d]: a patch must construct exactly one object, got %d results", i, len(results))
-		}
-		patch, empty, err := checkConstructedPatch(results[0], action.PatchType)
-		if err != nil {
-			return fmt.Errorf("[%d]: %w", i, err)
-		}
-		applied++
-		if empty {
-			continue
-		}
-		live, err := a.runner.GetObject()
-		if err != nil {
-			return fmt.Errorf("[%d]: %w", i, err)
-		}
-		patched, err := applyConstructedPatch(live, patch, action.PatchType)
-		if err != nil {
-			return fmt.Errorf("[%d]: apply patch: %w", i, err)
-		}
-		if err := a.runner.Assign(ctx, ".", patched); err != nil {
-			return fmt.Errorf("[%d]: apply patch: %w", i, err)
+		values = make([]any, len(ids))
+		for i := range values {
+			values[i] = suspended
 		}
 	}
-	if len(actions) > 0 && applied == 0 {
-		return fmt.Errorf("no action matched the document")
-	}
-
-	return nil
-}
-
-// entryMatches evaluates an entry's match conditions with the given bindings. Every
-// condition must return a boolean; an error, a null, or a non-boolean result fails
-// the operation instead of counting as false.
-func (a *Accessor) entryMatches(ctx context.Context, entry v1alpha1.PatchEntry, vars map[string]any) (bool, error) {
-	for _, condition := range entry.MatchConditions {
-		results, err := a.runner.EvaluateWithVariables(ctx, condition.Expression, vars)
-		if err != nil {
-			return false, fmt.Errorf("match condition %q: %w", condition.Name, err)
-		}
-		if len(results) != 1 {
-			return false, fmt.Errorf("match condition %q: must return exactly one value, got %d", condition.Name, len(results))
-		}
-		matched, isBool := results[0].(bool)
-		if !isBool {
-			return false, fmt.Errorf("match condition %q: must return a boolean, got %T", condition.Name, results[0])
-		}
-		if !matched {
-			return false, nil
-		}
-	}
-
-	return true, nil
+	return a.WriteValues(ctx, definition, via, values, a.mutationOptions)
 }
 
 func (a *Accessor) ExtractInstanceIds(ctx context.Context, definition v1alpha1.ComponentDefinition) ([]string, error) {
@@ -488,7 +429,7 @@ func (a *Accessor) UpdatePodMetadata(ctx context.Context, definition v1alpha1.Co
 	return a.assignVia(ctx, definition, definition.SpecDefinition.Metadata, lo.Map(podMetadata, func(podMetadata metav1.ObjectMeta, _ int) any { return podMetadata }))
 }
 
-func (a *Accessor) UpdateFragmentedPodSpec(ctx context.Context, definition v1alpha1.ComponentDefinition, fragmentedPodSpecs []FragmentedPodSpec) (retErr error) {
+func (a *Accessor) UpdateFragmentedPodSpec(ctx context.Context, definition v1alpha1.ComponentDefinition, fragmentedPodSpecs []FragmentedPodSpec) error {
 	if definition.SpecDefinition == nil {
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have spec definition", definition.Name))
 	}
@@ -497,73 +438,71 @@ func (a *Accessor) UpdateFragmentedPodSpec(ctx context.Context, definition v1alp
 		return DefinitionNotFoundError(fmt.Sprintf("component %s does not have fragmented pod spec definition", definition.Name))
 	}
 
-	fragmentedDef := definition.SpecDefinition.FragmentedPodSpecDefinition
-
-	// The fields are written in sequence into the live document, so an error midway would leave
-	// the earlier writes applied - and the two engines fail at different points on the same bad
-	// input. The update restores the pre-write document on any error, making it all-or-nothing.
-	live, err := a.runner.GetObject()
-	if err != nil {
-		return err
+	def := definition.SpecDefinition.FragmentedPodSpecDefinition
+	fields := []fragmentedWriteField{
+		{"scheduler name", def.SchedulerName, func(s FragmentedPodSpec) (any, bool) { return s.SchedulerName, s.SchedulerName != "" }},
+		{"priority class name", def.PriorityClassName, func(s FragmentedPodSpec) (any, bool) { return s.PriorityClassName, s.PriorityClassName != "" }},
+		{"image", def.Image, func(s FragmentedPodSpec) (any, bool) { return s.Image, s.Image != "" }},
+		{"labels", def.Labels, func(s FragmentedPodSpec) (any, bool) { return s.Labels, len(s.Labels) > 0 }},
+		{"annotations", def.Annotations, func(s FragmentedPodSpec) (any, bool) { return s.Annotations, len(s.Annotations) > 0 }},
+		{"resources", def.Resources, func(s FragmentedPodSpec) (any, bool) { return s.Resources, s.Resources != nil }},
+		{"pod affinity", def.PodAffinity, func(s FragmentedPodSpec) (any, bool) { return s.PodAffinity, s.PodAffinity != nil }},
+		{"node affinity", def.NodeAffinity, func(s FragmentedPodSpec) (any, bool) { return s.NodeAffinity, s.NodeAffinity != nil }},
+		{"container", def.Container, func(s FragmentedPodSpec) (any, bool) { return s.Container, s.Container != nil }},
+		{"resource claims", def.ResourceClaims, func(s FragmentedPodSpec) (any, bool) { return s.ResourceClaims, len(s.ResourceClaims) > 0 }},
+		{"containers", def.Containers, func(s FragmentedPodSpec) (any, bool) { return s.Containers, len(s.Containers) > 0 }},
 	}
-	encoded, err := json.Marshal(live)
-	if err != nil {
-		return err
-	}
-	var snapshot any
-	if err := json.Unmarshal(encoded, &snapshot); err != nil {
-		return err
-	}
-	defer func() {
-		if retErr != nil {
-			if restoreErr := a.runner.Assign(context.WithoutCancel(ctx), ".", snapshot); restoreErr != nil {
-				retErr = fmt.Errorf("%w (restoring the pre-write document also failed: %v)", retErr, restoreErr)
+	var writes []resolvedWrite
+	var names []string
+	var ids []string
+	var options MutationOptions
+	// Resolve every active field against the same document. Applying one field before
+	// resolving another can move its destination or overwrite a newer nested value.
+	for _, field := range fields {
+		values := make([]any, len(fragmentedPodSpecs))
+		active := false
+		for i, spec := range fragmentedPodSpecs {
+			var nonempty bool
+			values[i], nonempty = field.get(spec)
+			active = active || nonempty
+		}
+		if !active {
+			continue
+		}
+		if field.via == nil || (field.via.PathWrite == nil && field.via.PathWriteExpression == "") {
+			return fmt.Errorf("failed to update %s: the field has no write path and values are not empty", field.name)
+		}
+		if len(writes) == 0 {
+			var err error
+			options, err = a.mutationOptions.normalized()
+			if err != nil {
+				return fmt.Errorf("failed to update %s: %w", field.name, err)
+			}
+			ids, err = a.resolveWriteInstances(ctx, definition, len(fragmentedPodSpecs))
+			if err != nil {
+				return fmt.Errorf("failed to update %s: %w", field.name, err)
 			}
 		}
-	}()
-
-	// String fields
-	if err := a.updateStringField(ctx, definition, fragmentedDef.SchedulerName, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.SchedulerName }); err != nil {
-		return fmt.Errorf("failed to update scheduler name: %w", err)
+		resolved, err := a.resolveWrites(ctx, field.via, ids, values)
+		if err != nil {
+			return fmt.Errorf("failed to update %s: %w", field.name, err)
+		}
+		for i, write := range resolved {
+			for j, previous := range writes {
+				if pointersOverlap(write.parts, previous.parts) {
+					return fmt.Errorf("overlapping fragmented writes: %s at %q and %s (instance index %d) at %q; select only one overlapping field", names[j], previous.target.Path, field.name, i, write.target.Path)
+				}
+			}
+		}
+		for i := range resolved {
+			names = append(names, fmt.Sprintf("%s (instance index %d)", field.name, i))
+		}
+		writes = append(writes, resolved...)
 	}
-	if err := a.updateStringField(ctx, definition, fragmentedDef.PriorityClassName, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.PriorityClassName }); err != nil {
-		return fmt.Errorf("failed to update priority class name: %w", err)
+	if len(writes) == 0 {
+		return nil
 	}
-	if err := a.updateStringField(ctx, definition, fragmentedDef.Image, fragmentedPodSpecs, func(s FragmentedPodSpec) string { return s.Image }); err != nil {
-		return fmt.Errorf("failed to update image: %w", err)
-	}
-
-	// Map fields
-	if err := updateMapField(a, ctx, definition, fragmentedDef.Labels, fragmentedPodSpecs, func(s FragmentedPodSpec) map[string]string { return s.Labels }); err != nil {
-		return fmt.Errorf("failed to update labels: %w", err)
-	}
-	if err := updateMapField(a, ctx, definition, fragmentedDef.Annotations, fragmentedPodSpecs, func(s FragmentedPodSpec) map[string]string { return s.Annotations }); err != nil {
-		return fmt.Errorf("failed to update annotations: %w", err)
-	}
-
-	// Pointer fields
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.Resources, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.ResourceRequirements { return s.Resources }); err != nil {
-		return fmt.Errorf("failed to update resources: %w", err)
-	}
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.PodAffinity, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.PodAffinity { return s.PodAffinity }); err != nil {
-		return fmt.Errorf("failed to update pod affinity: %w", err)
-	}
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.NodeAffinity, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.NodeAffinity { return s.NodeAffinity }); err != nil {
-		return fmt.Errorf("failed to update node affinity: %w", err)
-	}
-	if err := updateStructPointerField(a, ctx, definition, fragmentedDef.Container, fragmentedPodSpecs, func(s FragmentedPodSpec) *corev1.Container { return s.Container }); err != nil {
-		return fmt.Errorf("failed to update container: %w", err)
-	}
-
-	// Slice fields
-	if err := updateSliceField(a, ctx, definition, fragmentedDef.ResourceClaims, fragmentedPodSpecs, func(s FragmentedPodSpec) []corev1.PodResourceClaim { return s.ResourceClaims }); err != nil {
-		return fmt.Errorf("failed to update resource claims: %w", err)
-	}
-	if err := updateSliceField(a, ctx, definition, fragmentedDef.Containers, fragmentedPodSpecs, func(s FragmentedPodSpec) []corev1.Container { return s.Containers }); err != nil {
-		return fmt.Errorf("failed to update containers: %w", err)
-	}
-
-	return nil
+	return a.applyResolvedWrites(ctx, writes, options)
 }
 
 // extractVia reads one field through the pair's expression. An instanced component's expression
@@ -598,183 +537,9 @@ func instancedComponent(definition v1alpha1.ComponentDefinition) bool {
 	return definition.InstanceIds != nil && definition.InstanceIds.Expression != ""
 }
 
-// applyPatches writes values through the accessor's patches: per value, the first
-// entry whose conditions hold supplies the patch, evaluated with `value`, `instance`,
-// and `index` bound, and the result applied at the root.
-func (a *Accessor) applyPatches(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any) error {
-	ids, err := a.ExtractInstanceIds(ctx, def)
-	if err != nil {
-		ids = nil
-	}
-	// Every patch is constructed against the pre-write document before any of them is applied -
-	// a stable order, every path resolved before the first write. A Replace deletes before it
-	// sets, and an addressing expression (a variable or the patch itself) must keep naming the
-	// location the delete just emptied; a later instance must not address through an earlier
-	// instance's write either.
-	expressions := make([]string, 0, len(via.Patches))
-	for _, entry := range via.Patches {
-		expressions = append(expressions, entry.Expression)
-		for _, condition := range entry.MatchConditions {
-			expressions = append(expressions, condition.Expression)
-		}
-	}
-	var frozen map[string]any
-	if resolved, err := a.runner.ResolveVariables(ctx, expressions...); err == nil {
-		frozen = resolved
-	}
-	type constructedPatch struct {
-		patchType v1alpha1.PatchType
-		patch     any
-	}
-	var patches []constructedPatch
-	for i, value := range values {
-		var instance any
-		if i < len(ids) {
-			instance = ids[i]
-		}
-		vars := map[string]any{"value": value, "instance": instance, "index": i}
-		if frozen != nil {
-			vars["variables"] = frozen
-		}
-		// The first entry whose conditions hold supplies the patch. The entry is picked
-		// once and reused for both Replace passes.
-		entry, err := a.selectPatchEntry(ctx, via.Patches, vars)
-		if err != nil {
-			return err
-		}
-		// Replace = delete first : the same patch with value bound to null removes the field ,
-		// so the second application sets the value clean instead of merging into what was there.
-		// Only a merge patch has an implicit prior value to clear; RFC 6902 operations state
-		// their removals explicitly, so a JSONPatch entry gets a single pass.
-		binds := []any{value}
-		if via.PatchStrategy == v1alpha1.PatchStrategyReplace && entry.PatchType == v1alpha1.PatchTypeMergePatch {
-			binds = []any{nil, value}
-		}
-		for _, bound := range binds {
-			vars := map[string]any{"value": bound, "instance": instance, "index": i}
-			if frozen != nil {
-				vars["variables"] = frozen
-			}
-			results, err := a.runner.EvaluateWithVariables(ctx, entry.Expression, vars)
-			if err != nil {
-				return fmt.Errorf("evaluate patch: %w", err)
-			}
-			if len(results) != 1 {
-				return fmt.Errorf("a patch must construct exactly one object, got %d results", len(results))
-			}
-			patch, empty, err := checkConstructedPatch(results[0], entry.PatchType)
-			if err != nil {
-				return err
-			}
-			if empty {
-				continue
-			}
-			patches = append(patches, constructedPatch{patchType: entry.PatchType, patch: patch})
-		}
-	}
-	// The patches land all-or-nothing: every path is resolved before the
-	// first assignment: a failure applying a later instance restores the pre-write document.
-	prewrite, err := a.runner.GetObject()
-	if err != nil {
-		return err
-	}
-	encoded, err := json.Marshal(prewrite)
-	if err != nil {
-		return err
-	}
-	var snapshot any
-	if err := json.Unmarshal(encoded, &snapshot); err != nil {
-		return err
-	}
-	for _, constructed := range patches {
-		live, err := a.runner.GetObject()
-		if err != nil {
-			return err
-		}
-		merged, err := applyConstructedPatch(live, constructed.patch, constructed.patchType)
-		if err == nil {
-			err = a.runner.Assign(ctx, ".", merged)
-		}
-		if err != nil {
-			if restoreErr := a.runner.Assign(context.WithoutCancel(ctx), ".", snapshot); restoreErr != nil {
-				return fmt.Errorf("apply patch: %w (restoring the pre-write document also failed: %v)", err, restoreErr)
-			}
-
-			return fmt.Errorf("apply patch: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// selectPatchEntry picks the first entry whose conditions all hold. If none matches,
-// the write fails: the definition said nothing about this document shape, and
-// guessing a location is not an option.
-func (a *Accessor) selectPatchEntry(ctx context.Context, entries []v1alpha1.PatchEntry, vars map[string]any) (v1alpha1.PatchEntry, error) {
-	for _, entry := range entries {
-		matched, err := a.entryMatches(ctx, entry, vars)
-		if err != nil {
-			return v1alpha1.PatchEntry{}, err
-		}
-		if matched {
-			return entry, nil
-		}
-	}
-
-	return v1alpha1.PatchEntry{}, fmt.Errorf("no patch entry matched the document")
-}
-
-// assignVia writes one field through the accessor's patches.
+// assignVia writes a field using SDK policy and the definition's destination.
 func (a *Accessor) assignVia(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any) error {
-	if via == nil || len(via.Patches) == 0 {
-		return fmt.Errorf("the field has no patches and cannot be written")
-	}
-
-	return a.applyPatches(ctx, def, via, values)
-}
-
-func (a *Accessor) updateField(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any, isEmpty func(any) bool) error {
-	if via != nil && len(via.Patches) > 0 {
-		// Skip assignment if all values are empty/nil to avoid writing null
-		// into the JSON.
-		allEmpty := true
-		for _, v := range values {
-			if !isEmpty(v) {
-				allEmpty = false
-				break
-			}
-		}
-		if allEmpty {
-			return nil
-		}
-		return a.assignVia(ctx, def, via, values)
-	}
-	for _, v := range values {
-		if !isEmpty(v) {
-			return fmt.Errorf("the field has no patches and values are not empty")
-		}
-	}
-	return nil
-}
-
-func (a *Accessor) updateStringField(ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) string) error {
-	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, via, values, func(v any) bool { return v.(string) == "" })
-}
-
-func updateMapField[K comparable, V any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) map[K]V) error {
-	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, via, values, func(v any) bool { return len(v.(map[K]V)) == 0 })
-}
-
-func updateStructPointerField[T any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) *T) error {
-	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, via, values, func(v any) bool { return v.(*T) == nil })
-}
-
-func updateSliceField[T any](a *Accessor, ctx context.Context, def v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, specs []FragmentedPodSpec, getter func(FragmentedPodSpec) []T) error {
-	values := lo.Map(specs, func(s FragmentedPodSpec, _ int) any { return getter(s) })
-	return a.updateField(ctx, def, via, values, func(v any) bool { return len(v.([]T)) == 0 })
+	return a.WriteValues(ctx, def, via, values, a.mutationOptions)
 }
 
 func safeGetByIndex[T any](s []T, i int) T {

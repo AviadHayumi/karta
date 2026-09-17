@@ -42,15 +42,42 @@ func DynamoV1beta1() *v1alpha1.Karta {
 						OwnerRef: ptr.To("dynamographdeployment"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"schedulerName"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/schedulerName", "value": value}]`}}},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"labels"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/metadata/labels", "value": value}]`}}},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"annotations"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/metadata/annotations", "value": value}]`}}},
-								ResourceClaims:    &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"resourceClaims"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/resourceClaims", "value": value}]`}}},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"podAffinity"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/affinity/podAffinity", "value": value}]`}}},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"nodeAffinity"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/affinity/nodeAffinity", "value": value}]`}}},
-								Container:         &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, (([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [null])[0])`},
-								Image:             &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, ((([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [{}])[0])[?"image"].orValue(null))`},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"priorityClassName"].orValue(null))`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/priorityClassName", "value": value}]`}}},
+								SchedulerName:  &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"schedulerName"].orValue(null))`, PathWriteExpression: `"/spec/components/" + string(index) + "/podTemplate/spec/schedulerName"`},
+								Labels:         &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"labels"].orValue(null))`, PathWriteExpression: `"/spec/components/" + string(index) + "/podTemplate/metadata/labels"`},
+								Annotations:    &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"annotations"].orValue(null))`, PathWriteExpression: `"/spec/components/" + string(index) + "/podTemplate/metadata/annotations"`},
+								ResourceClaims: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"resourceClaims"].orValue(null))`, PathWriteExpression: `"/spec/components/" + string(index) + "/podTemplate/spec/resourceClaims"`},
+								PodAffinity:    &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"podAffinity"].orValue(null))`, PathWriteExpression: `"/spec/components/" + string(index) + "/podTemplate/spec/affinity/podAffinity"`},
+								NodeAffinity:   &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"nodeAffinity"].orValue(null))`, PathWriteExpression: `"/spec/components/" + string(index) + "/podTemplate/spec/affinity/nodeAffinity"`},
+								Container: &v1alpha1.ValueAccessor{
+									Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, (([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [null])[0])`,
+									PathWriteExpression: `[variables.components[index].podTemplate.spec.containers]
+  .map(containers,
+    lists.range(containers.size())
+      .filter(i, containers[i].?name.orValue("") == "main")
+  )
+  .map(matches,
+    matches.size() == 1
+      ? "/spec/components/" + string(index)
+        + "/podTemplate/spec/containers/" + string(matches[0])
+      : dyn(null)
+  )[0]`,
+								},
+								Image: &v1alpha1.ValueAccessor{
+									Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, ((([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [{}])[0])[?"image"].orValue(null))`,
+									PathWriteExpression: `[variables.components[index].podTemplate.spec.containers]
+  .map(containers,
+    lists.range(containers.size())
+      .filter(i, containers[i].?name.orValue("") == "main")
+  )
+  .map(matches,
+    matches.size() == 1
+      ? "/spec/components/" + string(index)
+        + "/podTemplate/spec/containers/" + string(matches[0])
+        + "/image"
+      : dyn(null)
+  )[0]`,
+								},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"priorityClassName"].orValue(null))`, PathWriteExpression: `"/spec/components/" + string(index) + "/podTemplate/spec/priorityClassName"`},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{

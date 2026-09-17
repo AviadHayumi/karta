@@ -114,29 +114,24 @@ func ReactorKarta() *v1alpha1.Karta {
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
 								Labels: &v1alpha1.ValueAccessor{
-									Expression:    `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"labels"].orValue(null))`,
-									Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"services": {instance: {"labels": value}}}}`}},
-									PatchStrategy: v1alpha1.PatchStrategyReplace,
+									Expression:          `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"labels"].orValue(null))`,
+									PathWriteExpression: `"/spec/services/" + instance.replace("~", "~0").replace("/", "~1") + "/labels"`,
 								},
 								Annotations: &v1alpha1.ValueAccessor{
-									Expression:    `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"annotations"].orValue(null))`,
-									Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"services": {instance: {"annotations": value}}}}`}},
-									PatchStrategy: v1alpha1.PatchStrategyReplace,
+									Expression:          `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"annotations"].orValue(null))`,
+									PathWriteExpression: `"/spec/services/" + instance.replace("~", "~0").replace("/", "~1") + "/annotations"`,
 								},
 								Containers: &v1alpha1.ValueAccessor{
-									Expression:    `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"containers"].orValue(null))`,
-									Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"services": {instance: {"containers": value}}}}`}},
-									PatchStrategy: v1alpha1.PatchStrategyReplace,
+									Expression:          `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"containers"].orValue(null))`,
+									PathWriteExpression: `"/spec/services/" + instance.replace("~", "~0").replace("/", "~1") + "/containers"`,
 								},
 								Container: &v1alpha1.ValueAccessor{
-									Expression:    `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"mainContainer"].orValue(null))`,
-									Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"services": {instance: {"mainContainer": value}}}}`}},
-									PatchStrategy: v1alpha1.PatchStrategyReplace,
+									Expression:          `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"mainContainer"].orValue(null))`,
+									PathWriteExpression: `"/spec/services/" + instance.replace("~", "~0").replace("/", "~1") + "/mainContainer"`,
 								},
 								Resources: &v1alpha1.ValueAccessor{
-									Expression:    `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"resources"].orValue(null))`,
-									Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"services": {instance: {"resources": value}}}}`}},
-									PatchStrategy: v1alpha1.PatchStrategyReplace,
+									Expression:          `object.spec.services.map(k, string(k)).sort().map(k, object.spec.services[k][?"resources"].orValue(null))`,
+									PathWriteExpression: `"/spec/services/" + instance.replace("~", "~0").replace("/", "~1") + "/resources"`,
 								},
 							},
 						},

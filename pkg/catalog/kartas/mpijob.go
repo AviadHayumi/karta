@@ -26,8 +26,7 @@ func Mpijob() *v1alpha1.Karta {
 					Name: "mpijob",
 					Kind: &v1alpha1.GroupVersionKind{Group: "kubeflow.org", Version: "v2beta1", Kind: "MPIJob"},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"runPolicy": {"suspend": true}}}`}},
-						ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"runPolicy": {"suspend": false}}}`}},
+						PathWrite: ptr.To("/spec/runPolicy/suspend"),
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
@@ -52,7 +51,7 @@ func Mpijob() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("mpijob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"mpiReplicaSpecs": {"Launcher": {"template": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"template"].orValue(null)`, PathWrite: ptr.To("/spec/mpiReplicaSpecs/Launcher/template")},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specMpiReplicaSpecsLauncherReplicas`},
@@ -69,7 +68,7 @@ func Mpijob() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("mpijob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"mpiReplicaSpecs": {"Worker": {"template": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"template"].orValue(null)`, PathWrite: ptr.To("/spec/mpiReplicaSpecs/Worker/template")},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specMpiReplicaSpecsWorkerReplicas`},

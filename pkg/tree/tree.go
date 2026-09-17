@@ -10,10 +10,11 @@ import (
 )
 
 // WorkloadTree is the raw tree produced by Build().
-// It contains Karta-extracted data for the workload hierarchy. The root
-// component itself is not included; its status is in Status and its metadata
-// lives on the workload object.
+// It contains Karta-extracted data for the workload hierarchy.
 type WorkloadTree struct {
+	// Root includes the workload itself. Children retains the legacy hoisted view.
+	// Root is excluded from legacy serialized reports to preserve their shape.
+	Root *ComponentNode `json:"-"`
 	// Status is nil when no status was evaluated, e.g. an offline pre-submission
 	// tree built from a manifest that has not reached the cluster.
 	Status   *WorkloadStatus

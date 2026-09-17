@@ -82,7 +82,7 @@ func LWS() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"},
 						OwnerRef: ptr.To("group"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"leaderWorkerTemplate"][?"leaderTemplate"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"leaderWorkerTemplate": {"leaderTemplate": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"leaderWorkerTemplate"][?"leaderTemplate"].orValue(null)`, PathWrite: ptr.To("/spec/leaderWorkerTemplate/leaderTemplate")},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specReplicas`},
@@ -99,7 +99,7 @@ func LWS() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"},
 						OwnerRef: ptr.To("group"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"leaderWorkerTemplate": {"workerTemplate": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)`, PathWrite: ptr.To("/spec/leaderWorkerTemplate/workerTemplate")},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specReplicasFloat * (variables.specLeaderWorkerTemplateSize - 1.0)`},

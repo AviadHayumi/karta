@@ -19,6 +19,19 @@ type Flow struct {
 	name     string
 	manifest string
 	journey  []journeyStep
+	captures []CapturedReference
+}
+
+// CapturedReference names a CR the flow captures alongside every recorded state, so a replay can
+// resolve the workload's references against the recording alone. Namespaced objects are read from
+// the recorder's namespace; cluster-scoped ones by name.
+type CapturedReference struct {
+	GVK  kartav1alpha1.GroupVersionKind
+	Name string
+}
+
+func (c CapturedReference) key() string {
+	return c.GVK.Group + "/" + c.GVK.Version + "/" + c.GVK.Kind + "/" + c.Name
 }
 
 // Step is one declared journey step, built with Reaches and refined with Optional, With, and Do.
@@ -40,8 +53,9 @@ type journeyStep struct {
 type ActionType string
 
 const (
-	ActionResume ActionType = "Resume"
-	ActionScale  ActionType = "Scale"
+	ActionSuspend ActionType = "Suspend"
+	ActionResume  ActionType = "Resume"
+	ActionScale   ActionType = "Scale"
 )
 
 // Action is a merge-patch applied to the workload to drive a transition.
@@ -61,6 +75,13 @@ type namedState struct {
 // NewFlow starts a flow seeded from a manifest (path relative to test/e2e); declare its journey with Through.
 func NewFlow(r *Recorder, name, manifest string) *Flow {
 	return &Flow{rec: r, name: name, manifest: manifest}
+}
+
+// Capturing declares referenced CRs to snapshot with every recorded state. A reference that
+// does not exist is simply absent from the recording - the shape a lookup miss replays as.
+func (f *Flow) Capturing(refs ...CapturedReference) *Flow {
+	f.captures = append(f.captures, refs...)
+	return f
 }
 
 // Through declares the ordered steps of the journey.

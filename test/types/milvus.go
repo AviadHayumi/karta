@@ -92,11 +92,7 @@ func MilvusKarta() *v1alpha1.Karta {
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodTemplateSpec: &v1alpha1.ValueAccessor{
 								Expression: `object[?"spec"][?"components"][?"queryNode"][?"template"].orValue(null)`,
-								Patches: []v1alpha1.PatchEntry{{
-									PatchType:  v1alpha1.PatchTypeMergePatch,
-									Expression: `{"spec": {"components": {"queryNode": {"template": value}}}}`,
-								}},
-								PatchStrategy: v1alpha1.PatchStrategyReplace,
+								PathWrite:  ptr.To("/spec/components/queryNode/template"),
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -120,11 +116,7 @@ func MilvusKarta() *v1alpha1.Karta {
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodTemplateSpec: &v1alpha1.ValueAccessor{
 								Expression: `object[?"spec"][?"components"][?"dataNode"][?"template"].orValue(null)`,
-								Patches: []v1alpha1.PatchEntry{{
-									PatchType:  v1alpha1.PatchTypeMergePatch,
-									Expression: `{"spec": {"components": {"dataNode": {"template": value}}}}`,
-								}},
-								PatchStrategy: v1alpha1.PatchStrategyReplace,
+								PathWrite:  ptr.To("/spec/components/dataNode/template"),
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -149,11 +141,7 @@ func MilvusKarta() *v1alpha1.Karta {
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodTemplateSpec: &v1alpha1.ValueAccessor{
 								Expression: `object[?"spec"][?"components"][?"proxy"][?"template"].orValue(null)`,
-								Patches: []v1alpha1.PatchEntry{{
-									PatchType:  v1alpha1.PatchTypeMergePatch,
-									Expression: `{"spec": {"components": {"proxy": {"template": value}}}}`,
-								}},
-								PatchStrategy: v1alpha1.PatchStrategyReplace,
+								PathWrite:  ptr.To("/spec/components/proxy/template"),
 							},
 						},
 						PodSelector: &v1alpha1.PodSelector{

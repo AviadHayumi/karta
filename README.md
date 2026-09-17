@@ -1,5 +1,10 @@
 # Karta
 
+For current write definitions, see the [catalog](docs/catalog/).
+The [quickstart](docs/examples/quickstart/) shows tree reads, path-based writes,
+and raw-data edit drafts. Older patch-list examples in the guides below describe
+the previous API and do not work with this branch's CRD.
+
 **A standard way to describe the structure of any Kubernetes workload type.**
 
 [![CI](https://github.com/run-ai/karta/actions/workflows/ci.yaml/badge.svg)](https://github.com/run-ai/karta/actions/workflows/ci.yaml)
@@ -235,7 +240,7 @@ The [Dynamo Karta](docs/catalog/nvidia-com-dynamographdeployment-v1alpha1.yaml) 
 
 Two runnable examples live under [`docs/examples/`](docs/examples/):
 
-- [quickstart](docs/examples/quickstart/) - reads and mutates a JobSet and a LeaderWorkerSet offline, no cluster required. The fastest way to see the uniform API in action.
+- [quickstart](docs/examples/quickstart/) - reads JobSet and LeaderWorkerSet, then edits scheduler and label fields in one local draft while preserving the rest of the raw workload. Runs offline and includes the compatible partial-map mutation form.
 - [controller-runtime](docs/examples/controller-runtime/) - a controller-runtime manager you install into a Kind cluster. It watches live LeaderWorkerSet workloads, then inspects and mutates them through Karta with no per-CRD code. Adding more workload types is a flag change, not a rebuild.
 
 ## Who Uses Karta?

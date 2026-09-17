@@ -35,7 +35,7 @@ var _ = Describe("Gang Scheduling", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+										PathWrite:  ptr.To("/spec/template"),
 									},
 								},
 							},
@@ -93,7 +93,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/worker/template"),
 										},
 									},
 									PodSelector: &v1alpha1.PodSelector{
@@ -109,7 +109,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/master/template"),
 										},
 									},
 									PodSelector: &v1alpha1.PodSelector{
@@ -188,7 +188,7 @@ var _ = Describe("Gang Scheduling", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+										PathWrite:  ptr.To("/spec/template"),
 									},
 								},
 							},
@@ -227,17 +227,17 @@ var _ = Describe("Gang Scheduling", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+										PathWrite:  ptr.To("/spec/template"),
 									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
+										PathWrite:  ptr.To("/spec/replicas"),
 									},
 									MinReplicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"minReplicas": value}}`}},
+										PathWrite:  ptr.To("/spec/minReplicas"),
 									},
 								},
 							},
@@ -277,7 +277,7 @@ var _ = Describe("Gang Scheduling", func() {
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
+										PathWrite:  ptr.To("/spec/replicas"),
 									},
 								},
 							},
@@ -288,13 +288,13 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/worker/template"),
 										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
 										Replicas: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"worker"][?"replicas"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"replicas": value}}}`}},
+											PathWrite:  ptr.To("/spec/worker/replicas"),
 										},
 									},
 								},
@@ -304,13 +304,13 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/master/template"),
 										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
 										Replicas: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"replicas"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"replicas": value}}}`}},
+											PathWrite:  ptr.To("/spec/master/replicas"),
 										},
 									},
 								},
@@ -394,7 +394,7 @@ var _ = Describe("Gang Scheduling", func() {
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
+										PathWrite:  ptr.To("/spec/replicas"),
 									},
 								},
 							},
@@ -405,16 +405,14 @@ var _ = Describe("Gang Scheduling", func() {
 									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.workers.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.workers.map(x, x[?"template"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/workers/" + string(index) + "/template", "value": value}]`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.workers.map(x, x[?"template"].orValue(null))`,
+											PathWriteExpression: `"/spec/workers/" + string(index) + "/template"`,
 										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
 										Replicas: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.workers.map(x, x[?"replicas"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/workers/" + string(index) + "/replicas", "value": value}]`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.workers.map(x, x[?"replicas"].orValue(null))`,
+											PathWriteExpression: `"/spec/workers/" + string(index) + "/replicas"`,
 										},
 									},
 								},
@@ -471,13 +469,13 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+											PathWrite:  ptr.To("/spec/template"),
 										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
 										Replicas: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
+											PathWrite:  ptr.To("/spec/replicas"),
 										},
 									},
 								},
@@ -522,7 +520,7 @@ var _ = Describe("Gang Scheduling", func() {
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"size"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"size": value}}`}},
+										PathWrite:  ptr.To("/spec/size"),
 									},
 								},
 							},
@@ -533,7 +531,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+											PathWrite:  ptr.To("/spec/template"),
 										},
 										// No scale definition
 									},
@@ -580,17 +578,17 @@ var _ = Describe("Gang Scheduling", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+										PathWrite:  ptr.To("/spec/template"),
 									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
+										PathWrite:  ptr.To("/spec/replicas"),
 									},
 									MinReplicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"minReplicas": value}}`}},
+										PathWrite:  ptr.To("/spec/minReplicas"),
 									},
 								},
 							},
@@ -623,17 +621,17 @@ var _ = Describe("Gang Scheduling", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+										PathWrite:  ptr.To("/spec/template"),
 									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
+										PathWrite:  ptr.To("/spec/replicas"),
 									},
 									MinReplicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"minReplicas": value}}`}},
+										PathWrite:  ptr.To("/spec/minReplicas"),
 									},
 								},
 							},
@@ -676,17 +674,17 @@ var _ = Describe("Gang Scheduling", func() {
 								SpecDefinition: &v1alpha1.SpecDefinition{
 									PodTemplateSpec: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"template"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+										PathWrite:  ptr.To("/spec/template"),
 									},
 								},
 								ScaleDefinition: &v1alpha1.ScaleDefinition{
 									Replicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"replicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicas": value}}`}},
+										PathWrite:  ptr.To("/spec/replicas"),
 									},
 									MinReplicas: &v1alpha1.ValueAccessor{
 										Expression: `object[?"spec"][?"minReplicas"].orValue(null)`,
-										Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"minReplicas": value}}`}},
+										PathWrite:  ptr.To("/spec/minReplicas"),
 									},
 								},
 							},
@@ -733,7 +731,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/worker/template"),
 										},
 									},
 								},
@@ -743,7 +741,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/master/template"),
 										},
 									},
 								},
@@ -793,7 +791,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/master/template"),
 										},
 									},
 								},
@@ -803,7 +801,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/master/template"),
 										},
 									},
 								},
@@ -813,7 +811,7 @@ var _ = Describe("Gang Scheduling", func() {
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodTemplateSpec: &v1alpha1.ValueAccessor{
 											Expression: `object[?"spec"][?"storage"][?"template"].orValue(null)`,
-											Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"storage": {"template": value}}}`}},
+											PathWrite:  ptr.To("/spec/storage/template"),
 										},
 									},
 								},
@@ -868,21 +866,18 @@ var _ = Describe("Gang Scheduling", func() {
 									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodSpec: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + string(index) + "/spec"`,
 										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
 										Replicas: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(x, x[?"replicas"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/replicas", "value": value}]`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(x, x[?"replicas"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + string(index) + "/replicas"`,
 										},
 										MinReplicas: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(x, x[?"minReplicas"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/minReplicas", "value": value}]`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(x, x[?"minReplicas"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + string(index) + "/minReplicas"`,
 										},
 									},
 								},
@@ -953,21 +948,18 @@ var _ = Describe("Gang Scheduling", func() {
 									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(k, string(k)).sort()`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodSpec: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"spec"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicatedJobs": {instance: {"spec": value}}}}`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"spec"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + instance.replace("~", "~0").replace("/", "~1") + "/spec"`,
 										},
 									},
 									ScaleDefinition: &v1alpha1.ScaleDefinition{
 										Replicas: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"replicas"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicatedJobs": {instance: {"replicas": value}}}}`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"replicas"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + instance.replace("~", "~0").replace("/", "~1") + "/replicas"`,
 										},
 										MinReplicas: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"minReplicas"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"replicatedJobs": {instance: {"minReplicas": value}}}}`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(k, string(k)).sort().map(k, object.spec.replicatedJobs[k][?"minReplicas"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + instance.replace("~", "~0").replace("/", "~1") + "/minReplicas"`,
 										},
 									},
 								},
@@ -1036,9 +1028,8 @@ var _ = Describe("Gang Scheduling", func() {
 									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodSpec: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + string(index) + "/spec"`,
 										},
 									},
 									// No ScaleDefinition - will use byLeaves method
@@ -1107,9 +1098,8 @@ var _ = Describe("Gang Scheduling", func() {
 									InstanceIds: &v1alpha1.ValueAccessor{Expression: `object.spec.replicatedJobs.map(x, x[?"name"].orValue(null))`},
 									SpecDefinition: &v1alpha1.SpecDefinition{
 										PodSpec: &v1alpha1.ValueAccessor{
-											Expression:    `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
-											Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeJSONPatch, Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`}},
-											PatchStrategy: v1alpha1.PatchStrategyReplace,
+											Expression:          `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+											PathWriteExpression: `"/spec/replicatedJobs/" + string(index) + "/spec"`,
 										},
 									},
 								},

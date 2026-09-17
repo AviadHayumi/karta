@@ -28,14 +28,14 @@ func Build(
 		return nil, fmt.Errorf("failed to get root component: %w", err)
 	}
 
-	// Build the root as a node; the root is not exposed, only its hoisted children are used.
+	// Keep the root as well as the legacy hoisted children view.
 	rootNodes, err := buildComponentNodes(ctx, []*resource.Component{rootComponent}, factory)
 	if err != nil {
 		return nil, err
 	}
 	rootNode := rootNodes[0]
 
-	tree := &WorkloadTree{}
+	tree := &WorkloadTree{Root: &rootNode}
 	if len(rootNode.Instances) > 0 {
 		tree.Children = rootNode.Instances[0].Children
 	}
@@ -62,6 +62,13 @@ func buildComponentNodes(
 		instanceKeys, err := component.GetInstanceIds(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("get instance ids for component %s: %w", component.Name(), err)
+		}
+		seen := make(map[string]bool, len(instanceKeys))
+		for _, key := range instanceKeys {
+			if seen[key] {
+				return nil, fmt.Errorf("component %s has duplicate instance id %q", component.Name(), key)
+			}
+			seen[key] = true
 		}
 
 		children, err := factory.GetChildComponentsOf(component.Name())
@@ -145,6 +152,10 @@ func cloneComponentNodes(nodes []ComponentNode) []ComponentNode {
 	out := make([]ComponentNode, len(nodes))
 	for i := range nodes {
 		out[i] = nodes[i]
+		if nodes[i].Kind != nil {
+			kind := *nodes[i].Kind
+			out[i].Kind = &kind
+		}
 		out[i].Instances = cloneInstanceNodes(nodes[i].Instances)
 	}
 	return out
@@ -157,6 +168,10 @@ func cloneInstanceNodes(instances []InstanceNode) []InstanceNode {
 	out := make([]InstanceNode, len(instances))
 	for i := range instances {
 		out[i] = instances[i]
+		out[i].InstanceKey = clonePointer(instances[i].InstanceKey)
+		out[i].ReplicaKey = clonePointer(instances[i].ReplicaKey)
+		out[i].Scale = cloneScale(instances[i].Scale)
+		out[i].ExtractedInstance = cloneExtracted(instances[i].ExtractedInstance)
 		out[i].Children = cloneComponentNodes(instances[i].Children)
 	}
 	return out

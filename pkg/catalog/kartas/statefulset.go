@@ -5,6 +5,7 @@ package kartas
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	v1alpha1 "github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 )
@@ -33,7 +34,7 @@ func StatefulSet() *v1alpha1.Karta {
 						Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specReplicas`},
 					},
 					SpecDefinition: &v1alpha1.SpecDefinition{
-						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+						PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"template"].orValue(null)`, PathWrite: ptr.To("/spec/template")},
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						StatusMappings: v1alpha1.StatusMappings{

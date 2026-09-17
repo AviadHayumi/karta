@@ -15,10 +15,7 @@ spec:
       specDefinition:
         podTemplateSpec:
           expression: object[?"spec"][?"template"].orValue(null)
-          patches:
-            - patchType: MergePatch
-              expression: '{"spec": {"template": value}}'
-          patchStrategy: Replace
+          pathWrite: /spec/template
       scaleDefinition:
         replicas:
           expression: variables.specReplicas

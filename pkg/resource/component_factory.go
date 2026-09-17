@@ -5,7 +5,9 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,6 +16,7 @@ import (
 	"github.com/run-ai/karta/pkg/api/runai/v1alpha1"
 	celpkg "github.com/run-ai/karta/pkg/cel"
 	"github.com/run-ai/karta/pkg/expression"
+	"github.com/run-ai/karta/pkg/references"
 )
 
 type ComponentReader interface {
@@ -36,6 +39,13 @@ type ComponentWriter interface {
 	ApplyResumeActions(ctx context.Context, definition v1alpha1.ComponentDefinition) error
 }
 
+// PathWriter resolves definition-owned destinations and applies caller-owned values.
+// A target belongs to the current object snapshot; resolve it again after a write.
+type PathWriter interface {
+	ResolveWriteTarget(ctx context.Context, via *v1alpha1.ValueAccessor, instance string, index int) (WriteTarget, error)
+	WriteValues(ctx context.Context, definition v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any, options MutationOptions) error
+}
+
 //go:generate go run go.uber.org/mock/mockgen -source=component_factory.go -destination=accessor_mock.go -package=resource ComponentAccessor
 type ComponentAccessor interface {
 	ComponentReader
@@ -45,9 +55,17 @@ type ComponentAccessor interface {
 type ComponentFactory struct {
 	karta    *v1alpha1.Karta
 	accessor ComponentAccessor
+	settings *objectFactorySettings
 
 	componentDefinitionsByName map[string]v1alpha1.ComponentDefinition
 	childNamesByParent         map[string][]string
+}
+
+// objectFactorySettings stays immutable across forks. The provider shares a
+// successful reference snapshot so a staged write cannot fetch a different target.
+type objectFactorySettings struct {
+	mutationOptions   MutationOptions
+	referenceProvider func(context.Context) (map[string]any, error)
 }
 
 // NewComponentFactory creates a new Karta-based component factory
@@ -75,17 +93,170 @@ func NewComponentFactory(karta *v1alpha1.Karta, accessor ComponentAccessor) *Com
 	}
 }
 
+// FactoryOption configures NewComponentFactoryFromObject.
+type FactoryOption func(*factoryOptions)
+
+type factoryOptions struct {
+	resolved        references.ResolvedReferences
+	hasResolved     bool
+	reader          references.ResourceReader
+	mutationOptions MutationOptions
+}
+
+// WithMutationOptions selects SDK policy for this factory's typed setters.
+// Definitions only supply destinations; they cannot override caller policy.
+func WithMutationOptions(options MutationOptions) FactoryOption {
+	return func(o *factoryOptions) { o.mutationOptions = options }
+}
+
+// WithReferences passes pre-resolved reference values: the consumer fetched them from wherever
+// its data lives and Karta only sees the finished values. A nil map means "resolved to nothing":
+// every lookup stays unbound, every list is empty.
+func WithReferences(resolved references.ResolvedReferences) FactoryOption {
+	return func(o *factoryOptions) {
+		if resolved == nil {
+			resolved = references.ResolvedReferences{}
+		}
+		o.resolved = resolved
+		o.hasResolved = true
+	}
+}
+
+// WithReferenceReader hands the factory a reader to resolve references with. Resolution is lazy:
+// the first expression that reads references.<name> resolves all of them with that call's
+// context and memoizes the result, so a definition without references never touches the reader.
+func WithReferenceReader(reader references.ResourceReader) FactoryOption {
+	return func(o *factoryOptions) { o.reader = reader }
+}
+
 // NewComponentFactoryFromObject creates a new Karta-based component factory from a Kubernetes
 // object. Expressions are CEL, evaluated against the object bound as `object`.
-func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObject) *ComponentFactory {
-	celRunner, err := celpkg.NewRunnerWithVariables(object, namedExpressions(karta))
+func NewComponentFactoryFromObject(karta *v1alpha1.Karta, object KubernetesObject, opts ...FactoryOption) *ComponentFactory {
+	var options factoryOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+	if options.hasResolved && options.reader != nil {
+		err := errors.New("both WithReferences and WithReferenceReader were provided; pass exactly one")
+
+		return NewComponentFactory(karta, NewAccessor(errRunner{err}))
+	}
+
+	referenceKarta := karta.DeepCopy()
+	var referenceObject any
+	var referenceObjectError error
+	if options.reader != nil {
+		// Normalize first: callers may put Go ints in an unstructured object,
+		// which Kubernetes DeepCopyObject rejects with a panic.
+		referenceObject, referenceObjectError = jsonCopy(object)
+	}
+	var suppliedBindings map[string]any
+	var suppliedError error
+	if options.hasResolved {
+		suppliedBindings, suppliedError = withDeclaredLists(options.resolved, referenceKarta).Bindings()
+	}
+	var referenceMu sync.Mutex
+	var referenceBindings map[string]any
+	provider := func(ctx context.Context) (map[string]any, error) {
+		referenceMu.Lock()
+		defer referenceMu.Unlock()
+		if referenceBindings != nil {
+			copy, err := jsonCopy(referenceBindings)
+			if err != nil {
+				return nil, err
+			}
+			return copy.(map[string]any), nil
+		}
+		var bindings map[string]any
+		switch {
+		case options.hasResolved:
+			if suppliedError != nil {
+				return nil, suppliedError
+			}
+			bindings = suppliedBindings
+		case options.reader != nil:
+			if referenceObjectError != nil {
+				return nil, fmt.Errorf("snapshot reference workload: %w", referenceObjectError)
+			}
+			resolved, err := references.Resolve(ctx, options.reader, referenceKarta, referenceObject)
+			if err != nil {
+				return nil, err
+			}
+			bindings, err = resolved.Bindings()
+			if err != nil {
+				return nil, err
+			}
+		default:
+			return nil, expression.ErrReferencesNotSupported
+		}
+		if bindings == nil {
+			bindings = map[string]any{}
+		}
+		referenceBindings = bindings
+		copy, err := jsonCopy(bindings)
+		if err != nil {
+			return nil, err
+		}
+		return copy.(map[string]any), nil
+	}
+
+	return newObjectFactory(karta, object, &objectFactorySettings{
+		mutationOptions:   options.mutationOptions,
+		referenceProvider: provider,
+	})
+}
+
+func newObjectFactory(karta *v1alpha1.Karta, object KubernetesObject, settings *objectFactorySettings) *ComponentFactory {
+	celRunner, err := celpkg.NewRunnerWithVariables(object, namedExpressions(karta),
+		celpkg.WithReferenceProvider(settings.referenceProvider))
 	if err != nil {
 		// Nothing may silently evaluate against the wrong document, so every call reports
 		// the construction error instead.
 		return NewComponentFactory(karta, NewAccessor(errRunner{err}))
 	}
 
-	return NewComponentFactory(karta, NewAccessor(celRunner))
+	factory := NewComponentFactory(karta, NewAccessor(celRunner, settings.mutationOptions))
+	factory.settings = settings
+	return factory
+}
+
+// Fork creates a detached workload and definition for staging mutations. Reference
+// values are a shared, lazy snapshot, not a fresh read of external resources.
+// Factories constructed with a custom accessor cannot be rebuilt safely.
+func (f *ComponentFactory) Fork() (*ComponentFactory, error) {
+	if f.settings == nil {
+		return nil, errors.New("fork is unsupported for custom-accessor factories; use NewComponentFactoryFromObject")
+	}
+	if f.karta == nil {
+		return nil, errors.New("cannot fork a nil Karta definition")
+	}
+	object, err := f.GetResource()
+	if err != nil {
+		return nil, fmt.Errorf("fork current workload: %w", err)
+	}
+	copy, ok := object.DeepCopyObject().(KubernetesObject)
+	if !ok {
+		return nil, errors.New("fork current workload: copied object does not implement KubernetesObject")
+	}
+	return newObjectFactory(f.karta.DeepCopy(), copy, f.settings), nil
+}
+
+// PathWriter returns the optional path-based SDK supported by this accessor.
+func (f *ComponentFactory) PathWriter() (PathWriter, error) {
+	writer, ok := f.accessor.(PathWriter)
+	if !ok {
+		return nil, errors.New("the component accessor does not support path-based writes")
+	}
+	return writer, nil
+}
+
+// MutationOptions returns the SDK defaults configured for this factory.
+// Zero-valued fields use the standard SDK defaults when a write is applied.
+func (f *ComponentFactory) MutationOptions() MutationOptions {
+	if f.settings == nil {
+		return MutationOptions{}
+	}
+	return f.settings.mutationOptions
 }
 
 // namedExpressions converts the definition's variables into the engine's shape.
@@ -109,6 +280,9 @@ func (r errRunner) Evaluate(context.Context, string) ([]any, error) { return nil
 func (r errRunner) Assign(context.Context, string, any) error       { return r.err }
 func (r errRunner) GetObject() (any, error)                         { return nil, r.err }
 func (r errRunner) EvaluateWithVariables(context.Context, string, map[string]any) ([]any, error) {
+	return nil, r.err
+}
+func (r errRunner) EvaluateWritePath(context.Context, string, map[string]any) ([]any, error) {
 	return nil, r.err
 }
 func (r errRunner) ResolveVariables(context.Context, ...string) (map[string]any, error) {
@@ -228,4 +402,21 @@ func validateKubernetesObject(u *unstructured.Unstructured) error {
 		return fmt.Errorf("missing metadata.name or metadata.generateName")
 	}
 	return nil
+}
+
+// withDeclaredLists fills every declared list reference the consumer did not resolve with an
+// empty list, so references.<name>.size() reads zero instead of failing. A missing lookup stays
+// unbound by design: only an expression that reads it fails.
+func withDeclaredLists(resolved references.ResolvedReferences, karta *v1alpha1.Karta) references.ResolvedReferences {
+	filled := make(references.ResolvedReferences, len(resolved))
+	for name, value := range resolved {
+		filled[name] = value
+	}
+	for _, ref := range karta.Spec.StructureDefinition.References {
+		if _, ok := filled[ref.Name]; !ok && ref.List != nil {
+			filled[ref.Name] = references.NewListValue(nil)
+		}
+	}
+
+	return filled
 }

@@ -59,13 +59,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"standalone": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"standalone": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"standalone": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"standalone": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"standalone": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"standalone": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"standalone": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/standalone/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/standalone/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/standalone/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/standalone/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/standalone/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/standalone/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"standalone"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/standalone/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -84,13 +84,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"proxy": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"proxy": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"proxy": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"proxy": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"proxy": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"proxy": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"proxy": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/proxy/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/proxy/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/proxy/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/proxy/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/proxy/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/proxy/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"proxy"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/proxy/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -109,13 +109,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"mixCoord": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"mixCoord": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"mixCoord": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"mixCoord": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"mixCoord": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"mixCoord": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"mixCoord": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/mixCoord/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/mixCoord/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/mixCoord/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/mixCoord/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/mixCoord/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/mixCoord/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"mixCoord"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/mixCoord/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -134,13 +134,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataNode": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataNode": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataNode": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataNode": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataNode": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataNode": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataNode": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataNode/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataNode/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataNode/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataNode/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataNode/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataNode/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataNode"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataNode/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -159,13 +159,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryNode": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryNode": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryNode": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryNode": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryNode": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryNode": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryNode": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryNode/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryNode/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryNode/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryNode/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryNode/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryNode/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryNode"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryNode/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -184,13 +184,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"streamingNode": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"streamingNode": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"streamingNode": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"streamingNode": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"streamingNode": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"streamingNode": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"streamingNode": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/streamingNode/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/streamingNode/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/streamingNode/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/streamingNode/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/streamingNode/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/streamingNode/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"streamingNode"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/streamingNode/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -209,13 +209,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexNode": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexNode": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexNode": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexNode": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexNode": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexNode": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexNode": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexNode/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexNode/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexNode/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexNode/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexNode/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexNode/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexNode"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexNode/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -234,13 +234,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"rootCoord": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"rootCoord": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"rootCoord": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"rootCoord": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"rootCoord": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"rootCoord": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"rootCoord": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/rootCoord/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/rootCoord/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/rootCoord/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/rootCoord/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/rootCoord/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/rootCoord/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"rootCoord"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/rootCoord/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -259,13 +259,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataCoord": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataCoord": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataCoord": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataCoord": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataCoord": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataCoord": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"dataCoord": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataCoord/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataCoord/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataCoord/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataCoord/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataCoord/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataCoord/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"dataCoord"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/dataCoord/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -284,13 +284,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryCoord": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryCoord": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryCoord": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryCoord": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryCoord": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryCoord": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"queryCoord": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryCoord/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryCoord/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryCoord/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryCoord/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryCoord/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryCoord/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"queryCoord"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/queryCoord/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -309,13 +309,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexCoord": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexCoord": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexCoord": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexCoord": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexCoord": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexCoord": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"indexCoord": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexCoord/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexCoord/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexCoord/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexCoord/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexCoord/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexCoord/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"indexCoord"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/indexCoord/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -334,13 +334,13 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"cdc": {"schedulerName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"podLabels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"cdc": {"podLabels": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"podAnnotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"cdc": {"podAnnotations": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"cdc": {"resources": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"priorityClassName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"cdc": {"priorityClassName": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"cdc": {"affinity": {"nodeAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"components": {"cdc": {"affinity": {"podAffinity": value}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								SchedulerName:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/components/cdc/schedulerName")},
+								Labels:            &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"podLabels"].orValue(null)`, PathWrite: ptr.To("/spec/components/cdc/podLabels")},
+								Annotations:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"podAnnotations"].orValue(null)`, PathWrite: ptr.To("/spec/components/cdc/podAnnotations")},
+								Resources:         &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/components/cdc/resources")},
+								PriorityClassName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"priorityClassName"].orValue(null)`, PathWrite: ptr.To("/spec/components/cdc/priorityClassName")},
+								NodeAffinity:      &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/cdc/affinity/nodeAffinity")},
+								PodAffinity:       &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"components"][?"cdc"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/components/cdc/affinity/podAffinity")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -359,7 +359,7 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"dependencies": {"etcd": {"inCluster": {"values": {"resources": value}}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"etcd"][?"inCluster"][?"values"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/dependencies/etcd/inCluster/values/resources")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -372,7 +372,7 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"storage"][?"inCluster"][?"values"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"dependencies": {"storage": {"inCluster": {"values": {"resources": value}}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"storage"][?"inCluster"][?"values"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/dependencies/storage/inCluster/values/resources")},
 							},
 						},
 					},
@@ -382,7 +382,7 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"zookeeper": {"resources": value}}}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"zookeeper"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/dependencies/pulsar/inCluster/values/zookeeper/resources")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -395,7 +395,7 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"bookkeeper": {"resources": value}}}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"bookkeeper"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/dependencies/pulsar/inCluster/values/bookkeeper/resources")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -408,7 +408,7 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"broker": {"resources": value}}}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"broker"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/dependencies/pulsar/inCluster/values/broker/resources")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -421,7 +421,7 @@ func Milvus() *v1alpha1.Karta {
 						OwnerRef: ptr.To("milvus"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"dependencies": {"pulsar": {"inCluster": {"values": {"proxy": {"resources": value}}}}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+								Resources: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"dependencies"][?"pulsar"][?"inCluster"][?"values"][?"proxy"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/dependencies/pulsar/inCluster/values/proxy/resources")},
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{

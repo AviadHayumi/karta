@@ -37,12 +37,7 @@ spec:
                 expression: variables.statusJobDeploymentStatus == "Suspended" || variables.statusJobDeploymentStatus == "Suspending"
                 expectedResult: "true"
       suspendDefinition:
-        suspendActions:
-          - patchType: MergePatch
-            expression: '{"spec": {"suspend": true}}'
-        resumeActions:
-          - patchType: MergePatch
-            expression: '{"spec": {"suspend": false}}'
+        pathWrite: /spec/suspend
     childComponents:
       - name: head
         kind:
@@ -53,10 +48,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"rayClusterSpec"][?"headGroupSpec"][?"template"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"rayClusterSpec": {"headGroupSpec": {"template": value}}}}'
-            patchStrategy: Replace
+            pathWrite: /spec/rayClusterSpec/headGroupSpec/template
         scaleDefinition:
           replicas:
             expression: "1"
@@ -73,9 +65,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: ([dyn(object[?"spec"][?"rayClusterSpec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))
-            patches:
-              - patchType: JSONPatch
-                expression: '[{"op": "add", "path": "/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
+            pathWriteExpression: '"/spec/rayClusterSpec/workerGroupSpecs/" + string(index) + "/template"'
         scaleDefinition:
           replicas:
             expression: '(variables.workerReplicas.size() > 0 ? variables.workerReplicas : [dyn(1)])'

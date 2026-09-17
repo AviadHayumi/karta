@@ -27,12 +27,12 @@ func NIMService() *v1alpha1.Karta {
 					Kind: &v1alpha1.GroupVersionKind{Group: "apps.nvidia.com", Version: "v1alpha1", Kind: "NIMService"},
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						FragmentedPodSpecDefinition: &v1alpha1.FragmentedPodSpecDefinition{
-							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"schedulerName": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-							Labels:        &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"labels"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"labels": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-							Annotations:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"annotations"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"annotations": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-							Resources:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"resources"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"resources": value}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-							PodAffinity:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"affinity": {"podAffinity": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
-							NodeAffinity:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"affinity": {"nodeAffinity": value}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							SchedulerName: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"schedulerName"].orValue(null)`, PathWrite: ptr.To("/spec/schedulerName")},
+							Labels:        &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"labels"].orValue(null)`, PathWrite: ptr.To("/spec/labels")},
+							Annotations:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"annotations"].orValue(null)`, PathWrite: ptr.To("/spec/annotations")},
+							Resources:     &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"resources"].orValue(null)`, PathWrite: ptr.To("/spec/resources")},
+							PodAffinity:   &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/affinity/podAffinity")},
+							NodeAffinity:  &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)`, PathWrite: ptr.To("/spec/affinity/nodeAffinity")},
 						},
 					},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{

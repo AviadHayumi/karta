@@ -94,20 +94,12 @@ func JobGroupKarta() *v1alpha1.Karta {
 						},
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodSpec: &v1alpha1.ValueAccessor{
-								Expression: `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
-								Patches: []v1alpha1.PatchEntry{{
-									PatchType:  v1alpha1.PatchTypeJSONPatch,
-									Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/spec", "value": value}]`,
-								}},
-								PatchStrategy: v1alpha1.PatchStrategyReplace,
+								Expression:          `object.spec.replicatedJobs.map(x, x[?"spec"].orValue(null))`,
+								PathWriteExpression: `"/spec/replicatedJobs/" + string(index) + "/spec"`,
 							},
 							Metadata: &v1alpha1.ValueAccessor{
-								Expression: `object.spec.replicatedJobs.map(x, x[?"metadata"].orValue(null))`,
-								Patches: []v1alpha1.PatchEntry{{
-									PatchType:  v1alpha1.PatchTypeJSONPatch,
-									Expression: `[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/metadata", "value": value}]`,
-								}},
-								PatchStrategy: v1alpha1.PatchStrategyReplace,
+								Expression:          `object.spec.replicatedJobs.map(x, x[?"metadata"].orValue(null))`,
+								PathWriteExpression: `"/spec/replicatedJobs/" + string(index) + "/metadata"`,
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{

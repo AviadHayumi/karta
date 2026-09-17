@@ -15,9 +15,7 @@ spec:
       specDefinition:
         podTemplateSpec:
           expression: object
-          patches:
-            - patchType: MergePatch
-              expression: value
+          pathWrite: ""
       scaleDefinition:
         replicas:
           expression: "1"

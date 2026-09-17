@@ -1,173 +1,201 @@
-<!--
-SPDX-License-Identifier: Apache-2.0
-Copyright (c) 2026 NVIDIA Corporation
--->
-# Karta Quickstart
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2026 NVIDIA Corporation -->
 
-> **What is Karta?** A Go library + Kubernetes CRD that gives platform controllers a single, uniform API over any workload type — JobSet, LeaderWorkerSet, PyTorchJob, RayCluster, and more. You describe each CRD's structure once in a YAML definition; your controller code never hard-codes per-type paths again. This example runs entirely offline — no cluster required.
+# Karta tree quickstart
 
-## The problem
-
-A scheduler plugin needs to inject `schedulerName: kai-scheduler` into every pod of every workload it manages:
-
-```go
-// Without Karta — grows with every new workload type you support
-switch workload.GetKind() {
-case "JobSet":
-    for i := range jobset.Spec.ReplicatedJobs {
-        jobset.Spec.ReplicatedJobs[i].Template.Spec.Template.Spec.SchedulerName = scheduler
-    }
-case "LeaderWorkerSet":
-    lws.Spec.LeaderWorkerTemplate.LeaderTemplate.Spec.SchedulerName = scheduler
-    lws.Spec.LeaderWorkerTemplate.WorkerTemplate.Spec.SchedulerName = scheduler
-// case "PyTorchJob": ...
-// case "RayCluster": ...
-}
-```
-
-With Karta:
-
-```go
-// With Karta — identical for every workload type
-for _, comp := range children {
-    pts, _ := comp.GetPodTemplateSpec(ctx)
-    for id, t := range pts {
-        t.Spec.SchedulerName = scheduler
-        pts[id] = t
-    }
-    comp.UpdatePodTemplateSpec(ctx, pts)
-}
-```
-
-The same code in `main.go` runs over two completely different CRD types — **no `switch` on CRD kind anywhere**.
+This example edits JobSet and LeaderWorkerSet through the same tree API. It runs offline. Karta describes where fields live; the Go caller selects the fields to change.
 
 ## Run it
 
-From the `docs/examples/quickstart` directory:
+From `docs/examples/quickstart`:
 
 ```bash
-# Default — injects kai-scheduler
 go run .
-
-# Use a different scheduler
-go run . --scheduler volcano
-
-# Also print the full mutated CRD YAML
-go run . --scheduler my-scheduler --print-mutated
-
-# Help
-go run . --help
+go run . --scheduler batch-scheduler
+go run . --scheduler batch-scheduler --print-mutated
 ```
 
-Default expected output:
+The program prints status, replica counts, resource requests, resolved write paths, and a read-back check. It sends no Kubernetes requests.
+
+## Open, inspect, mutate, read back
+
+`tree.Open` creates a local editor. `Snapshot` returns extracted data, including the root component and its children.
+
+```go
+editor, err := tree.Open(ctx, karta, workload)
+if err != nil {
+    return err
+}
+snapshot := editor.Snapshot()
+// Walk snapshot.Root and each instance's Children.
+```
+
+A write selects a component and a stable instance ID. For the sample JobSet, `replicatedjob[workers]` means the replicated job whose name is `workers`, regardless of its array position.
+
+```go
+target := tree.Target{
+    Component: "replicatedjob",
+    Instance:  "workers",
+    Field:     tree.PodTemplateSpec,
+}
+location, err := editor.ResolveWriteTarget(ctx, target)
+if err != nil {
+    return err
+}
+fmt.Println(location.Path)
+// /spec/replicatedJobs/1/template/spec/template
+```
+
+The path above comes from this workload. Do not cache its array index across mutations. Begin a draft and select the catalog target to edit individual fields:
+
+```go
+draft, err := tree.BeginEdit(ctx, editor,
+    tree.WithEditParents(resource.CreateMapParents))
+if err != nil {
+    return err
+}
+defer draft.Abort()
+template, err := draft.Target(ctx, target)
+if err != nil {
+    return err
+}
+if err := template.At("spec", "schedulerName").Set("batch-scheduler"); err != nil {
+    return err
+}
+if err := template.At("metadata", "labels", "app.kubernetes.io/managed-by").Set("karta"); err != nil {
+    return err
+}
+if err := draft.Commit(ctx); err != nil {
+    return err
+}
+```
+
+`At` takes literal map keys, so the label key needs no escaping. `CreateMapParents` permits absent metadata and label maps; an existing null or scalar parent still fails. Without that option, every parent must already exist.
+
+`main.go` selects the writable `PodTemplateSpec` accessor for these two catalog definitions. Other definitions can expose `PodSpec` or fragmented fields and need the corresponding explicit accessor choice. The program edits all selected templates in one draft, then publishes the raw workload and refreshed extraction together. Containers, sidecars, and unknown fields stay intact.
+
+Selections and reads use the starting snapshot. An ignored edit error prevents commit. If another mutation changes the editor first, commit returns `ErrStaleDraft`; start a fresh draft from the new snapshot. `Abort` discards uncommitted edits.
+
+The existing partial-map `Mutate` form remains supported:
+
+```go
+err = editor.Mutate(ctx, tree.Write{
+    Component: "replicatedjob",
+    Instance:  "workers",
+    Field:     tree.PodTemplateSpec,
+    Value: map[string]any{
+        "spec": map[string]any{"schedulerName": "batch-scheduler"},
+        "metadata": map[string]any{
+            "labels": map[string]any{"app.kubernetes.io/managed-by": "karta"},
+        },
+    },
+    Options: resource.MutationOptions{
+        PatchType: resource.PatchTypeMergePatch,
+        Strategy:  resource.Merge,
+    },
+})
+if err != nil {
+    return err
+}
+```
+
+Only the supplied map members change. Existing containers, resource requests, and other labels stay. Arrays are replaced as whole values when supplied; Merge does not merge containers by name.
+
+The executable tests check both forms against the complete raw JobSet and LeaderWorkerSet, including unknown nested container data and sidecars.
+
+```go
+fresh := editor.Snapshot() // Already reflects successful mutations.
+updated, err := editor.GetResource()
+if err != nil {
+    return err
+}
+// A controller can now call k8sClient.Update(ctx, updated).
+```
+
+Changing `fresh` alone does not edit the workload. Use a draft or an explicit `Mutate` call to apply a change. These are local operations; a controller still handles Kubernetes resourceVersion conflicts when persisting the result.
+
+<details>
+<summary>Example paths printed by the program</summary>
 
 ```text
-══════════════════════════════════════════
-  JobSet  (scheduler: kai-scheduler)
-══════════════════════════════════════════
-
-=== Workload status ===
-  Karta workload status: Running
-
-=== Component replica counts ===
-  replicatedjob[leader]        replicas=1
-  replicatedjob[workers]       replicas=8
-
-=== Resource requests per component ===
-  replicatedjob[leader]        container=training     cpu=4        memory=32Gi       gpu=1
-  replicatedjob[workers]       container=training     cpu=8        memory=64Gi       gpu=4
-
-=== Injecting scheduler "kai-scheduler" + label ===
-  Injected into "replicatedjob" (2 instances)
-
-=== Verification ===
-  replicatedjob[leader]        schedulerName="kai-scheduler"      managed-by="karta"
-  replicatedjob[workers]       schedulerName="kai-scheduler"      managed-by="karta"
-
-  → In a real controller: k8sClient.Update(ctx, updated)
-
-══════════════════════════════════════════
-  LeaderWorkerSet  (scheduler: kai-scheduler)
-══════════════════════════════════════════
-
-=== Workload status ===
-  Karta workload status: Initializing
-
-=== Component replica counts ===
-  group (virtual)              replicas=4
-  leader                       replicas=3
-  worker                       replicas=9
-
-=== Resource requests per component ===
-  leader                       container=nginx2       cpu=500m     memory=512Mi      gpu=<none>
-  worker                       container=nginx        cpu=200m     memory=256Mi      gpu=<none>
-
-=== Injecting scheduler "kai-scheduler" + label ===
-  Injected into "leader" (1 instance)
-  Injected into "worker" (1 instance)
-
-=== Verification ===
-  leader                       schedulerName="kai-scheduler"      managed-by="karta"
-  worker                       schedulerName="kai-scheduler"      managed-by="karta"
-
-  → In a real controller: k8sClient.Update(ctx, updated)
+replicatedjob[leader]  -> /spec/replicatedJobs/0/template/spec/template
+replicatedjob[workers] -> /spec/replicatedJobs/1/template/spec/template
+leader[]              -> /spec/leaderWorkerTemplate/leaderTemplate
+worker[]              -> /spec/leaderWorkerTemplate/workerTemplate
 ```
 
-## What the example does
+An empty instance ID means a single-instance component. After the call, the program checks that each extracted template has the requested scheduler and the `app.kubernetes.io/managed-by: karta` label.
 
-| Step | How | What it shows |
-|------|-----|---------------|
-| 1 | `tree.Build()` → `wt.Status.Phases` | Unified `Running/Initializing/Failed` — no per-CRD condition parsing |
-| 2 | `tree.Build()` → walk `wt.Children` | Replica counts regardless of where the CRD stores them; LWS worker total computed via a CEL expression; virtual components labelled |
-| 3 | `inst.ExtractedInstance.PodTemplateSpec` | Resource requests per container — GPUs for JobSet, CPU for LWS — same traversal, different CRDs |
-| 4 | `comp.GetPodTemplateSpec` → mutate → `UpdatePodTemplateSpec` | Inject scheduler name and a pod label in one pass via real `corev1` types |
-| 5 | `comp.GetPodTemplateSpec` read-back + `factory.GetResource()` | Confirm both mutations landed at the right paths; retrieve the object for `k8sClient.Update` |
+</details>
 
-## File layout
+## What is stored in Karta?
+
+These are fragments of the generated catalog CRs, not complete manifests. The complete definitions are in `docs/catalog`.
+
+JobSet stores templates in an array. Karta discovers instance names and evaluates the write path with the selected instance's current source index:
+
+```yaml
+name: replicatedjob
+instanceIds:
+  expression: '([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))'
+specDefinition:
+  podTemplateSpec:
+    expression: '([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))'
+    pathWriteExpression: '"/spec/replicatedJobs/" + string(index) + "/template/spec/template"'
+```
+
+LeaderWorkerSet has a fixed worker-template location:
+
+```yaml
+name: worker
+specDefinition:
+  podTemplateSpec:
+    expression: 'object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)'
+    pathWrite: /spec/leaderWorkerTemplate/workerTemplate
+```
+
+`expression` reads the value. `pathWrite` is a fixed JSON Pointer. `pathWriteExpression` is CEL that returns a JSON Pointer. Neither field contains a patch or a merge strategy.
+
+<details>
+<summary>Suspension and paths that depend on the workload</summary>
+
+The tree interface also exposes the root component's suspension capability:
+
+```go
+if editor.IsSuspendable() {
+    if err := editor.Suspend(ctx); err != nil {
+        return err
+    }
+    if err := editor.Resume(ctx); err != nil {
+        return err
+    }
+}
+```
+
+These calls change the local desired spec. They do not wait for an operator to suspend or resume pods.
+
+KServe's catalog discovers the predictor child that contains `storageUri`. Its logical `Container` field can therefore resolve to `/spec/predictor/model` or `/spec/predictor/sklearn`. The caller can inspect the selected path:
+
+```go
+location, err := editor.ResolveWriteTarget(ctx, tree.Target{
+    Component: "predictor",
+    Field:     tree.Container,
+})
+```
+
+For this catalog, a predictor without a matching child has no resolved Container target. Karta returns an error instead of guessing a destination.
+
+The executable examples in `pkg/tree/example_editable_test.go` cover both KServe shapes, an unresolved target, a fixed Deployment path, stable Ray worker IDs, and Job suspension.
+
+</details>
+
+## Files
 
 | File | Purpose |
-|------|---------|
-| `main.go` | Example code — runs identically for both workload types |
-| `jobset.yaml` | Sample `JobSet` workload (leader × 1, worker × 4) |
-| `lws.yaml` | Sample `LeaderWorkerSet` workload (2 groups × 4 pods) |
-| `docs/catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml` | Karta definition for JobSet (loaded at runtime) |
-| `docs/catalog/leaderworkerset-x-k8s-io-leaderworkerset-v1.yaml` | Karta definition for LeaderWorkerSet (loaded at runtime) |
+| --- | --- |
+| `main.go` | Runs the same inspection and mutation flow for both workloads |
+| `jobset.yaml`, `lws.yaml` | Example workload inputs |
+| `../../catalog/jobset-x-k8s-io-jobset-v1alpha2.yaml` | JobSet Karta definition |
+| `../../catalog/leaderworkerset-x-k8s-io-leaderworkerset-v1.yaml` | LeaderWorkerSet Karta definition |
 
-## How Karta works
-
-A Karta YAML describes the structure of a CRD using CEL expressions. Each field is an accessor pair: `expression` is the read, evaluated with the workload bound as `object`, and `patch` is a CEL expression that constructs the write:
-
-```yaml
-# JobSet child component: one entry per replicatedJob, identified by name
-childComponents:
-  - name: replicatedjob
-    specDefinition:
-      podTemplateSpec:
-        expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"][?"spec"][?"template"].orValue(null))
-        patch: '[{"op": "add", "path": "/spec/replicatedJobs/" + string(index) + "/template/spec/template", "value": value}]'
-    instanceIds:
-      expression: ([dyn(object[?"spec"][?"replicatedJobs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"name"].orValue(null))
-```
-
-```yaml
-# LWS worker total computed directly in CEL
-  - name: worker
-    specDefinition:
-      podTemplateSpec:
-        expression: object[?"spec"][?"leaderWorkerTemplate"][?"workerTemplate"].orValue(null)
-        patch: '{"spec": {"leaderWorkerTemplate": {"workerTemplate": value}}}'
-        replace: true
-    scaleDefinition:
-      replicas:
-        expression: variables.specReplicasFloat * (variables.specLeaderWorkerTemplateSize - 1.0)
-```
-
-`variables.<name>` references named CEL expressions declared once under `spec.variables` and reused across the definition. Your Go code never references these expressions directly; Karta handles the navigation. Adding support for a new CRD means writing a new YAML definition; existing code is untouched.
-
-## Next steps
-
-- [Technical Guide](../../Technical%20Guide.md) — full Karta specification
-- [catalog](../../catalog/) — ready-made definitions for PyTorchJob, RayCluster, MPIJob, KServe, and more
-- [resource](../../../pkg/resource/) — full Component API (suspend/resume, fragmented pod specs, pod querier)
-- [tree](../../../pkg/tree/) — WorkloadTree for inspecting the component hierarchy of live workloads
-- [instructions](../../../pkg/instructions/) — gang scheduling and `StructureSummary` for scheduler integrations
+The example module uses a local `replace` directive for the repository root. Remove that directive and choose a released module version when adapting the example outside this experimental checkout.

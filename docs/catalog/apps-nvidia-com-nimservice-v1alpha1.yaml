@@ -16,40 +16,22 @@ spec:
         fragmentedPodSpecDefinition:
           schedulerName:
             expression: object[?"spec"][?"schedulerName"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"schedulerName": value}}'
-            patchStrategy: Replace
+            pathWrite: /spec/schedulerName
           labels:
             expression: object[?"spec"][?"labels"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"labels": value}}'
-            patchStrategy: Replace
+            pathWrite: /spec/labels
           annotations:
             expression: object[?"spec"][?"annotations"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"annotations": value}}'
-            patchStrategy: Replace
+            pathWrite: /spec/annotations
           resources:
             expression: object[?"spec"][?"resources"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"resources": value}}'
-            patchStrategy: Replace
+            pathWrite: /spec/resources
           podAffinity:
             expression: object[?"spec"][?"affinity"][?"podAffinity"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"affinity": {"podAffinity": value}}}'
-            patchStrategy: Replace
+            pathWrite: /spec/affinity/podAffinity
           nodeAffinity:
             expression: object[?"spec"][?"affinity"][?"nodeAffinity"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"affinity": {"nodeAffinity": value}}}'
-            patchStrategy: Replace
+            pathWrite: /spec/affinity/nodeAffinity
       scaleDefinition:
         replicas:
           expression: variables.specReplicas

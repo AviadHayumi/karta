@@ -52,6 +52,11 @@ type Event struct {
 	ResourceVersion         string          `json:"resourceVersion,omitempty"`
 	Object                  map[string]any  `json:"object,omitempty"`
 	Action                  *RecordedAction `json:"action,omitempty"`
+	// References are the referenced CRs captured alongside this state, as declared by the
+	// flow's Capturing steps. Each object self-describes (apiVersion, kind, metadata), so a
+	// replay can serve them back through a reference reader. Optional and additive: absent in
+	// recordings made before references existed.
+	References []map[string]any `json:"references,omitempty"`
 }
 
 // RecordedAction is a mutation performed between states.
@@ -141,6 +146,17 @@ func (r *Reader) State() string { return r.stateEvents[r.pos].State }
 
 func (r *Reader) Object() *unstructured.Unstructured {
 	return &unstructured.Unstructured{Object: r.stateEvents[r.pos].Object}
+}
+
+// References returns the referenced CRs captured with the current state, possibly empty.
+func (r *Reader) References() []*unstructured.Unstructured {
+	refs := r.stateEvents[r.pos].References
+	out := make([]*unstructured.Unstructured, 0, len(refs))
+	for _, ref := range refs {
+		out = append(out, &unstructured.Unstructured{Object: ref})
+	}
+
+	return out
 }
 
 func (r *Reader) Recording() Recording { return r.rec }

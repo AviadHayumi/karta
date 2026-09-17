@@ -253,13 +253,13 @@ func bareJobKarta() *v1alpha1.Karta {
 					SpecDefinition: &v1alpha1.SpecDefinition{
 						PodTemplateSpec: &v1alpha1.ValueAccessor{
 							Expression: `object[?"spec"][?"template"].orValue(null)`,
-							Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"template": value}}`}},
+							PathWrite:  ptr.To("/spec/template"),
 						},
 					},
 					ScaleDefinition: &v1alpha1.ScaleDefinition{
 						Replicas: &v1alpha1.ValueAccessor{
 							Expression: `([dyn(object[?"spec"][?"parallelism"].orValue(null))].filter(v, v != null && v != false) + [1])[0]`,
-							Patches:    []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"parallelism": value}}`}},
+							PathWrite:  ptr.To("/spec/parallelism"),
 						},
 					},
 				},

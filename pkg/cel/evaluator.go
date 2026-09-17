@@ -33,7 +33,8 @@ type Evaluator interface {
 }
 
 type evaluator struct {
-	env *cel.Env
+	env     *cel.Env
+	pathEnv *cel.Env
 
 	mu       sync.RWMutex
 	programs map[string]cel.Program
@@ -58,10 +59,10 @@ func Shared() (Evaluator, error) {
 func newEvaluator() (*evaluator, error) {
 	env, err := cel.NewEnv(
 		cel.Variable(ObjectVar, cel.MapType(cel.StringType, cel.DynType)),
-		cel.Variable("value", cel.DynType),
 		cel.Variable("instance", cel.DynType),
 		cel.Variable("index", cel.DynType),
 		cel.Variable("variables", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("references", cel.MapType(cel.StringType, cel.DynType)),
 		// Optional types give `object.status.?readyReplicas.orValue(0)`, the CEL spelling of
 		// `.status.readyReplicas // 0`, so an absent field is a value rather than an error.
 		cel.OptionalTypes(),
@@ -74,7 +75,11 @@ func newEvaluator() (*evaluator, error) {
 		return nil, fmt.Errorf("build CEL environment: %w", err)
 	}
 
-	return &evaluator{env: env, programs: map[string]cel.Program{}}, nil
+	valueEnv, err := env.Extend(cel.Variable("value", cel.DynType))
+	if err != nil {
+		return nil, fmt.Errorf("build CEL value environment: %w", err)
+	}
+	return &evaluator{env: valueEnv, pathEnv: env, programs: map[string]cel.Program{}}, nil
 }
 
 func (e *evaluator) Evaluate(ctx context.Context, expression string, object any) (ref.Val, error) {

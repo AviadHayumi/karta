@@ -4,8 +4,8 @@
 // Package main demonstrates how to use Karta to uniformly read and mutate
 // distributed training workloads without writing per-CRD integration code.
 //
-// The same operations run over two completely different CRD types — JobSet and
-// LeaderWorkerSet — without any per-type branching.
+// The same tree API reads and edits JobSet and LeaderWorkerSet without
+// branching on workload kind. All edits are local; no cluster is required.
 //
 // Usage (from the docs/examples/quickstart directory):
 //
@@ -91,12 +91,12 @@ func main() {
 	flag.BoolVar(&o.printMutated, "print-mutated", false,
 		"print the full mutated CRD YAML after injection")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: go run ./docs/examples/quickstart [flags]\n\nFlags:\n")
+		fmt.Fprintf(os.Stderr, "Usage: go run . [flags]\n\nFlags:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
-		fmt.Fprintf(os.Stderr, "  go run ./docs/examples/quickstart\n")
-		fmt.Fprintf(os.Stderr, "  go run ./docs/examples/quickstart --scheduler volcano\n")
-		fmt.Fprintf(os.Stderr, "  go run ./docs/examples/quickstart --scheduler kai-scheduler --print-mutated\n")
+		fmt.Fprintf(os.Stderr, "  go run .\n")
+		fmt.Fprintf(os.Stderr, "  go run . --scheduler volcano\n")
+		fmt.Fprintf(os.Stderr, "  go run . --scheduler kai-scheduler --print-mutated\n")
 	}
 	flag.Parse()
 
@@ -116,9 +116,10 @@ func main() {
 	}
 
 	for _, ex := range examples {
-		fmt.Printf("══════════════════════════════════════════\n")
+		fmt.Println("==========================================")
 		fmt.Printf("  %s  (scheduler: %s)\n", ex.name, o.scheduler)
-		fmt.Printf("══════════════════════════════════════════\n\n")
+		fmt.Println("==========================================")
+		fmt.Println()
 		if err := run(ctx, ex, o); err != nil {
 			log.Fatalf("%s: %v", ex.name, err)
 		}
@@ -127,7 +128,7 @@ func main() {
 }
 
 // run executes the Karta operations for a single workload type.
-// Notice there is no switch on CRD kind anywhere in this function — the Karta
+// There is no switch on CRD kind anywhere in this function. The Karta
 // definition absorbs all structural differences between workload types.
 func run(ctx context.Context, ex workloadExample, o opts) error {
 	// Load the Karta definition from docs/catalog/.
@@ -147,16 +148,16 @@ func run(ctx context.Context, ex workloadExample, o opts) error {
 	}
 	obj := &unstructured.Unstructured{Object: rawObj}
 
-	// Create a ComponentFactory — the single entry point for all Karta operations.
-	factory := resource.NewComponentFactoryFromObject(karta, obj)
-
-	// Build a WorkloadTree for uniform inspection of status, scale, and spec resources.
-	wt, err := tree.Build(ctx, factory)
+	// Open one local editor for inspection, path resolution, and mutations.
+	editor, err := tree.Open(ctx, karta, obj)
 	if err != nil {
-		return fmt.Errorf("build workload tree: %w", err)
+		return fmt.Errorf("open workload tree: %w", err)
 	}
+	wt := editor.Snapshot()
+	// Start at Root so workloads that store their template on the root are included.
+	nodes := []tree.ComponentNode{*wt.Root}
 
-	// ── Step 1: Read unified status ──────────────────────────────────────────
+	// Step 1: read unified status.
 	fmt.Println("=== Workload status ===")
 	status := "<none>"
 	if wt.Status != nil {
@@ -164,11 +165,9 @@ func run(ctx context.Context, ex workloadExample, o opts) error {
 	}
 	fmt.Printf("  Karta workload status: %s\n\n", status)
 
-	// ── Step 2: Inspect replica counts ───────────────────────────────────────
-	// Scale values are read from wherever the CRD stores them — a JQ formula
-	// for LWS, per replicatedJob entry for JobSet — with no per-type branching.
+	// Step 2: read scale through the catalog's CEL expressions.
 	fmt.Println("=== Component replica counts ===")
-	eachComponent(wt.Children, func(comp tree.ComponentNode, inst tree.InstanceNode) {
+	eachComponent(nodes, func(comp tree.ComponentNode, inst tree.InstanceNode) {
 		label := comp.Name
 		if inst.InstanceKey != nil {
 			label = fmt.Sprintf("%s[%s]", comp.Name, *inst.InstanceKey)
@@ -182,11 +181,11 @@ func run(ctx context.Context, ex workloadExample, o opts) error {
 	})
 	fmt.Println()
 
-	// ── Step 3: Resource requests per component ─────────────────────────────
+	// Step 3: inspect the extracted container resources.
 	// PodTemplateSpec is extracted from the workload spec via Karta, so container
-	// resources are directly accessible — no per-CRD path knowledge required.
+	// resources are directly accessible without knowing CRD-specific paths.
 	fmt.Println("=== Resource requests per component ===")
-	eachComponent(wt.Children, func(comp tree.ComponentNode, inst tree.InstanceNode) {
+	eachComponent(nodes, func(comp tree.ComponentNode, inst tree.InstanceNode) {
 		if !comp.HasPodDefinition || inst.ExtractedInstance == nil || inst.ExtractedInstance.PodTemplateSpec == nil {
 			return
 		}
@@ -215,75 +214,88 @@ func run(ctx context.Context, ex workloadExample, o opts) error {
 	})
 	fmt.Println()
 
-	// ── Step 4: Inject scheduler + label into all pod-bearing components ─────
-	// A single UpdatePodTemplateSpec call covers any field on the pod template —
-	// not just schedulerName. Karta routes each mutation to the right path in
-	// the underlying CRD without any per-type branching.
-	children, err := factory.GetChildComponents()
-	if err != nil {
-		return fmt.Errorf("get child components: %w", err)
-	}
+	// Step 4: select instances from the tree, then edit two explicit fields.
+	// These examples have writable podTemplateSpec fields. Other catalog shapes
+	// can expose podSpec, metadata, or fragmented fields instead.
 	fmt.Printf("=== Injecting scheduler %q + label ===\n", o.scheduler)
-	for _, comp := range children {
-		if !comp.HasPodDefinition() {
-			continue
+	var targets []tree.Target
+	seen := make(map[tree.Target]bool)
+	eachComponent(nodes, func(comp tree.ComponentNode, inst tree.InstanceNode) {
+		if !comp.HasPodDefinition || inst.ExtractedInstance == nil || inst.ExtractedInstance.PodTemplateSpec == nil {
+			return
 		}
-		podTemplateSpecs, err := comp.GetPodTemplateSpec(ctx)
+		id := "" // A single-instance component uses the empty ID.
+		if inst.InstanceKey != nil {
+			id = *inst.InstanceKey
+		}
+		target := tree.Target{Component: comp.Name, Instance: id, Field: tree.PodTemplateSpec}
+		// A logical component can appear under several parent instances.
+		if seen[target] {
+			return
+		}
+		seen[target] = true
+		targets = append(targets, target)
+	})
+	if len(targets) == 0 {
+		return fmt.Errorf("no pod-template instances were extracted from %s", ex.name)
+	}
+	for _, target := range targets {
+		location, err := editor.ResolveWriteTarget(ctx, target)
 		if err != nil {
-			return fmt.Errorf("get pod template spec for %s: %w", comp.Name(), err)
+			return fmt.Errorf("resolve %s[%s]: %w", target.Component, target.Instance, err)
 		}
-		updates := make(map[string]corev1.PodTemplateSpec, len(podTemplateSpecs))
-		for id, pts := range podTemplateSpecs {
-			pts.Spec.SchedulerName = o.scheduler
-			if pts.Labels == nil {
-				pts.Labels = make(map[string]string)
-			}
-			pts.Labels["app.kubernetes.io/managed-by"] = "karta"
-			updates[id] = pts
-		}
-		if err := comp.UpdatePodTemplateSpec(ctx, updates); err != nil {
-			return fmt.Errorf("update pod template spec for %s: %w", comp.Name(), err)
-		}
-		noun := "instances"
-		if len(updates) == 1 {
-			noun = "instance"
-		}
-		fmt.Printf("  Injected into %q (%d %s)\n", comp.Name(), len(updates), noun)
+		fmt.Printf("  %s[%s] -> %s\n", target.Component, target.Instance, location.Path)
+	}
+	// All destinations resolve against one starting snapshot. A failed write
+	// leaves the entire batch unchanged. No Kubernetes request is sent.
+	if err := editTemplates(ctx, editor, targets, o.scheduler); err != nil {
+		return fmt.Errorf("edit templates: %w", err)
 	}
 	fmt.Println()
 
-	// ── Step 5: Verify via Karta read-back ───────────────────────────────────
-	// Reading back through Karta confirms both mutations landed at the right
-	// paths regardless of where in the CRD structure the template lives.
+	// Step 5: mutation refreshed the tree. Read back and check both changes.
 	fmt.Println("=== Verification ===")
-	for _, comp := range children {
-		if !comp.HasPodDefinition() {
-			continue
+	refreshed := editor.Snapshot()
+	var verificationErr error
+	pending := make(map[tree.Target]bool, len(targets))
+	for _, target := range targets {
+		pending[target] = true
+	}
+	eachComponent([]tree.ComponentNode{*refreshed.Root}, func(comp tree.ComponentNode, inst tree.InstanceNode) {
+		if !comp.HasPodDefinition || inst.ExtractedInstance == nil || inst.ExtractedInstance.PodTemplateSpec == nil {
+			return
 		}
-		podTemplateSpecs, err := comp.GetPodTemplateSpec(ctx)
-		if err != nil {
-			return fmt.Errorf("read back pod template spec for %s: %w", comp.Name(), err)
+		pts := inst.ExtractedInstance.PodTemplateSpec
+		label := comp.Name
+		id := ""
+		if inst.InstanceKey != nil {
+			id = *inst.InstanceKey
+			label = fmt.Sprintf("%s[%s]", comp.Name, *inst.InstanceKey)
 		}
-		for id, pts := range podTemplateSpecs {
-			compLabel := comp.Name()
-			if id != "" {
-				compLabel = fmt.Sprintf("%s[%s]", comp.Name(), id)
-			}
-			fmt.Printf("  %-28s schedulerName=%-20q managed-by=%q\n",
-				compLabel, pts.Spec.SchedulerName, pts.Labels["app.kubernetes.io/managed-by"])
+		delete(pending, tree.Target{Component: comp.Name, Instance: id, Field: tree.PodTemplateSpec})
+		if pts.Spec.SchedulerName != o.scheduler || pts.Labels["app.kubernetes.io/managed-by"] != "karta" {
+			verificationErr = fmt.Errorf("read-back mismatch for %s", label)
 		}
+		fmt.Printf("  %-28s schedulerName=%-20q managed-by=%q\n",
+			label, pts.Spec.SchedulerName, pts.Labels["app.kubernetes.io/managed-by"])
+	})
+	if verificationErr != nil {
+		return verificationErr
+	}
+	if len(pending) != 0 {
+		return fmt.Errorf("%d mutated instances were missing from the refreshed tree", len(pending))
 	}
 
-	// ── Step 5: Retrieve the fully mutated object ─────────────────────────────
+	// Step 6: retrieve the full local result.
 	// GetResource returns the modified unstructured object ready for
 	//   k8sClient.Update(ctx, updated)
-	updated, err := factory.GetResource()
+	updated, err := editor.GetResource()
 	if err != nil {
 		return fmt.Errorf("get updated resource: %w", err)
 	}
-	fmt.Printf("\n  → In a real controller: k8sClient.Update(ctx, updated)\n")
+	fmt.Printf("\n  In a real controller: k8sClient.Update(ctx, updated)\n")
 
-	// ── Optional: print full mutated CRD YAML ────────────────────────────────
+	// Optionally print the full mutated workload YAML.
 	if o.printMutated {
 		mutatedYAML, err := yaml.Marshal(updated.(*unstructured.Unstructured).Object)
 		if err != nil {
@@ -293,4 +305,26 @@ func run(ctx context.Context, ex workloadExample, o opts) error {
 	}
 
 	return nil
+}
+
+func editTemplates(ctx context.Context, editor tree.Editable, targets []tree.Target, scheduler string) error {
+	// Metadata and labels may be absent. Existing null or scalar parents fail.
+	draft, err := tree.BeginEdit(ctx, editor, tree.WithEditParents(resource.CreateMapParents))
+	if err != nil {
+		return err
+	}
+	defer draft.Abort()
+	for _, target := range targets {
+		template, err := draft.Target(ctx, target)
+		if err != nil {
+			return err
+		}
+		if err := template.At("spec", "schedulerName").Set(scheduler); err != nil {
+			return err
+		}
+		if err := template.At("metadata", "labels", "app.kubernetes.io/managed-by").Set("karta"); err != nil {
+			return err
+		}
+	}
+	return draft.Commit(ctx)
 }

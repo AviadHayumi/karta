@@ -7,7 +7,9 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -64,7 +66,19 @@ var _ = Describe("Karta mutates the recorded CRs", func() {
 			cr := pickInput(r)
 			Expect(cr).NotTo(BeNil())
 
-			factory := resource.NewComponentFactoryFromObject(karta, cr)
+			options := resource.MutationOptions{
+				PatchType: resource.PatchType(os.Getenv("KARTA_REPLAY_PATCH_TYPE")),
+				Strategy:  resource.MergeStrategy(os.Getenv("KARTA_REPLAY_MERGE_STRATEGY")),
+			}
+			// This historical golden records the typed template replacement that
+			// discarded Knative-only fields. Preserve that compatibility assertion;
+			// the independent test below verifies today's default Merge preserves them.
+			// Explicit policy overrides still compare their actual result to the
+			// historical golden, so intentional differences remain visible.
+			if karta.Name == "serving-knative-dev-service-v1" && options.PatchType == "" && options.Strategy == "" {
+				options.Strategy = resource.Replace
+			}
+			factory := resource.NewComponentFactoryFromObject(karta, cr, resource.WithMutationOptions(options))
 			root, err := factory.GetRootComponent()
 			Expect(err).NotTo(HaveOccurred())
 			children, err := factory.GetChildComponents()
@@ -101,6 +115,66 @@ var _ = Describe("Karta mutates the recorded CRs", func() {
 	}
 })
 
+func TestRecordedKnativeDefaultMergeExact(t *testing.T) {
+	ctx := context.Background()
+	var recordings int
+	for _, path := range replayPaths(t) {
+		if !strings.Contains(path, "/knative/") {
+			continue
+		}
+		recordings++
+		t.Run(strings.TrimPrefix(path, "../recorded_data/"), func(t *testing.T) {
+			r, karta := replayDefinition(t, path)
+			original, reader := replayInput(t, r)
+			var expected map[string]any
+			if err := normalizedJSONValue(original, &expected); err != nil {
+				t.Fatal(err)
+			}
+			before := jsonText(original)
+			template := expected["spec"].(map[string]any)["template"].(map[string]any)
+			spec := template["spec"].(map[string]any)
+			metadata := template["metadata"].(map[string]any)
+			if value, exists := metadata["creationTimestamp"]; !exists || value != nil || spec["containerConcurrency"] != float64(0) || spec["timeoutSeconds"] != float64(300) {
+				t.Fatal("recording must retain the three fields omitted by the historical typed replacement")
+			}
+			spec["schedulerName"] = goldenScheduler
+			factory := resource.NewComponentFactoryFromObject(karta, original, resource.WithReferenceReader(reader))
+			revision, err := factory.GetComponent("revision")
+			if err != nil {
+				t.Fatal(err)
+			}
+			values, err := revision.GetPodTemplateSpec(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for id, value := range values {
+				value.Spec.SchedulerName = goldenScheduler
+				values[id] = value
+			}
+			if err := revision.UpdatePodTemplateSpec(ctx, values); err != nil {
+				t.Fatal(err)
+			}
+			result, err := factory.GetResource()
+			if err != nil {
+				t.Fatal(err)
+			}
+			var actual map[string]any
+			if err := normalizedJSONValue(result, &actual); err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(actual, expected) {
+				t.Fatal("default Merge changed raw Knative fields beyond the requested scheduler")
+			}
+			if jsonText(original) != before {
+				t.Fatal("default Merge changed caller-owned recording input")
+			}
+		})
+	}
+	if recordings == 0 {
+		t.Fatal("Knative recording is required")
+	}
+}
+
 // pickInput walks the recording and returns the CR of the "running" state when
 // present, otherwise the last captured state.
 func pickInput(r *recorder.Reader) resource.KubernetesObject {
@@ -123,7 +197,7 @@ func mutateComponent(ctx context.Context, comp *resource.Component) []string {
 		return nil
 	}
 
-	if via := def.SpecDefinition.PodTemplateSpec; via != nil && len(via.Patches) > 0 {
+	if via := def.SpecDefinition.PodTemplateSpec; via != nil && (via.PathWrite != nil || via.PathWriteExpression != "") {
 		templates, err := comp.GetPodTemplateSpec(ctx)
 		Expect(err).NotTo(HaveOccurred(), "read pod templates of %s", comp.Name())
 		for id, template := range templates {
@@ -134,7 +208,7 @@ func mutateComponent(ctx context.Context, comp *resource.Component) []string {
 		applied = append(applied, comp.Name()+":podTemplateSpec")
 	}
 
-	if via := def.SpecDefinition.PodSpec; via != nil && len(via.Patches) > 0 {
+	if via := def.SpecDefinition.PodSpec; via != nil && (via.PathWrite != nil || via.PathWriteExpression != "") {
 		podSpecs, err := comp.GetPodSpec(ctx)
 		Expect(err).NotTo(HaveOccurred(), "read pod specs of %s", comp.Name())
 		for id, podSpec := range podSpecs {
@@ -146,8 +220,8 @@ func mutateComponent(ctx context.Context, comp *resource.Component) []string {
 	}
 
 	if fragmented := def.SpecDefinition.FragmentedPodSpecDefinition; fragmented != nil {
-		writableScheduler := fragmented.SchedulerName != nil && len(fragmented.SchedulerName.Patches) > 0
-		writableAffinity := fragmented.NodeAffinity != nil && len(fragmented.NodeAffinity.Patches) > 0
+		writableScheduler := fragmented.SchedulerName != nil && (fragmented.SchedulerName.PathWrite != nil || fragmented.SchedulerName.PathWriteExpression != "")
+		writableAffinity := fragmented.NodeAffinity != nil && (fragmented.NodeAffinity.PathWrite != nil || fragmented.NodeAffinity.PathWriteExpression != "")
 		if writableScheduler || writableAffinity {
 			current, err := comp.GetFragmentedPodSpec(ctx)
 			Expect(err).NotTo(HaveOccurred(), "read fragmented pod spec of %s", comp.Name())

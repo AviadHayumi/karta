@@ -41,12 +41,7 @@ spec:
                 - type: Suspended
                   status: "True"
       suspendDefinition:
-        suspendActions:
-          - patchType: MergePatch
-            expression: '{"spec": {"runPolicy": {"suspend": true}}}'
-        resumeActions:
-          - patchType: MergePatch
-            expression: '{"spec": {"runPolicy": {"suspend": false}}}'
+        pathWrite: /spec/runPolicy/suspend
     childComponents:
       - name: launcher
         kind:
@@ -57,10 +52,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"mpiReplicaSpecs"][?"Launcher"][?"template"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"mpiReplicaSpecs": {"Launcher": {"template": value}}}}'
-            patchStrategy: Replace
+            pathWrite: /spec/mpiReplicaSpecs/Launcher/template
         scaleDefinition:
           replicas:
             expression: variables.specMpiReplicaSpecsLauncherReplicas
@@ -77,10 +69,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"mpiReplicaSpecs"][?"Worker"][?"template"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"mpiReplicaSpecs": {"Worker": {"template": value}}}}'
-            patchStrategy: Replace
+            pathWrite: /spec/mpiReplicaSpecs/Worker/template
         scaleDefinition:
           replicas:
             expression: variables.specMpiReplicaSpecsWorkerReplicas

@@ -23,6 +23,17 @@ type Component struct {
 	accessor   ComponentAccessor
 }
 
+// Suspendable exposes optional native suspension independently of component reads.
+// Call IsSuspendable before using Suspend or Resume; unsupported components remain
+// no-ops for compatibility with existing component callers.
+type Suspendable interface {
+	IsSuspendable() bool
+	Suspend(context.Context) error
+	Resume(context.Context) error
+}
+
+var _ Suspendable = (*Component)(nil)
+
 type FragmentedPodSpec struct {
 	SchedulerName     string                       `json:"schedulerName,omitempty"`
 	Labels            map[string]string            `json:"labels,omitempty"`
@@ -70,6 +81,8 @@ type ExtractedInstance struct {
 	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Scale *Scale `json:"scale,omitempty"`
+
+	Fields map[string]any `json:"fields,omitempty"`
 }
 
 // Name returns the component name
@@ -267,6 +280,11 @@ func (c *Component) GetExtractedInstances(ctx context.Context) (map[string]Extra
 		return nil, fmt.Errorf("failed to get scales: %w", err)
 	}
 
+	fields, err := c.GetFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fields: %w", err)
+	}
+
 	result := make(map[string]ExtractedInstance, len(instanceIds))
 	for _, instanceID := range instanceIds {
 		extractedInstance := ExtractedInstance{}
@@ -301,6 +319,10 @@ func (c *Component) GetExtractedInstances(ctx context.Context) (map[string]Extra
 			}
 		}
 
+		if fields != nil {
+			extractedInstance.Fields = fields[instanceID]
+		}
+
 		result[instanceID] = extractedInstance
 	}
 
@@ -312,7 +334,12 @@ func (c *Component) HasSuspendDefinition() bool {
 	return c.definition.SuspendDefinition != nil
 }
 
-// Suspend applies the component's SuspendActions in sequence against the manifest.
+// IsSuspendable reports whether the definition declares native suspend/resume.
+func (c *Component) IsSuspendable() bool {
+	return c.HasSuspendDefinition()
+}
+
+// Suspend writes true to the component's declared suspend location.
 // It is a no-op if the component has no SuspendDefinition.
 func (c *Component) Suspend(ctx context.Context) error {
 	if err := c.accessor.ApplySuspendActions(ctx, c.definition); err != nil {
@@ -324,7 +351,7 @@ func (c *Component) Suspend(ctx context.Context) error {
 	return nil
 }
 
-// Resume applies the component's ResumeActions in sequence against the manifest.
+// Resume writes false to the component's declared suspend location.
 // It is a no-op if the component has no SuspendDefinition.
 func (c *Component) Resume(ctx context.Context) error {
 	if err := c.accessor.ApplyResumeActions(ctx, c.definition); err != nil {

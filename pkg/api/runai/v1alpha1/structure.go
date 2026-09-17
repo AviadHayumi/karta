@@ -17,6 +17,10 @@ type GroupVersionKind struct {
 
 // ComponentDefinition defines a single component in the workload hierarchy.
 // Components represent logical units of computation that can be optimized independently.
+// +kubebuilder:validation:XValidation:rule="!has(self.fields) || (!(\"\" in self.fields) && !('podTemplateSpec' in self.fields) && !('podSpec' in self.fields) && !('metadata' in self.fields) && !('fragmented.schedulerName' in self.fields) && !('fragmented.labels' in self.fields))",message="field names must not be empty or reserved for a built-in SDK field"
+// +kubebuilder:validation:XValidation:rule="!has(self.fields) || (!('fragmented.annotations' in self.fields) && !('fragmented.resources' in self.fields) && !('fragmented.resourceClaims' in self.fields) && !('fragmented.podAffinity' in self.fields) && !('fragmented.nodeAffinity' in self.fields) && !('fragmented.containers' in self.fields))",message="field names must not be reserved for a built-in SDK field"
+// +kubebuilder:validation:XValidation:rule="!has(self.fields) || (!('fragmented.container' in self.fields) && !('fragmented.priorityClassName' in self.fields) && !('fragmented.image' in self.fields) && !('scale.replicas' in self.fields) && !('scale.minReplicas' in self.fields) && !('scale.maxReplicas' in self.fields))",message="field names must not be reserved for a built-in SDK field"
+// +kubebuilder:validation:XValidation:rule="!has(self.fields) || !('suspend' in self.fields)",message="suspend is a reserved built-in SDK field"
 type ComponentDefinition struct {
 	// Name is the unique identifier for this component within the Karta
 	// +kubebuilder:validation:Required
@@ -43,14 +47,20 @@ type ComponentDefinition struct {
 	// +kubebuilder:validation:Optional
 	StatusDefinition *StatusDefinition `json:"statusDefinition,omitempty"`
 
-	// SuspendDefinition defines the path/value assignments used to suspend and resume this component.
+	// SuspendDefinition locates the boolean field used to suspend and resume this component.
 	// Should only be populated for components where the underlying framework provides native, first-class support for suspension primitives.
 	// (e.g. spec.suspend for batch/v1 Job).
 	// +kubebuilder:validation:Optional
 	SuspendDefinition *SuspendDefinition `json:"suspendDefinition,omitempty"`
 
+	// Fields exposes custom named workload values through the SDK's field accessors.
+	// Built-in SDK field names are reserved.
+	// +optional
+	Fields map[string]ValueAccessor `json:"fields,omitempty"`
+
 	// InstanceIds is an expression returning the list of instance ids.
 	// +optional
+	// +kubebuilder:validation:XValidation:rule="!has(self.pathWrite) && !has(self.pathWriteExpression)",message="instanceIds is read-only"
 	InstanceIds *ValueAccessor `json:"instanceIds,omitempty"`
 
 	// PodSelector defines how to identify pods belonging to this component
@@ -58,22 +68,18 @@ type ComponentDefinition struct {
 	PodSelector *PodSelector `json:"podSelector,omitempty"`
 }
 
-// SuspendDefinition defines the patches applied to a manifest when suspending or
-// resuming a workload. Actions use the same entry shape as a value accessor's
-// patches: entries whose conditions hold are applied in sequence, and later actions
-// may overwrite earlier ones. If no entry applies, the operation fails.
+// SuspendDefinition locates the boolean field set to true on suspend and false on resume.
+// +kubebuilder:validation:XValidation:rule="has(self.pathWrite) != has(self.pathWriteExpression)",message="exactly one of pathWrite or pathWriteExpression must be set"
 type SuspendDefinition struct {
-	// SuspendActions is an ordered list of patches applied on suspend.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinItems=1
-	// +listType=atomic
-	SuspendActions []PatchEntry `json:"suspendActions"`
+	// PathWrite is the field's RFC 6901 JSON Pointer. An empty string targets the document root.
+	// +optional
+	// +kubebuilder:validation:Pattern="^(/([^~/]|~[01])*)*$"
+	PathWrite *string `json:"pathWrite,omitempty"`
 
-	// ResumeActions is an ordered list of patches applied on resume.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinItems=1
-	// +listType=atomic
-	ResumeActions []PatchEntry `json:"resumeActions"`
+	// PathWriteExpression returns the field's RFC 6901 JSON Pointer using the definition's engine.
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	PathWriteExpression string `json:"pathWriteExpression,omitempty"`
 }
 
 // Variable is a named expression, the same shape a ValidatingAdmissionPolicy variable has.
@@ -87,95 +93,25 @@ type Variable struct {
 	Expression string `json:"expression"`
 }
 
-// PatchType declares what a patch entry's expression builds, the way a
-// MutatingAdmissionPolicy mutation declares its patchType.
-// +kubebuilder:validation:Enum=MergePatch;JSONPatch
-type PatchType string
-
-const (
-	// PatchTypeMergePatch means the expression builds a map, applied as a JSON merge
-	// patch (RFC 7386): maps merge recursively, any other value replaces, null removes
-	// the field.
-	PatchTypeMergePatch PatchType = "MergePatch"
-
-	// PatchTypeJSONPatch means the expression builds a list of RFC 6902 operations.
-	PatchTypeJSONPatch PatchType = "JSONPatch"
-)
-
-// PatchStrategy controls whether a write merges into the field's current value or
-// replaces it.
-// +kubebuilder:validation:Enum=Merge;Replace
-type PatchStrategy string
-
-const (
-	// PatchStrategyMerge merges the new value into the current one. The default.
-	PatchStrategyMerge PatchStrategy = "Merge"
-
-	// PatchStrategyReplace clears the field before setting it: the selected entry is
-	// applied once with value bound to null (removing the field, since null deletes)
-	// and then with the real value. A pod template update wants this; an annotations
-	// update usually does not. Only meaningful for MergePatch entries, because RFC
-	// 6902 authors write their removals explicitly.
-	PatchStrategyReplace PatchStrategy = "Replace"
-)
-
-// MatchCondition gates a patch entry on the document's shape, the
-// admissionregistration shape: a named boolean expression.
-type MatchCondition struct {
-	// Name identifies the condition in error messages.
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-
-	// Expression must return a boolean. An error, a null, or a non-boolean result
-	// fails the write; it never counts as false.
-	// +kubebuilder:validation:Required
-	Expression string `json:"expression"`
-}
-
-// PatchEntry is one candidate patch: an expression that constructs the change, the
-// declared type of what it builds, and optional conditions deciding when it applies.
-// The expression sees `value` (the value karta is writing), `instance` and `index`
-// (the instance being written), and `variables.<name>`.
-type PatchEntry struct {
-	// MatchConditions must all hold for this entry to apply. Entries are checked in
-	// order and the first match wins; an entry without conditions always matches and
-	// may only appear last.
-	// +optional
-	// +listType=map
-	// +listMapKey=name
-	MatchConditions []MatchCondition `json:"matchConditions,omitempty"`
-
-	// PatchType declares what the expression builds. The result must match: a map for
-	// MergePatch, a list of operations for JSONPatch. An empty map or list means no
-	// change.
-	// +kubebuilder:validation:Required
-	PatchType PatchType `json:"patchType"`
-
-	// Expression constructs the patch.
-	// +kubebuilder:validation:Required
-	Expression string `json:"expression"`
-}
-
-// ValueAccessor reads and writes one workload field without naming a location.
+// ValueAccessor reads and locates one workload field.
 // Expression is evaluated by the definition's engine and returns the field's value.
-// Patches declares how a write constructs its change; an accessor without patches is
-// read-only, and writing through it is an error.
+// PathWrite or PathWriteExpression locates the field for writes. An accessor without
+// either is read-only. The SDK owns patch construction and write strategy.
+// +kubebuilder:validation:XValidation:rule="!(has(self.pathWrite) && has(self.pathWriteExpression))",message="pathWrite and pathWriteExpression are mutually exclusive"
 type ValueAccessor struct {
 	// Expression returns the field's value.
 	// +optional
 	Expression string `json:"expression,omitempty"`
 
-	// Patches is the ordered list of candidate patches for a write, the shape a
-	// MutatingAdmissionPolicy uses for its mutations. The first entry whose
-	// conditions hold supplies the patch; if none matches, the write fails.
+	// PathWrite is the field's RFC 6901 JSON Pointer. An empty string targets the document root.
 	// +optional
-	// +listType=atomic
-	Patches []PatchEntry `json:"patches,omitempty"`
+	// +kubebuilder:validation:Pattern="^(/([^~/]|~[01])*)*$"
+	PathWrite *string `json:"pathWrite,omitempty"`
 
-	// PatchStrategy controls whether the write merges into the field's current value
-	// (Merge, the default) or clears it first (Replace).
+	// PathWriteExpression returns the field's RFC 6901 JSON Pointer using the definition's engine.
 	// +optional
-	PatchStrategy PatchStrategy `json:"patchStrategy,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+	PathWriteExpression string `json:"pathWriteExpression,omitempty"`
 }
 
 // SpecDefinition defines how to extract pod specifications from a component.

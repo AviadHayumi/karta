@@ -103,9 +103,8 @@ func PyFlowKarta() *v1alpha1.Karta {
 						OwnerRef: ptr.To("pyflow"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodTemplateSpec: &v1alpha1.ValueAccessor{
-								Expression:    `object[?"spec"][?"master"][?"template"].orValue(null)`,
-								Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"master": {"template": value}}}`}},
-								PatchStrategy: v1alpha1.PatchStrategyReplace,
+								Expression: `object[?"spec"][?"master"][?"template"].orValue(null)`,
+								PathWrite:  ptr.To("/spec/master/template"),
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -123,9 +122,8 @@ func PyFlowKarta() *v1alpha1.Karta {
 						OwnerRef: ptr.To("pyflow"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
 							PodTemplateSpec: &v1alpha1.ValueAccessor{
-								Expression:    `object[?"spec"][?"worker"][?"template"].orValue(null)`,
-								Patches:       []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"worker": {"template": value}}}`}},
-								PatchStrategy: v1alpha1.PatchStrategyReplace,
+								Expression: `object[?"spec"][?"worker"][?"template"].orValue(null)`,
+								PathWrite:  ptr.To("/spec/worker/template"),
 							},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
@@ -154,8 +152,7 @@ func SuspendablePyFlowKarta() *v1alpha1.Karta {
 	root := &karta.Spec.StructureDefinition.RootComponent
 
 	root.SuspendDefinition = &v1alpha1.SuspendDefinition{
-		SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": true}}`}},
-		ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"suspend": false}}`}},
+		PathWrite: ptr.To("/spec/suspend"),
 	}
 
 	root.StatusDefinition.StatusMappings.Suspended = []v1alpha1.StatusMatcher{

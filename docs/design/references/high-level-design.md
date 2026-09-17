@@ -197,7 +197,7 @@ type ResolvedReferences map[string]ReferenceValue
 `Resolve` fetches them. It lives in a new package, `pkg/references` - a new domain that owns reference resolution and is the one place in Karta that depends on a Kubernetes client; the types and `WithReferences` stay in the client-free `pkg/resource`. Given a reader, the Karta definition, and the workload object, it evaluates each reference's expressions against the workload, performs the `Get` (for a `lookup`) or `List` (for a `list`), and returns the map.
 
 ```go
-func Resolve(ctx context.Context, reader client.Reader, karta *Karta, workload client.Object) (ResolvedReferences, error)
+func Resolve(ctx context.Context, reader ResourceReader, karta *Karta, workload any) (ResolvedReferences, error)
 ```
 
 `WithReferences` binds them. When the component factory is built, the resolved references are passed as an option; each becomes `references.<name>`, in scope for every component's expressions.

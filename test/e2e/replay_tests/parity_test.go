@@ -46,8 +46,7 @@ var parityNodeAffinity = &corev1.NodeAffinity{
 // last commit before the CEL adoption, by running snapshotStep - the exact same
 // logic as below - over every recorded object. This suite replays the identical
 // reads and writes through the CEL engine and requires byte-for-byte agreement,
-// with four accepted divergence classes where the jq engine was wrong or lossy;
-// each is enforced by a narrow rule below and documented with counts in
+// apart from the explicit corrections documented in
 // testdata/parity_baseline/README.md, together with the regeneration steps.
 var _ = Describe("CEL matches the previous engine baseline", func() {
 	recordings, _ := filepath.Glob(recordedGlob)
@@ -58,6 +57,9 @@ var _ = Describe("CEL matches the previous engine baseline", func() {
 	for _, path := range recordings {
 		path := path
 		rel := strings.TrimPrefix(path, "../recorded_data/")
+		if _, addedAfterJQ := postJQRecordings[rel]; addedAfterJQ {
+			continue
+		}
 		It("matches "+rel, func(_ SpecContext) {
 			baselineBytes, err := os.ReadFile(filepath.Join(parityBaselineRoot, rel))
 			Expect(err).NotTo(HaveOccurred(),
@@ -75,8 +77,11 @@ var _ = Describe("CEL matches the previous engine baseline", func() {
 			Expect(yaml.Unmarshal(kartaYAML, karta)).To(Succeed())
 
 			var steps []map[string]any
+			var inputs []map[string]any
 			for r.Next() {
-				step := snapshotStep(karta, r.Object().Object)
+				input := r.Object().Object
+				inputs = append(inputs, input)
+				step := snapshotStep(karta, input)
 				step["state"] = r.State()
 				steps = append(steps, step)
 			}
@@ -90,23 +95,22 @@ var _ = Describe("CEL matches the previous engine baseline", func() {
 					Expect(canonYAML(step[section])).To(Equal(canonYAML(baseStep[section])),
 						"%s step %d (%s): %s diverges from the previous engine", rel, i, state, section)
 				}
-				compareReads(rel, i, state, step["reads"], baseStep["reads"])
+				compareReads(rel, i, state, step["reads"], baseStep["reads"], inputs[i])
 				for _, section := range []string{"docAfterWrites", "docAfterSuspend", "docAfterResume"} {
-					compareDoc(rel, i, section, step[section], baseStep[section])
+					compareDoc(rel, i, section, step[section], baseStep[section], inputs[i])
 				}
 			}
 		})
 	}
 })
 
-// compareReads matches every component read against the baseline. Two accepted
-// divergence classes live here. Grove clique instance ids: the jq definition
-// errored on every recording; cel is required to read no ids, and a cel read
-// error against that baseline fails. Matched statuses: where the engines
+// compareReads matches every component read against the baseline. Absent Grove
+// scaling groups now return empty results instead of jq read errors. Matched
+// statuses: where the engines
 // disagree, the cel answer is required to be exactly the state label the
 // recorder itself captured, which covers both the states the jq catalog left
 // Undefined and the retuned jobset mappings. Anything else fails.
-func compareReads(rel string, step int, state string, got, base any) {
+func compareReads(rel string, step int, state string, got, base any, input map[string]any) {
 	gotList, _ := got.([]any)
 	baseList, _ := base.([]any)
 	Expect(gotList).To(HaveLen(len(baseList)),
@@ -132,9 +136,17 @@ func compareReads(rel string, step int, state string, got, base any) {
 			switch {
 			case key == "status":
 				compareStatus(rel, step, state, gotRead["name"], gotVal, baseVal)
-			case key == "instanceIds" && baseVal == readErrorMarker:
-				Expect(canonYAML(gotVal)).To(Equal("null\n"),
-					"%s step %d (%s) component %v: jq errored reading instanceIds; cel reads no ids there and must not return ids or an error", rel, step, state, gotRead["name"])
+			case strings.HasPrefix(rel, "grove/") && gotRead["name"] == "scalinggroup" &&
+				baseVal == readErrorMarker && (key == "instanceIds" || key == "scale" || key == "extractedInstances"):
+				groups, _, err := unstructured.NestedSlice(input, "spec", "template", "podCliqueScalingGroups")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(groups).To(BeEmpty(), "only an absent or empty scaling-group list permits empty reads")
+				want := "{}\n"
+				if key == "instanceIds" {
+					want = "null\n"
+				}
+				Expect(canonYAML(gotVal)).To(Equal(want),
+					"%s step %d (%s): Grove %s must return an empty result, not an error", rel, step, state, key)
 			default:
 				Expect(canonYAML(gotVal)).To(Equal(canonYAML(baseVal)),
 					"%s step %d (%s) component %v: read %s diverges from the previous engine", rel, step, state, gotRead["name"], key)
@@ -169,16 +181,16 @@ func compareStatus(rel string, step int, state string, name, got, base any) {
 		rel, step, state, name, baseStatuses, gotStatuses)
 }
 
-// compareDoc matches a document snapshot against the baseline. Two accepted
-// divergence classes live here. The pod definition's whole-document template
+// compareDoc matches a document snapshot against the baseline. The pod definition's whole-document template
 // write: the jq engine replaced the entire object with the template, dropping
 // apiVersion and kind, so its own GetResource failed validation; against that
 // baseline error cel is required to produce a valid object that still carries
 // the parity scheduler write, and a cel error fails. Null elision: the jq
 // engine stores a literal null where a merge patch removes the key, so both
-// documents are compared with null-valued keys elided, which under RFC 7386 is
-// the same document.
-func compareDoc(rel string, step int, section string, got, base any) {
+// documents retain the historical suite's null-elision comparison. The expected
+// document also restores only the fields named in parityExpectedDocument, using
+// the original recording rather than the actual result as the source of truth.
+func compareDoc(rel string, step int, section string, got, base any, input map[string]any) {
 	if baseStr, ok := base.(string); ok && baseStr == readErrorMarker {
 		doc, isMap := deepCanon(got).(map[string]any)
 		Expect(isMap && doc["kind"] != nil && doc["apiVersion"] != nil).To(BeTrue(),
@@ -187,11 +199,13 @@ func compareDoc(rel string, step int, section string, got, base any) {
 			"%s step %d: %s: the cel document lost the parity writes", rel, step, section)
 		return
 	}
-	if canonYAML(got) == canonYAML(base) {
+	expected, err := parityExpectedDocument(rel, base, input)
+	Expect(err).NotTo(HaveOccurred())
+	if canonYAML(got) == canonYAML(expected) {
 		return
 	}
-	Expect(canonYAML(stripNulls(deepCanon(got)))).To(Equal(canonYAML(stripNulls(deepCanon(base)))),
-		"%s step %d: %s diverges from the previous engine beyond null elision", rel, step, section)
+	Expect(canonYAML(stripNulls(deepCanon(got)))).To(Equal(canonYAML(stripNulls(expected))),
+		"%s step %d: %s diverges beyond the documented corrections", rel, step, section)
 }
 
 func stripNulls(value any) any {

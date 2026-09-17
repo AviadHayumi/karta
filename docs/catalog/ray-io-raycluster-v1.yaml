@@ -29,12 +29,7 @@ spec:
                 expression: object.?spec.?suspend.orValue(false) == true && (variables.statusState == "suspended" || variables.statusState == "")
                 expectedResult: "true"
       suspendDefinition:
-        suspendActions:
-          - patchType: MergePatch
-            expression: '{"spec": {"suspend": true}}'
-        resumeActions:
-          - patchType: MergePatch
-            expression: '{"spec": {"suspend": false}}'
+        pathWrite: /spec/suspend
     childComponents:
       - name: head
         kind:
@@ -45,10 +40,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: object[?"spec"][?"headGroupSpec"][?"template"].orValue(null)
-            patches:
-              - patchType: MergePatch
-                expression: '{"spec": {"headGroupSpec": {"template": value}}}'
-            patchStrategy: Replace
+            pathWrite: /spec/headGroupSpec/template
         scaleDefinition:
           replicas:
             expression: "1"
@@ -65,9 +57,7 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: ([dyn(object[?"spec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"template"].orValue(null))
-            patches:
-              - patchType: JSONPatch
-                expression: '[{"op": "add", "path": "/spec/workerGroupSpecs/" + string(index) + "/template", "value": value}]'
+            pathWriteExpression: '"/spec/workerGroupSpecs/" + string(index) + "/template"'
         scaleDefinition:
           replicas:
             expression: ([dyn(object[?"spec"][?"workerGroupSpecs"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"replicas"].orValue(null))

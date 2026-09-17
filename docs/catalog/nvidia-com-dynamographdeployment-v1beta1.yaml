@@ -30,43 +30,54 @@ spec:
           fragmentedPodSpecDefinition:
             schedulerName:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"schedulerName"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/schedulerName", "value": value}]'
+              pathWriteExpression: '"/spec/components/" + string(index) + "/podTemplate/spec/schedulerName"'
             labels:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"labels"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/metadata/labels", "value": value}]'
+              pathWriteExpression: '"/spec/components/" + string(index) + "/podTemplate/metadata/labels"'
             annotations:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"metadata"][?"annotations"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/metadata/annotations", "value": value}]'
+              pathWriteExpression: '"/spec/components/" + string(index) + "/podTemplate/metadata/annotations"'
             resourceClaims:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"resourceClaims"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/resourceClaims", "value": value}]'
+              pathWriteExpression: '"/spec/components/" + string(index) + "/podTemplate/spec/resourceClaims"'
             podAffinity:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"podAffinity"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/affinity/podAffinity", "value": value}]'
+              pathWriteExpression: '"/spec/components/" + string(index) + "/podTemplate/spec/affinity/podAffinity"'
             nodeAffinity:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"affinity"][?"nodeAffinity"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/affinity/nodeAffinity", "value": value}]'
+              pathWriteExpression: '"/spec/components/" + string(index) + "/podTemplate/spec/affinity/nodeAffinity"'
             container:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, (([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [null])[0])
+              pathWriteExpression: |-
+                [variables.components[index].podTemplate.spec.containers]
+                  .map(containers,
+                    lists.range(containers.size())
+                      .filter(i, containers[i].?name.orValue("") == "main")
+                  )
+                  .map(matches,
+                    matches.size() == 1
+                      ? "/spec/components/" + string(index)
+                        + "/podTemplate/spec/containers/" + string(matches[0])
+                      : dyn(null)
+                  )[0]
             priorityClassName:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, x[?"podTemplate"][?"spec"][?"priorityClassName"].orValue(null))
-              patches:
-                - patchType: JSONPatch
-                  expression: '[{"op": "add", "path": "/spec/components/" + string(index) + "/podTemplate/spec/priorityClassName", "value": value}]'
+              pathWriteExpression: '"/spec/components/" + string(index) + "/podTemplate/spec/priorityClassName"'
             image:
               expression: ([dyn(object[?"spec"][?"components"].orValue(null))].filter(v, type(v) == list) + [[]])[0].map(x, ((([dyn(x[?"podTemplate"][?"spec"][?"containers"].orValue(null))].filter(v, type(v) == list) + [[]])[0].filter(c, c[?"name"].orValue("") == "main") + [{}])[0])[?"image"].orValue(null))
+              pathWriteExpression: |-
+                [variables.components[index].podTemplate.spec.containers]
+                  .map(containers,
+                    lists.range(containers.size())
+                      .filter(i, containers[i].?name.orValue("") == "main")
+                  )
+                  .map(matches,
+                    matches.size() == 1
+                      ? "/spec/components/" + string(index)
+                        + "/podTemplate/spec/containers/" + string(matches[0])
+                        + "/image"
+                      : dyn(null)
+                  )[0]
         scaleDefinition:
           replicas:
             expression: variables.components.map(x, ([dyn(x.?replicas.orValue(null))].filter(v, v != null && v != false) + [1.0])[0] * ([dyn(x.?multinode.?nodeCount.orValue(null))].filter(v, v != null && v != false) + [1.0])[0])

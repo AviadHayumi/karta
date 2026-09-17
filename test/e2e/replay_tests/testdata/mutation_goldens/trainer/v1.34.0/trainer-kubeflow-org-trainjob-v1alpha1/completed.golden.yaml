@@ -1,0 +1,34 @@
+apiVersion: trainer.kubeflow.org/v1alpha1
+kind: TrainJob
+metadata:
+  creationTimestamp: "2026-09-09T23:44:18Z"
+  generation: 1
+  name: trainer-completed
+  namespace: test-49wgg
+  uid: eff9bf57-1430-4517-82f2-cd9e0f4bf6a8
+spec:
+  managedBy: trainer.kubeflow.org/trainjob-controller
+  runtimeRef:
+    apiGroup: trainer.kubeflow.org
+    kind: ClusterTrainingRuntime
+    name: karta-busybox
+  suspend: true
+  trainer:
+    command:
+    - sh
+    - -c
+    - sleep 15
+status:
+  conditions:
+  - lastTransitionTime: "2026-09-09T23:44:36Z"
+    message: jobset completed successfully
+    reason: AllJobsCompleted
+    status: "True"
+    type: Complete
+  jobsStatus:
+  - active: 0
+    failed: 0
+    name: node
+    ready: 0
+    succeeded: 1
+    suspended: 0

@@ -271,6 +271,59 @@ func (mr *MockComponentWriterMockRecorder) UpdatePodTemplateSpec(ctx, definition
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePodTemplateSpec", reflect.TypeOf((*MockComponentWriter)(nil).UpdatePodTemplateSpec), ctx, definition, podTemplateSpecs)
 }
 
+// MockPathWriter is a mock of PathWriter interface.
+type MockPathWriter struct {
+	ctrl     *gomock.Controller
+	recorder *MockPathWriterMockRecorder
+	isgomock struct{}
+}
+
+// MockPathWriterMockRecorder is the mock recorder for MockPathWriter.
+type MockPathWriterMockRecorder struct {
+	mock *MockPathWriter
+}
+
+// NewMockPathWriter creates a new mock instance.
+func NewMockPathWriter(ctrl *gomock.Controller) *MockPathWriter {
+	mock := &MockPathWriter{ctrl: ctrl}
+	mock.recorder = &MockPathWriterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPathWriter) EXPECT() *MockPathWriterMockRecorder {
+	return m.recorder
+}
+
+// ResolveWriteTarget mocks base method.
+func (m *MockPathWriter) ResolveWriteTarget(ctx context.Context, via *v1alpha1.ValueAccessor, instance string, index int) (WriteTarget, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveWriteTarget", ctx, via, instance, index)
+	ret0, _ := ret[0].(WriteTarget)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveWriteTarget indicates an expected call of ResolveWriteTarget.
+func (mr *MockPathWriterMockRecorder) ResolveWriteTarget(ctx, via, instance, index any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveWriteTarget", reflect.TypeOf((*MockPathWriter)(nil).ResolveWriteTarget), ctx, via, instance, index)
+}
+
+// WriteValues mocks base method.
+func (m *MockPathWriter) WriteValues(ctx context.Context, definition v1alpha1.ComponentDefinition, via *v1alpha1.ValueAccessor, values []any, options MutationOptions) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WriteValues", ctx, definition, via, values, options)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WriteValues indicates an expected call of WriteValues.
+func (mr *MockPathWriterMockRecorder) WriteValues(ctx, definition, via, values, options any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteValues", reflect.TypeOf((*MockPathWriter)(nil).WriteValues), ctx, definition, via, values, options)
+}
+
 // MockComponentAccessor is a mock of ComponentAccessor interface.
 type MockComponentAccessor struct {
 	ctrl     *gomock.Controller

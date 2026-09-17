@@ -6,11 +6,14 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
+	"regexp"
 )
 
 var kindsWithoutGroup = map[string]bool{
 	"Pod": true,
 }
+
+var writePath = regexp.MustCompile(`^(/([^~/]|~[01])*)*$`)
 
 type KartaValidator struct {
 	karta         *Karta
@@ -40,6 +43,10 @@ func (v *KartaValidator) Validate() error {
 
 	if instructionErrs := v.validateInstructions(); instructionErrs != nil {
 		errs = append(errs, instructionErrs...)
+	}
+
+	if referenceErrs := v.validateReferences(); referenceErrs != nil {
+		errs = append(errs, referenceErrs...)
 	}
 
 	return errors.Join(errs...)
@@ -157,17 +164,33 @@ func (v *KartaValidator) validateComponent(component ComponentDefinition) []erro
 		errs = append(errs, err)
 	}
 
-	errs = append(errs, validateComponentPatches(component)...)
+	errs = append(errs, validateComponentWritePaths(component)...)
 
 	return errs
 }
 
-// validateComponentPatches checks every patch entry the component declares: a
-// declared patch type and an expression on each entry, named conditions, and in a
-// value accessor an unconditional entry only as the last one, since entry selection
-// is first match wins.
-func validateComponentPatches(component ComponentDefinition) []error {
+func validateComponentWritePaths(component ComponentDefinition) []error {
 	var errs []error
+
+	for name, accessor := range component.Fields {
+		switch name {
+		case "":
+			errs = append(errs, fmt.Errorf("component '%s' fields: field name is empty", component.Name))
+		case "podTemplateSpec", "podSpec", "metadata",
+			"fragmented.schedulerName", "fragmented.labels", "fragmented.annotations",
+			"fragmented.resources", "fragmented.resourceClaims", "fragmented.podAffinity",
+			"fragmented.nodeAffinity", "fragmented.containers", "fragmented.container",
+			"fragmented.priorityClassName", "fragmented.image",
+			"scale.replicas", "scale.minReplicas", "scale.maxReplicas", "suspend":
+			errs = append(errs, fmt.Errorf("component '%s' fields[%q]: field name is reserved for a built-in SDK field", component.Name, name))
+		}
+		if accessor.Expression == "" && accessor.PathWrite == nil && accessor.PathWriteExpression == "" {
+			errs = append(errs, fmt.Errorf("component '%s' fields[%q]: expression, pathWrite, or pathWriteExpression is required", component.Name, name))
+		}
+		if err := validateWriteTarget(accessor.PathWrite, accessor.PathWriteExpression); err != nil {
+			errs = append(errs, fmt.Errorf("component '%s' fields[%q]: %w", component.Name, name, err))
+		}
+	}
 
 	accessors := map[string]*ValueAccessor{
 		"instanceIds": component.InstanceIds,
@@ -199,54 +222,33 @@ func validateComponentPatches(component ComponentDefinition) []error {
 		if accessor == nil {
 			continue
 		}
-		if accessor.PatchStrategy != "" && accessor.PatchStrategy != PatchStrategyMerge && accessor.PatchStrategy != PatchStrategyReplace {
-			errs = append(errs, fmt.Errorf("component '%s' %s: unknown patchStrategy %q", component.Name, field, accessor.PatchStrategy))
-		}
-		for i, entry := range accessor.Patches {
-			errs = append(errs, validatePatchEntry(component.Name, fmt.Sprintf("%s.patches[%d]", field, i), entry)...)
-			if len(entry.MatchConditions) == 0 && i != len(accessor.Patches)-1 {
-				errs = append(errs, fmt.Errorf("component '%s' %s.patches[%d]: an entry without matchConditions always matches and may only appear last", component.Name, field, i))
-			}
+		if err := validateWriteTarget(accessor.PathWrite, accessor.PathWriteExpression); err != nil {
+			errs = append(errs, fmt.Errorf("component '%s' %s: %w", component.Name, field, err))
 		}
 	}
-	if component.InstanceIds != nil && len(component.InstanceIds.Patches) > 0 {
-		errs = append(errs, fmt.Errorf("component '%s' instanceIds: is read-only and cannot declare patches", component.Name))
+	if ids := component.InstanceIds; ids != nil && (ids.PathWrite != nil || ids.PathWriteExpression != "") {
+		errs = append(errs, fmt.Errorf("component '%s' instanceIds: is read-only and cannot declare pathWrite or pathWriteExpression", component.Name))
 	}
 	if suspend := component.SuspendDefinition; suspend != nil {
-		for i, entry := range suspend.SuspendActions {
-			errs = append(errs, validatePatchEntry(component.Name, fmt.Sprintf("suspendActions[%d]", i), entry)...)
+		if suspend.PathWrite == nil && suspend.PathWriteExpression == "" {
+			errs = append(errs, fmt.Errorf("component '%s' suspendDefinition: exactly one of pathWrite or pathWriteExpression is required", component.Name))
 		}
-		for i, entry := range suspend.ResumeActions {
-			errs = append(errs, validatePatchEntry(component.Name, fmt.Sprintf("resumeActions[%d]", i), entry)...)
+		if err := validateWriteTarget(suspend.PathWrite, suspend.PathWriteExpression); err != nil {
+			errs = append(errs, fmt.Errorf("component '%s' suspendDefinition: %w", component.Name, err))
 		}
 	}
 
 	return errs
 }
 
-func validatePatchEntry(componentName, field string, entry PatchEntry) []error {
-	var errs []error
-
-	if entry.PatchType != PatchTypeMergePatch && entry.PatchType != PatchTypeJSONPatch {
-		errs = append(errs, fmt.Errorf("component '%s' %s: patchType must be %s or %s, got %q", componentName, field, PatchTypeMergePatch, PatchTypeJSONPatch, entry.PatchType))
+func validateWriteTarget(pathWrite *string, pathWriteExpression string) error {
+	if pathWrite != nil && pathWriteExpression != "" {
+		return errors.New("pathWrite and pathWriteExpression are mutually exclusive")
 	}
-	if entry.Expression == "" {
-		errs = append(errs, fmt.Errorf("component '%s' %s: expression is required", componentName, field))
+	if pathWrite != nil && !writePath.MatchString(*pathWrite) {
+		return fmt.Errorf("pathWrite %q must be an RFC 6901 JSON Pointer: empty or slash-prefixed, with only ~0 and ~1 escapes", *pathWrite)
 	}
-	seen := map[string]bool{}
-	for j, condition := range entry.MatchConditions {
-		if condition.Name == "" {
-			errs = append(errs, fmt.Errorf("component '%s' %s.matchConditions[%d]: name is required", componentName, field, j))
-		} else if seen[condition.Name] {
-			errs = append(errs, fmt.Errorf("component '%s' %s.matchConditions[%d]: name %q is not unique", componentName, field, j, condition.Name))
-		}
-		seen[condition.Name] = true
-		if condition.Expression == "" {
-			errs = append(errs, fmt.Errorf("component '%s' %s.matchConditions[%d]: expression is required", componentName, field, j))
-		}
-	}
-
-	return errs
+	return nil
 }
 
 func validateMultiInstanceComponent(component ComponentDefinition) error {
@@ -323,5 +325,72 @@ func (v *KartaValidator) validateGangScheduling() []error {
 			}
 		}
 	}
+	return errs
+}
+
+// referenceName constrains a reference name to a CEL identifier, so references.<name> always
+// parses.
+var referenceName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+func (v *KartaValidator) validateReferences() []error {
+	var errs []error
+
+	names := make(map[string]bool, len(v.karta.Spec.StructureDefinition.References))
+	for _, ref := range v.karta.Spec.StructureDefinition.References {
+		if ref.Name == "" {
+			errs = append(errs, fmt.Errorf("reference name is empty"))
+		} else if !referenceName.MatchString(ref.Name) {
+			errs = append(errs, fmt.Errorf("reference name %q is not a valid identifier (want %s)", ref.Name, referenceName))
+		}
+		if names[ref.Name] {
+			errs = append(errs, fmt.Errorf("reference name %q is not unique", ref.Name))
+		}
+		names[ref.Name] = true
+
+		if ref.GVK.Version == "" || ref.GVK.Kind == "" {
+			errs = append(errs, fmt.Errorf("reference %q must have version and kind", ref.Name))
+		}
+
+		if (ref.Lookup == nil) == (ref.List == nil) {
+			errs = append(errs, fmt.Errorf("reference %q must set exactly one of lookup or list", ref.Name))
+			continue
+		}
+
+		switch {
+		case ref.Lookup != nil:
+			if ref.Lookup.NameExpression == "" {
+				errs = append(errs, fmt.Errorf("reference %q lookup has an empty nameExpression", ref.Name))
+			}
+		case ref.List != nil:
+			if len(ref.List.MatchLabels) == 0 && len(ref.List.MatchExpressions) == 0 {
+				errs = append(errs, fmt.Errorf("reference %q list must set matchLabels or matchExpressions", ref.Name))
+			}
+			for key, value := range ref.List.MatchLabels {
+				if (value.Value == nil) == (value.Expression == nil) {
+					errs = append(errs, fmt.Errorf("reference %q matchLabels[%s] must set exactly one of value or expression", ref.Name, key))
+				}
+			}
+			for _, req := range ref.List.MatchExpressions {
+				switch req.Operator {
+				case LabelSelectorOpIn, LabelSelectorOpNotIn:
+					if len(req.Values) == 0 {
+						errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] requires values for operator %s", ref.Name, req.Key, req.Operator))
+					}
+				case LabelSelectorOpExists, LabelSelectorOpDoesNotExist:
+					if len(req.Values) != 0 {
+						errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] must not set values for operator %s", ref.Name, req.Key, req.Operator))
+					}
+				default:
+					errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] has unknown operator %q", ref.Name, req.Key, req.Operator))
+				}
+				for _, value := range req.Values {
+					if (value.Value == nil) == (value.Expression == nil) {
+						errs = append(errs, fmt.Errorf("reference %q matchExpressions[%s] values must set exactly one of value or expression", ref.Name, req.Key))
+					}
+				}
+			}
+		}
+	}
+
 	return errs
 }

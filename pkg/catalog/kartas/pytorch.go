@@ -26,8 +26,7 @@ func Pytorch() *v1alpha1.Karta {
 					Name: "pytorchjob",
 					Kind: &v1alpha1.GroupVersionKind{Group: "kubeflow.org", Version: "v1", Kind: "PyTorchJob"},
 					SuspendDefinition: &v1alpha1.SuspendDefinition{
-						SuspendActions: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"runPolicy": {"suspend": true}}}`}},
-						ResumeActions:  []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"runPolicy": {"suspend": false}}}`}},
+						PathWrite: ptr.To("/spec/runPolicy/suspend"),
 					},
 					StatusDefinition: &v1alpha1.StatusDefinition{
 						ConditionsDefinition: &v1alpha1.ConditionsDefinition{
@@ -51,7 +50,7 @@ func Pytorch() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("pytorchjob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"pytorchReplicaSpecs": {"Master": {"template": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"pytorchReplicaSpecs"][?"Master"][?"template"].orValue(null)`, PathWrite: ptr.To("/spec/pytorchReplicaSpecs/Master/template")},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas: &v1alpha1.ValueAccessor{Expression: `variables.specPytorchReplicaSpecsMasterReplicas`},
@@ -68,7 +67,7 @@ func Pytorch() *v1alpha1.Karta {
 						Kind:     &v1alpha1.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 						OwnerRef: ptr.To("pytorchjob"),
 						SpecDefinition: &v1alpha1.SpecDefinition{
-							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)`, Patches: []v1alpha1.PatchEntry{{PatchType: v1alpha1.PatchTypeMergePatch, Expression: `{"spec": {"pytorchReplicaSpecs": {"Worker": {"template": value}}}}`}}, PatchStrategy: v1alpha1.PatchStrategyReplace},
+							PodTemplateSpec: &v1alpha1.ValueAccessor{Expression: `object[?"spec"][?"pytorchReplicaSpecs"][?"Worker"][?"template"].orValue(null)`, PathWrite: ptr.To("/spec/pytorchReplicaSpecs/Worker/template")},
 						},
 						ScaleDefinition: &v1alpha1.ScaleDefinition{
 							Replicas:    &v1alpha1.ValueAccessor{Expression: `variables.specPytorchReplicaSpecsWorkerReplicas`},

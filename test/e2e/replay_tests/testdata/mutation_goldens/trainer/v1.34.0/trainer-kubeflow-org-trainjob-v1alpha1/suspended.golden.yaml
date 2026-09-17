@@ -1,0 +1,20 @@
+apiVersion: trainer.kubeflow.org/v1alpha1
+kind: TrainJob
+metadata:
+  creationTimestamp: "2026-09-09T23:44:36Z"
+  generation: 1
+  name: trainer-suspended
+  namespace: test-49wgg
+  uid: 1ea6243c-a8a4-4217-b877-8ee60822bf90
+spec:
+  managedBy: trainer.kubeflow.org/trainjob-controller
+  runtimeRef:
+    apiGroup: trainer.kubeflow.org
+    kind: ClusterTrainingRuntime
+    name: karta-busybox
+  suspend: true
+  trainer:
+    command:
+    - sh
+    - -c
+    - sleep 15
