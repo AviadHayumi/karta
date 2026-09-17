@@ -787,3 +787,10 @@ rr-poc/ar_executor.py):
   operand is false, so `int(name) > 0 && dyn(Get) != null ? a : b` silently
   took the else branch while no request existed and only surfaced the error
   once one did. Keep fallible calls out of && chains in generate expressions.
+
+Follow-up (gap 3, job kept alive): capture 73. With the job and the policy both
+present, Kyverno holds one PolicyReport result for the action: policy name,
+result pass, message success, source KyvernoMutatingPolicy, the scan timestamp.
+No patch, no evidence. Deleting only the policy removed it while the job stayed
+suspended; events expire on the API server's one-hour TTL. The record depends
+on the policy's life, the job's life, and the clock.

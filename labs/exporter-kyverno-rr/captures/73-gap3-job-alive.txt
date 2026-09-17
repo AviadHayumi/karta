@@ -1,0 +1,44 @@
+# capture 73 - gap 3 with the job NOT deleted: what history exists while job and policy both live, then after the policy changes
+# 2026-09-17T04:51:05Z lab2, stock kyverno 1.19.1, mutate-existing path (05e scoped to trainer-hp), reporting.mutateExisting on (chart default)
+
+04:51:05 policy applied, then trainer-hp resumed by hand so the rule suspends it again:
+mutatingpolicy.policies.kyverno.io/metric-suspend-alive created
+job.batch/trainer-hp patched
+04:54:01 trainer-hp suspend=true  <- suspended by the rule
+
+=== A. job alive, policy alive: everything kyverno holds about this action ===
+--- the report result, full object ---
+report name: 3fddc24f-dfde-46dd-a859-53ebd6f0449b  owner: ['trainer-hp']
+{
+ "message": "success",
+ "policy": "metric-suspend-alive",
+ "properties": {
+  "process": "background scan"
+ },
+ "result": "pass",
+ "scored": true,
+ "source": "KyvernoMutatingPolicy",
+ "timestamp": {
+  "nanos": 0,
+  "seconds": 1789620871
+ }
+}
+summary: {'error': 0, 'fail': 0, 'pass': 1, 'skip': 0, 'warn': 0}
+--- events on the job (all) ---
+2026-09-17T04:51:08Z   Normal    Resumed            job-controller   Job resumed
+2026-09-17T04:54:01Z   Normal    Suspended          job-controller   Job suspended
+2026-09-17T04:51:08Z   Normal    SuccessfulCreate   job-controller   Created pod: trainer-hp-rnch6
+<nil>                  Warning   PolicyViolation    <none>           policy metric-suspend-alive/ fail: mutation is not applied
+2026-09-17T04:54:01Z   Normal    SuccessfulDelete   job-controller   Deleted pod: trainer-hp-rnch6
+--- work items ---
+0
+--- kyverno background log lines naming the policy (default verbosity) ---
+1
+
+=== B. now delete the POLICY only. job untouched, still suspended ===
+mutatingpolicy.policies.kyverno.io "metric-suspend-alive" deleted
+--- the report results for trainer-hp now ---
+reports for the job: 0
+--- job ---
+suspend=true
+--- events on the job: kubernetes keeps events for 1h by default (kube-apiserver --event-ttl=1h). trainer-hp had 0 events left from its 4h-old suspension when checked at 05:05 UTC ---
