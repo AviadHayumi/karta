@@ -18,22 +18,7 @@ For example, the controller asks to change the predictor's image. Karta finds th
 
 The old jq path did two jobs: read a value and locate it for writes. Now `expression` reads; `pathWrite` or `pathWriteExpression` locates the write. The patch and new value stay in Go.
 
-These are the new building blocks. A Karta only needs the ones its workload uses:
-
-| In the Karta | Why it exists | Example |
-| --- | --- | --- |
-| `expression` | Read a workload value with CEL | Read a worker's template. |
-| `pathWrite` | Write at a fixed JSON path | `/spec/suspend` |
-| `pathWriteExpression` | Calculate a path from the workload | Find the template belonging to `gpu`. |
-| `spec.variables` | Reuse a CEL calculation | Give the worker list a shared name. |
-| `component.fields` | Expose an operator-specific setting | Ray's `rayVersion`, which has no built-in SDK field. |
-| `instanceIds.expression` | Read repeated component IDs | `gpu` and `cpu` worker groups. |
-| `suspendDefinition` | Declare how suspend/resume writes work | Set `spec.suspend` to true/false. |
-
-<details>
-<summary>One complete Karta showing these fields together: Ray workers</summary>
-
-This teaching definition uses real RayCluster fields. It adds a named `rayVersion` accessor to show custom fields; that accessor is not in the shipped Ray catalog. It covers workers, not Ray's head Pod. The expressions expect `spec.rayVersion` and `spec.workerGroupSpecs` to be present.
+This Ray Karta shows where the fields go. `(new)` marks fields or sections added to the jq CRD by this proposal. `suspendDefinition` already existed; its contents changed.
 
 ```yaml
 apiVersion: run.ai/v1alpha1
@@ -41,38 +26,53 @@ kind: Karta
 metadata:
   name: ray-example
 spec:
-  variables:
+  variables: # (new)
     - name: workerGroups
-      expression: object.spec.workerGroupSpecs
+      expression: object.spec.workerGroupSpecs # (new)
   structureDefinition:
     rootComponent:
       name: raycluster
       kind: {group: ray.io, version: v1, kind: RayCluster}
       statusDefinition: {statusMappings: {}}
-      suspendDefinition:
-        pathWrite: /spec/suspend
-      fields:
+      suspendDefinition: # Existing field, changed contents.
+        pathWrite: /spec/suspend # (new)
+      fields: # (new)
         rayVersion:
-          expression: object.spec.rayVersion
-          pathWrite: /spec/rayVersion
+          expression: object.spec.rayVersion # (new)
+          pathWrite: /spec/rayVersion # (new)
     childComponents:
       - name: worker
         kind: {group: "", version: v1, kind: Pod}
         ownerRef: raycluster
-        instanceIds:
-          expression: variables.workerGroups.map(g, g.groupName)
+        instanceIds: # (new) Replaces instanceIdPath.
+          expression: variables.workerGroups.map(g, g.groupName) # (new)
         specDefinition:
-          podTemplateSpec:
-            expression: variables.workerGroups.map(g, g.template)
-            pathWriteExpression: >-
+          podTemplateSpec: # (new) Replaces podTemplateSpecPath.
+            expression: variables.workerGroups.map(g, g.template) # (new)
+            pathWriteExpression: >- # (new)
               "/spec/workerGroupSpecs/" + string(index) + "/template"
         podSelector:
           componentTypeSelector:
-            expression: 'object.metadata.labels["ray.io/node-type"]'
+            expression: 'object.metadata.labels["ray.io/node-type"]' # (new)
             value: worker
           componentInstanceSelector:
-            expression: 'object.metadata.labels["ray.io/group"]'
+            expression: 'object.metadata.labels["ray.io/group"]' # (new)
 ```
+
+This example covers Ray workers, not the head Pod, and expects `rayVersion` and `workerGroupSpecs` in the workload. The custom `rayVersion` accessor illustrates `fields`; it is not in the shipped catalog.
+
+| In the Karta | Why it exists | Example |
+| --- | --- | --- |
+| `expression` (new) | Read a workload value with CEL | Read a worker's template. |
+| `pathWrite` (new) | Write at a fixed JSON path | `/spec/suspend` |
+| `pathWriteExpression` (new) | Calculate a path from the workload | Find the template belonging to `gpu`. |
+| `spec.variables` (new) | Reuse a CEL calculation | Give the worker list a shared name. |
+| `component.fields` (new) | Expose an operator-specific setting | Ray's `rayVersion`, which has no built-in SDK field. |
+| `instanceIds.expression` (new) | Read repeated component IDs; replaces `instanceIdPath` | `gpu` and `cpu` worker groups. |
+| `suspendDefinition` (changed) | Existing suspend/resume support, now configured with a write path | Set `spec.suspend` to true/false. |
+
+<details>
+<summary>How the Ray definition fits together</summary>
 
 `variables.workerGroups` is the workload's list. `instanceIds` reads its names; the template expression reads its templates. The SDK supplies `index` for the requested name, as explained below. The Pod selectors associate actual Pods with these worker groups; they are not write destinations.
 
