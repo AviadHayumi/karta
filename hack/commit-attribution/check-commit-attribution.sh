@@ -24,8 +24,9 @@ checked=0
 while IFS= read -r commit; do
   [[ -n $commit ]] || continue
   message=$(git show -s --format=%B "$commit")
+  trailers=$(git interpret-trailers --parse <<< "$message")
   checked=$((checked + 1))
-  if printf '%s\n' "$message" |
+  if printf '%s\n' "$trailers" |
     grep -Ei '^[[:blank:]]*Co-authored-by[[:blank:]]*:' |
     grep -Ei '(^|[^[:alnum:]_])(Claude|ChatGPT|Copilot|Codex|Devin|Cursor|Gemini|Anthropic)([^[:alnum:]_]|$)' > /dev/null; then
     echo "${commit:0:12}: remove the AI Co-authored-by line."

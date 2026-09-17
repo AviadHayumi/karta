@@ -38,6 +38,19 @@ clean=$(commit "docs: explain Claude integration"$'\n\nCo-authored-by: Example C
 expect 0 "$historical" "$clean"
 expect 0 "$clean" "$clean"
 
+before=$(git rev-parse HEAD)
+prose=$'docs: explain attribution\n\nCo-authored-by: Claude is prohibited by policy.\nThis is ordinary prose.'
+clean=$(commit "$prose")
+expect 0 "$before" "$clean"
+clean=$(commit "$prose"$'\n\nCo-authored-by: Example Contributor <person@example.com>\n'"$signoff")
+expect 0 "$before" "$clean"
+bad=$(commit "$prose"$'\n\n'"$ai")
+expect 1 "$before" "$bad"
+
+before=$(git rev-parse HEAD)
+bad=$(commit $'fix: folded attribution\n\nCo-authored-by:\n Claude <noreply@anthropic.com>')
+expect 1 "$before" "$bad"
+
 for name in Claude ChatGPT Copilot Codex Devin Cursor Gemini Anthropic; do
   before=$(git rev-parse HEAD)
   bad=$(commit "fix: example"$'\n\n'"Co-authored-by:$name <tool@example.com>")
@@ -52,7 +65,7 @@ for subject in 'Merge branch feature' 'Revert "fix: example"' 'fixup! fix: examp
 done
 
 before=$(git rev-parse HEAD)
-bad=$(commit $'fix: mixed case\n\n co-AUTHORED-by : claude <noreply@anthropic.com>\r\n')
+bad=$(commit $'fix: mixed case\n\nco-AUTHORED-by : claude <noreply@anthropic.com>\r\n')
 expect 1 "$before" "$bad"
 expect 1 0000000000000000000000000000000000000000 "$historical"
 expect 128 missing-base HEAD

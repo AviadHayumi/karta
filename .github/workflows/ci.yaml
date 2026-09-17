@@ -10,17 +10,16 @@ on:
     branches: [ main, v0.* ]
 
 jobs:
-  commit-attribution:
-    name: Commit attribution
+  ci:
+    name: CI
     if: github.event.deleted != true
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Check out the incoming commit history
+      - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -32,13 +31,6 @@ jobs:
           COMMIT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           COMMIT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: make commit-attribution-check
-
-  ci:
-    name: CI
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
 
       - name: Set up Go
         uses: actions/setup-go@v7
