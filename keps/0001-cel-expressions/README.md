@@ -64,7 +64,8 @@ spec:
         specDefinition:
           podTemplateSpec:
             expression: variables.workerGroups.map(g, g.template)
-            pathWriteExpression: '"/spec/workerGroupSpecs/" + string(index) + "/template"'
+            pathWriteExpression: >-
+              "/spec/workerGroupSpecs/" + string(index) + "/template"
         podSelector:
           componentTypeSelector:
             expression: 'object.metadata.labels["ray.io/node-type"]'
@@ -430,7 +431,8 @@ The Karta author defines how to find the groups once. Controllers using `kartas.
   specDefinition:
     podTemplateSpec:
       expression: object.spec.workerGroupSpecs.map(g, g.template)
-      pathWriteExpression: '"/spec/workerGroupSpecs/" + string(index) + "/template"'
+      pathWriteExpression: >-
+        "/spec/workerGroupSpecs/" + string(index) + "/template"
 ```
 
 Read `.map(g, g.groupName)` as "for each group `g`, take its `groupName`." On this workload, it returns `["gpu", "cpu"]`. These are the names already in the RayCluster. Karta does not create them.
@@ -1008,7 +1010,9 @@ Suppose an edit needs to copy an existing label, find the container named `main`
 For an image-only update, `Mutate` above is enough. Here is the smallest draft example so the three steps are visible: begin, select and edit, commit.
 
 ```go
-func setImageWithDraft(ctx context.Context, editor tree.Editable, image string) error {
+func setImageWithDraft(
+    ctx context.Context, editor tree.Editable, image string,
+) error {
     draft, err := tree.BeginEdit(ctx, editor)
     if err != nil {
         return err
