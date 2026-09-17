@@ -74,7 +74,132 @@ scaleDefinition:
 
 Use this when the location is fixed. The caller chooses the new number; the Karta author defines where it goes.
 
-`pathWrite: ""` means the whole document. Omitting `expression` makes the field write-only. The CRD rejects invalid pointers and an accessor containing both write-path forms.
+Most fields use a path such as `/spec/replicas`. An empty path is useful when the value starts at the top of the workload itself, as it does for a Pod. A field can also have a write path without a read expression. The examples below show both cases.
+
+<details>
+<summary>When would pathWrite be empty? The Pod catalog already uses it</summary>
+
+A Deployment keeps its Pod template under `spec.template`, so its Karta writes to `/spec/template`. A Pod has no `spec.template`: its `metadata` and `spec` are already at the top.
+
+The Pod catalog therefore defines the same SDK field like this:
+
+```yaml
+# Under spec.structureDefinition.rootComponent.
+specDefinition:
+  podTemplateSpec:
+    expression: object
+    pathWrite: ""
+```
+
+`expression: object` reads the whole Pod. `pathWrite: ""` says to apply writes starting at that outer object. The empty string is a real destination, not a missing setting.
+
+For example, this Pod needs a team label:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: api
+  labels: {app: api}
+spec:
+  containers:
+    - {name: api, image: 'ghcr.io/example/api:v1'}
+```
+
+With that Pod loaded into `pod`, the controller can use the built-in definition:
+
+```go
+editor, err := tree.Open(ctx, kartas.Pod(), pod)
+if err != nil {
+    return err
+}
+if err := editor.Mutate(ctx, tree.Write{
+    Component: "pod", Field: tree.PodTemplateSpec,
+    Value: map[string]any{
+        "metadata": map[string]any{
+            "labels": map[string]any{"team": "platform"},
+        },
+    },
+}); err != nil {
+    return err
+}
+```
+
+After the call, `editor.GetResource()` returns a Pod with labels `{app: api, team: platform}`. Its name, image, and other fields stay unchanged. Save that resource with the Kubernetes client as in the reconcile example.
+
+Why was nothing removed if the path selects the whole Pod? The path chooses where the write starts; the SDK's default Merge decides how to apply the supplied value. This call merges one label into the Pod. Choosing Replace at this path would request replacement of the whole document, so a partial value like this is not appropriate for Replace.
+
+Keep the quotes in `pathWrite: ""`. Leaving the write path out makes a field with only `expression` read-only. `pathWrite: "/"` is different too: it selects a field whose name is an empty string, not the whole document.
+
+</details>
+
+<details>
+<summary>When can expression be omitted? Set Job parallelism from queue capacity</summary>
+
+Suppose a queue controller has assigned four worker slots to a Job. It already knows the desired parallelism is `4`; it does not need to read the old number through this field first.
+
+The Karta author can expose a write-only custom field:
+
+```yaml
+# Add to the Job Karta's spec.structureDefinition.rootComponent.
+fields:
+  parallelism:
+    pathWrite: /spec/parallelism
+```
+
+Open the editor with that updated Job Karta, then write the queue's decision:
+
+```go
+workerSlots := 4
+if err := editor.Mutate(ctx, tree.Write{
+    Component: "job", Field: tree.Field("parallelism"), Value: workerSlots,
+}); err != nil {
+    return err
+}
+```
+
+`spec.parallelism: 1` becomes `spec.parallelism: 4`. The Job's completions and Pod template stay unchanged. The value comes from `workerSlots`; the Karta supplies its destination.
+
+Without `expression`, Karta does not include `parallelism` in the extracted custom fields. The controller can still write it. If the controller also needs Karta to read this field, add the expression:
+
+```yaml
+fields:
+  parallelism:
+    expression: 'object[?"spec"][?"parallelism"].orValue(1)'
+    pathWrite: /spec/parallelism
+```
+
+"Write-only" describes this field's configuration, not a security boundary. The value is still present in the workload, and `ResolveWriteTarget` can return its current raw value. Omitting the read expression does not hide it or change Kubernetes permissions.
+
+</details>
+
+<details>
+<summary>What does validation reject, and why?</summary>
+
+With the proposed CRD installed, Kubernetes rejects this fixed path when the Karta is submitted:
+
+```yaml
+scaleDefinition:
+  replicas:
+    pathWrite: spec/replicas
+```
+
+It is missing the leading `/`. Use `/spec/replicas`. A fixed path is a JSON Pointer, not a jq path such as `.spec.replicas` or a CEL expression such as `object.spec.replicas`.
+
+This is also rejected, even though both entries would point to the same place:
+
+```yaml
+scaleDefinition:
+  replicas:
+    pathWrite: /spec/replicas
+    pathWriteExpression: '"/spec/replicas"'
+```
+
+One field must have one way to find its write destination. For this fixed location, keep `pathWrite` and remove `pathWriteExpression`. If the location depends on the workload, keep only `pathWriteExpression`; the next section shows KServe's example.
+
+The CRD checks the fixed pointer's spelling and prevents both write-path forms on one field. It does not prove that the destination exists in a particular workload. The SDK checks a computed path after evaluating its expression; a valid-looking path can still fail at write time, for example if it points through a string instead of an object.
+
+</details>
 
 </details>
 
