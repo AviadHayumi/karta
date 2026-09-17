@@ -69,7 +69,7 @@ metrics interface.
 
 Every workload-scoped series carries `namespace`, `workload`,
 `workload_kind`, and `workload_group`. Labels are additive-only: a released
-metric never loses or renames a label. The exporter emits six families:
+metric never loses or renames a label. The exporter emits seven families:
 
 ```text
 # one series per attributed pod, value always 1 - the attribution primitive
@@ -93,6 +93,10 @@ karta_workload_component_pods{..., component, component_instance, phase} N
 
 # spec changes step this up; consumers draw deploy markers from it
 karta_workload_generation{...} N
+
+# metadata.creationTimestamp as unix seconds; the age anchor for duration
+# policies, steps forward on a same-name recreation
+karta_workload_created_timestamp_seconds{...} N
 ```
 
 The status set is dense on purpose: every phase always has a series, so
@@ -301,7 +305,7 @@ kind at once.
 ## Migration and versioning
 
 No CRD change and no library change; the exporter is a new module consuming
-the existing public packages. The six metric families and the `karta:*`
+the existing public packages. The seven metric families and the `karta:*`
 rule output names are the public contract, additive-only. A golden
 exposition file in the tests is the enforcement: any label change fails a
 test visibly.
