@@ -28,7 +28,7 @@ spec:
     rootComponent:
       name: job
       kind: {group: batch, version: v1, kind: Job}
-      statusDefinition: {}
+      statusDefinition: {statusMappings: {}}
       specDefinition:
         podTemplateSpec:
           expression: 'object[?"spec"][?"template"].orValue(null)'
